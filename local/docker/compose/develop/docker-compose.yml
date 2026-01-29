@@ -1,0 +1,167 @@
+# ============================================================================
+# NEXO PLATFORM - Docker Compose (Development)
+# ============================================================================
+# Ambiente de desenvolvimento para validação de features antes de QA
+#
+# Usage:
+#   docker compose -f infra/docker/compose/develop/docker-compose.yml up -d
+# ============================================================================
+
+name: nexo-develop
+
+services:
+  nexo-be:
+    image: docker.io/geraldobl58/nexo-be:${IMAGE_TAG:-latest}
+    container_name: nexo-be-develop
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - APP_NAME=Nexo
+      - APP_URL=${APP_URL:-http://develop.api.nexo.local}
+      - FRONTEND_URL=${FRONTEND_URL:-http://develop.nexo.local}
+      - DATABASE_URL=postgresql://nexo:${DB_PASSWORD}@postgres:5432/nexo_develop
+      - REDIS_URL=redis://redis:6379
+      - KEYCLOAK_URL=http://keycloak:8080
+      - KEYCLOAK_REALM=nexo-develop
+      - KEYCLOAK_CLIENT_ID=nexo-be
+      - JWT_SECRET=${JWT_SECRET}
+      - LOG_LEVEL=debug
+      - SWAGGER_ENABLED=true
+      - METRICS_ENABLED=true
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+    networks:
+      - nexo-develop-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  nexo-fe:
+    image: docker.io/geraldobl58/nexo-fe:${IMAGE_TAG:-latest}
+    container_name: nexo-fe-hlg
+    restart: unless-stopped
+    ports:
+      - "3003:3003"
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=${API_URL:-http://api.develop.nexo.local}
+      - NEXT_PUBLIC_KEYCLOAK_URL=${KEYCLOAK_URL:-http://auth.develop.nexo.local}
+      - NEXT_PUBLIC_KEYCLOAK_REALM=nexo-develop
+      - NEXT_PUBLIC_KEYCLOAK_CLIENT_ID=nexo-fe
+    depends_on:
+      nexo-be:
+        condition: service_healthy
+    networks:
+      - nexo-develop-network
+
+  keycloak:
+    image: docker.io/geraldobl58/nexo-auth:${IMAGE_TAG:-latest}
+    container_name: nexo-auth-hlg
+    command: start --import-realm
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+      KC_HTTP_ENABLED: "true"
+      KC_HOSTNAME_STRICT: "false"
+      KC_HEALTH_ENABLED: "true"
+      KC_METRICS_ENABLED: "true"
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak_hlg
+      KC_DB_USERNAME: nexo
+      KC_DB_PASSWORD: ${DB_PASSWORD}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - nexo-develop-network
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: nexo-postgres-hlg
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: nexo
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: nexo_hlg
+    volumes:
+      - postgres-data-hlg:/var/lib/postgresql/data
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro
+    networks:
+      - nexo-develop-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nexo -d nexo_hlg"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: nexo-redis-hlg
+    restart: unless-stopped
+    volumes:
+      - redis-data-hlg:/data
+    networks:
+      - nexo-develop-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    command: redis-server --appendonly yes --maxmemory 512mb
+
+  prometheus:
+    image: prom/prometheus:v2.48.0
+    container_name: nexo-prometheus-hlg
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data-hlg:/prometheus
+    networks:
+      - nexo-develop-network
+
+  grafana:
+    image: grafana/grafana:10.2.2
+    container_name: nexo-grafana-hlg
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD}
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafana-data-hlg:/var/lib/grafana
+    depends_on:
+      - prometheus
+    networks:
+      - nexo-develop-network
+
+networks:
+  nexo-develop-network:
+    driver: bridge
+    name: nexo-develop-network
+
+volumes:
+  postgres-data-hlg:
+    name: nexo-postgres-data-hlg
+  redis-data-hlg:
+    name: nexo-redis-data-hlg
+  prometheus-data-hlg:
+    name: nexo-prometheus-data-hlg
+  grafana-data-hlg:
+    name: nexo-grafana-data-hlg

@@ -1,0 +1,39 @@
+# Values for Development environment
+replicaCount: 2
+
+image:
+  tag: "release"
+
+ingress:
+  enabled: true
+  hosts:
+    - host: api.develop.nexo.io
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: nexo-be-develop-tls
+      hosts:
+        - api.develop.nexo.io
+
+resources:
+  limits:
+    cpu: 750m
+    memory: 768Mi
+  requests:
+    cpu: 200m
+    memory: 384Mi
+
+autoscaling:
+  enabled: false
+
+env:
+  NODE_ENV: development
+  LOG_LEVEL: debug
+  SWAGGER_ENABLED: "true"
+  METRICS_ENABLED: "true"
+  KEYCLOAK_REALM: nexo-develop
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1

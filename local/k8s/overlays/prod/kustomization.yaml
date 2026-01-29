@@ -1,0 +1,144 @@
+# ============================================================================
+# NEXO PLATFORM - Production Overlay
+# ============================================================================
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: nexo-prod
+
+resources:
+  - ../../base
+  - namespace.yaml
+  - pdb-strict.yaml
+
+commonLabels:
+  app.kubernetes.io/environment: production
+
+patches:
+  # Backend - alta disponibilidade em prod
+  - target:
+      kind: Deployment
+      name: nexo-be
+    patch: |
+      - op: replace
+        path: /spec/replicas
+        value: 5
+      - op: add
+        path: /spec/template/spec/topologySpreadConstraints
+        value:
+          - maxSkew: 1
+            topologyKey: topology.kubernetes.io/zone
+            whenUnsatisfiable: DoNotSchedule
+            labelSelector:
+              matchLabels:
+                app.kubernetes.io/name: nexo-be
+
+  # Frontend - alta disponibilidade em prod
+  - target:
+      kind: Deployment
+      name: nexo-fe
+    patch: |
+      - op: replace
+        path: /spec/replicas
+        value: 5
+      - op: add
+        path: /spec/template/spec/topologySpreadConstraints
+        value:
+          - maxSkew: 1
+            topologyKey: topology.kubernetes.io/zone
+            whenUnsatisfiable: DoNotSchedule
+            labelSelector:
+              matchLabels:
+                app.kubernetes.io/name: nexo-fe
+
+  # Keycloak - 2 replicas em prod (HA)
+  - target:
+      kind: Deployment
+      name: keycloak
+    patch: |
+      - op: replace
+        path: /spec/replicas
+        value: 2
+
+  # HPA - alta escala em prod
+  - target:
+      kind: HorizontalPodAutoscaler
+      name: nexo-be
+    patch: |
+      - op: replace
+        path: /spec/minReplicas
+        value: 5
+      - op: replace
+        path: /spec/maxReplicas
+        value: 50
+
+  - target:
+      kind: HorizontalPodAutoscaler
+      name: nexo-fe
+    patch: |
+      - op: replace
+        path: /spec/minReplicas
+        value: 5
+      - op: replace
+        path: /spec/maxReplicas
+        value: 50
+
+  # PostgreSQL - mais recursos em prod
+  - target:
+      kind: StatefulSet
+      name: postgres
+    patch: |
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/cpu
+        value: "1000m"
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/memory
+        value: "2Gi"
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/cpu
+        value: "4000m"
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/memory
+        value: "8Gi"
+
+  # Ingress - atualizar hosts
+  - target:
+      kind: Ingress
+      name: nexo-ingress
+    patch: |
+      - op: replace
+        path: /spec/rules/0/host
+        value: app.nexo.io
+      - op: replace
+        path: /spec/rules/1/host
+        value: api.nexo.io
+      - op: replace
+        path: /spec/rules/2/host
+        value: auth.nexo.io
+      - op: replace
+        path: /spec/tls/0/hosts
+        value:
+          - app.nexo.io
+          - api.nexo.io
+          - auth.nexo.io
+
+configMapGenerator:
+  - name: nexo-config
+    behavior: merge
+    literals:
+      - NODE_ENV=production
+      - LOG_LEVEL=warn
+      - LOG_FORMAT=json
+      - SWAGGER_ENABLED=false
+      - METRICS_ENABLED=true
+      - APP_URL=https://api.nexo.io
+      - FRONTEND_URL=https://app.nexo.io
+      - KEYCLOAK_URL=https://auth.nexo.io
+      - KEYCLOAK_REALM=nexo
+
+  - name: nexo-fe-config
+    behavior: merge
+    literals:
+      - NEXT_PUBLIC_API_URL=https://api.nexo.io
+      - NEXT_PUBLIC_KEYCLOAK_URL=https://auth.nexo.io
+      - NEXT_PUBLIC_KEYCLOAK_REALM=nexo

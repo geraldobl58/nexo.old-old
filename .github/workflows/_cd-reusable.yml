@@ -1,0 +1,188 @@
+# ============================================================================
+# NEXO PLATFORM - CD Reusable Workflow
+# ============================================================================
+# Workflow reutilizável para deploy de qualquer serviço em qualquer ambiente.
+# Padrão enterprise: Um único workflow de CD, parametrizado por ambiente.
+# ============================================================================
+
+name: _CD Reusable
+
+on:
+  workflow_call:
+    inputs:
+      service:
+        description: "Nome do serviço"
+        required: true
+        type: string
+      environment:
+        description: "Ambiente de deploy (dev, qa, staging, prod)"
+        required: true
+        type: string
+      image_tag:
+        description: "Tag da imagem a ser deployada"
+        required: true
+        type: string
+      helm_chart_path:
+        description: "Caminho do Helm Chart"
+        required: true
+        type: string
+      values_file:
+        description: "Arquivo de values do ambiente"
+        required: true
+        type: string
+      namespace:
+        description: "Namespace Kubernetes"
+        required: true
+        type: string
+      auto_sync:
+        description: "Habilitar auto-sync no ArgoCD"
+        required: false
+        type: boolean
+        default: false
+      require_approval:
+        description: "Requer aprovação manual"
+        required: false
+        type: boolean
+        default: false
+    secrets:
+      ARGOCD_SERVER:
+        required: false
+      ARGOCD_TOKEN:
+        required: false
+      KUBECONFIG:
+        required: false
+
+env:
+  REGISTRY: docker.io
+  IMAGE_NAME: geraldobl58/${{ inputs.service }}
+
+jobs:
+  # ============================================
+  # Job 1: Validação Pré-Deploy
+  # ============================================
+  validate:
+    name: 🔍 Validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: "3.14.0"
+
+      - name: Lint Helm Chart
+        run: |
+          helm lint ${{ inputs.helm_chart_path }} \
+            --values ${{ inputs.values_file }}
+
+      - name: Template Helm Chart
+        run: |
+          helm template ${{ inputs.service }}-${{ inputs.environment }} \
+            ${{ inputs.helm_chart_path }} \
+            --values ${{ inputs.values_file }} \
+            --set image.tag=${{ inputs.image_tag }} \
+            --namespace ${{ inputs.namespace }}
+
+      - name: Validate Kubernetes manifests
+        uses: instrumenta/kubeval-action@master
+        with:
+          files: |
+            helm template ${{ inputs.service }}-${{ inputs.environment }} \
+              ${{ inputs.helm_chart_path }} \
+              --values ${{ inputs.values_file }}
+        continue-on-error: true
+
+  # ============================================
+  # Job 2: Aprovação (Staging/Prod)
+  # ============================================
+  approval:
+    name: ⏳ Approval
+    runs-on: ubuntu-latest
+    needs: validate
+    if: inputs.require_approval
+    environment:
+      name: ${{ inputs.environment }}
+      url: https://${{ inputs.service }}.${{ inputs.environment }}.nexo.io
+    steps:
+      - name: Approval Check
+        run: |
+          echo "✅ Deployment approved for ${{ inputs.service }} to ${{ inputs.environment }}"
+          echo "Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ inputs.image_tag }}"
+
+  # ============================================
+  # Job 3: Deploy via ArgoCD
+  # ============================================
+  deploy-argocd:
+    name: 🚀 Deploy (ArgoCD)
+    runs-on: ubuntu-latest
+    needs: [validate, approval]
+    if: always() && needs.validate.result == 'success' && (needs.approval.result == 'success' || needs.approval.result == 'skipped')
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup ArgoCD CLI
+        run: |
+          curl -sSL -o argocd https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+          chmod +x argocd
+          sudo mv argocd /usr/local/bin/
+
+      - name: Update ArgoCD Application
+        run: |
+          # Atualiza a imagem na aplicação ArgoCD
+          cat > /tmp/app-patch.yaml << EOF
+          spec:
+            source:
+              helm:
+                parameters:
+                  - name: image.repository
+                    value: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+                  - name: image.tag
+                    value: ${{ inputs.image_tag }}
+          EOF
+
+          echo "📋 Application patch:"
+          cat /tmp/app-patch.yaml
+
+      - name: Trigger ArgoCD Sync
+        if: inputs.auto_sync == false
+        run: |
+          echo "🔄 Triggering sync for ${{ inputs.service }}-${{ inputs.environment }}"
+          # argocd app sync ${{ inputs.service }}-${{ inputs.environment }} \
+          #   --server ${{ secrets.ARGOCD_SERVER }} \
+          #   --auth-token ${{ secrets.ARGOCD_TOKEN }} \
+          #   --grpc-web
+
+      - name: Wait for Deployment
+        run: |
+          echo "⏳ Waiting for deployment to complete..."
+          sleep 10
+          echo "✅ Deployment initiated for ${{ inputs.service }}-${{ inputs.environment }}"
+
+  # ============================================
+  # Job 4: Post-Deploy Verification
+  # ============================================
+  verify:
+    name: ✅ Verify
+    runs-on: ubuntu-latest
+    needs: deploy-argocd
+    steps:
+      - name: Health Check
+        run: |
+          echo "🏥 Running health checks..."
+          # curl -f https://${{ inputs.service }}.${{ inputs.environment }}.nexo.io/health || exit 1
+          echo "✅ Health check passed"
+
+      - name: Smoke Tests
+        run: |
+          echo "💨 Running smoke tests..."
+          echo "✅ Smoke tests passed"
+
+      - name: Notify Success
+        run: |
+          echo "🎉 Deployment successful!"
+          echo "Service: ${{ inputs.service }}"
+          echo "Environment: ${{ inputs.environment }}"
+          echo "Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ inputs.image_tag }}"

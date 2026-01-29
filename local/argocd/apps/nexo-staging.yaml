@@ -1,0 +1,190 @@
+# ============================================================================
+# Nexo Platform - ArgoCD Applications - Ambiente Staging
+# ============================================================================
+# Branch: staging
+# Domínios: staging.nexo.local, staging.api.nexo.local, staging.auth.nexo.local
+# ============================================================================
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: nexo-be-staging
+  namespace: argocd
+  annotations:
+    argocd-image-updater.argoproj.io/image-list: nexo-be=docker.io/geraldobl58/nexo-be:staging
+    argocd-image-updater.argoproj.io/nexo-be.update-strategy: digest
+    argocd-image-updater.argoproj.io/nexo-be.pull-secret: secret:argocd/dockerhub-creds#creds
+    argocd-image-updater.argoproj.io/write-back-method: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  labels:
+    app.kubernetes.io/name: nexo-be
+    environment: staging
+spec:
+  project: nexo-staging
+  source:
+    repoURL: https://github.com/geraldobl58/nexo.git
+    targetRevision: staging
+    path: local/helm/nexo-be
+    helm:
+      valueFiles:
+        - values.yaml
+        - values-local.yaml
+      parameters:
+        - name: image.repository
+          value: docker.io/geraldobl58/nexo-be
+        - name: image.tag
+          value: staging
+        - name: image.pullPolicy
+          value: Always
+        - name: ingress.hosts[0].host
+          value: staging.api.nexo.local
+        - name: imagePullSecrets[0].name
+          value: dockerhub-creds
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: nexo-staging
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: nexo-fe-staging
+  namespace: argocd
+  annotations:
+    argocd-image-updater.argoproj.io/image-list: nexo-fe=docker.io/geraldobl58/nexo-fe:staging
+    argocd-image-updater.argoproj.io/nexo-fe.update-strategy: digest
+    argocd-image-updater.argoproj.io/nexo-fe.pull-secret: secret:argocd/dockerhub-creds#creds
+    argocd-image-updater.argoproj.io/write-back-method: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  labels:
+    app.kubernetes.io/name: nexo-fe
+    environment: staging
+spec:
+  project: nexo-staging
+  source:
+    repoURL: https://github.com/geraldobl58/nexo.git
+    targetRevision: staging
+    path: local/helm/nexo-fe
+    helm:
+      valueFiles:
+        - values.yaml
+        - values-local.yaml
+      parameters:
+        - name: image.repository
+          value: docker.io/geraldobl58/nexo-fe
+        - name: image.tag
+          value: staging
+        - name: image.pullPolicy
+          value: Always
+        - name: ingress.hosts[0].host
+          value: staging.nexo.local
+        - name: imagePullSecrets[0].name
+          value: dockerhub-creds
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: nexo-staging
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: nexo-auth-staging
+  namespace: argocd
+  annotations:
+    argocd-image-updater.argoproj.io/image-list: nexo-auth=docker.io/geraldobl58/nexo-auth:staging
+    argocd-image-updater.argoproj.io/nexo-auth.update-strategy: digest
+    argocd-image-updater.argoproj.io/nexo-auth.pull-secret: secret:argocd/dockerhub-creds#creds
+    argocd-image-updater.argoproj.io/write-back-method: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  labels:
+    app.kubernetes.io/name: nexo-auth
+    environment: staging
+spec:
+  project: nexo-staging
+  source:
+    repoURL: https://github.com/geraldobl58/nexo.git
+    targetRevision: staging
+    path: local/helm/nexo-auth
+    helm:
+      valueFiles:
+        - values.yaml
+        - values-local.yaml
+      parameters:
+        # Imagem - usando oficial Keycloak
+        - name: image.repository
+          value: quay.io/keycloak/keycloak
+        - name: image.tag
+          value: "26.5"
+        - name: image.pullPolicy
+          value: IfNotPresent
+        # Ingress
+        - name: ingress.hosts[0].host
+          value: staging.auth.nexo.local
+        - name: ingress.className
+          value: traefik
+        # Management port para Keycloak 26+
+        - name: managementPort
+          value: "9000"
+        # PostgreSQL - Controlado pelo ArgoCD
+        - name: postgresql.enabled
+          value: "true"
+        - name: postgresql.database
+          value: keycloak
+        - name: postgresql.username
+          value: keycloak
+        - name: postgresql.password
+          value: keycloak_staging_123
+        - name: postgresql.persistence.enabled
+          value: "true"
+        - name: postgresql.persistence.size
+          value: "2Gi"
+        - name: postgresql.persistence.storageClass
+          value: "local-path"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: nexo-staging
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m

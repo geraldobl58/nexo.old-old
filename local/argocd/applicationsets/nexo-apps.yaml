@@ -1,0 +1,88 @@
+# ============================================================================
+# ArgoCD ApplicationSet - Multi-Environment Deployment
+# ============================================================================
+# This ApplicationSet automatically creates Applications for all environments
+#
+# Branch Flow: feature/* → develop → qa → staging → main (production)
+# ============================================================================
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: nexo-apps
+  namespace: argocd
+spec:
+  generators:
+    - matrix:
+        generators:
+          # Environments - mapped to branches
+          - list:
+              elements:
+                - env: dev
+                  namespace: nexo-develop
+                  branch: develop
+                  autoSync: true
+                  prune: true
+                  selfHeal: true
+                - env: qa
+                  namespace: nexo-qa
+                  branch: qa
+                  autoSync: true
+                  prune: true
+                  selfHeal: true
+                - env: staging
+                  namespace: nexo-staging
+                  branch: staging
+                  autoSync: true
+                  prune: true
+                  selfHeal: true
+                - env: prod
+                  namespace: nexo-production
+                  branch: main
+                  autoSync: false
+                  prune: false
+                  selfHeal: false
+          # Services - all apps
+          - list:
+              elements:
+                - service: nexo-be
+                  path: infra/helm/nexo-be
+                - service: nexo-fe
+                  path: infra/helm/nexo-fe
+                - service: nexo-auth
+                  path: infra/helm/nexo-auth
+
+  template:
+    metadata:
+      name: "{{service}}-{{env}}"
+      labels:
+        app: "{{service}}"
+        environment: "{{env}}"
+    spec:
+      project: "nexo-{{env}}"
+      source:
+        repoURL: https://github.com/geraldobl58/nexo.git
+        targetRevision: "{{branch}}"
+        path: "{{path}}"
+        helm:
+          valueFiles:
+            - values.yaml
+            - "values-{{env}}.yaml"
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: "{{namespace}}"
+      syncPolicy:
+        automated:
+          prune: "{{prune}}"
+          selfHeal: "{{selfHeal}}"
+        syncOptions:
+          - CreateNamespace=true
+          - PruneLast=true
+        retry:
+          limit: 3
+          backoff:
+            duration: 5s
+            factor: 2
+            maxDuration: 3m
+
+  syncPolicy:
+    preserveResourcesOnDeletion: true

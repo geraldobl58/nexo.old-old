@@ -1,0 +1,80 @@
+# =============================================================================
+# Values for Local K3D environment
+# =============================================================================
+# Usa DockerHub como registry e Traefik como Ingress Controller
+# =============================================================================
+
+replicaCount: 1
+
+image:
+  repository: docker.io/geraldobl58/nexo-be
+  tag: "latest"
+  pullPolicy: Always
+
+# DockerHub público - não precisa de secrets
+imagePullSecrets: []
+
+ingress:
+  enabled: true
+  className: "traefik"
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+    traefik.ingress.kubernetes.io/router.tls: "false"
+    cert-manager.io/cluster-issuer: ""
+  hosts:
+    - host: develop.api.nexo.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 256Mi
+
+autoscaling:
+  enabled: false
+
+env:
+  NODE_ENV: development
+  LOG_LEVEL: debug
+  SWAGGER_ENABLED: "true"
+  METRICS_ENABLED: "true"
+  KEYCLOAK_REALM: nexo-develop
+  KEYCLOAK_URL: http://nexo-auth-develop:8080
+  DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/nexo?schema=public"
+
+# Remover secrets para ambiente local
+envFrom: []
+
+# Probes ajustados para local
+livenessProbe:
+  httpGet:
+    path: /health
+    port: http
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /health
+    port: http
+  initialDelaySeconds: 10
+  periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 3
+
+podDisruptionBudget:
+  enabled: false
+
+# Service Monitor para Prometheus
+serviceMonitor:
+  enabled: true
+  interval: 15s
+  path: /metrics

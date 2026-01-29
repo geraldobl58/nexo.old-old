@@ -1,0 +1,49 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: []
+
+rule_files:
+  - /etc/prometheus/alerts.yml
+
+scrape_configs:
+  # Prometheus self-monitoring
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  # PostgreSQL Exporter
+  - job_name: "postgres"
+    static_configs:
+      - targets: ["nexo-postgres-exporter-dev:9187"]
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: "postgres"
+
+  # Redis Exporter
+  - job_name: "redis"
+    static_configs:
+      - targets: ["nexo-redis-exporter-dev:9121"]
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: "redis"
+
+  # Backend API (quando rodando)
+  - job_name: "nexo-be"
+    static_configs:
+      - targets: ["host.docker.internal:3001"]
+    metrics_path: /metrics
+    scrape_interval: 30s
+
+  # Keycloak
+  - job_name: "keycloak"
+    static_configs:
+      - targets: ["nexo-auth-dev:9000"]
+    metrics_path: /metrics
+    scrape_interval: 30s

@@ -1,0 +1,28 @@
+{
+  "eslint.workingDirectories": [
+    {
+      "mode": "auto"
+    }
+  ],
+  "tailwindCSS.experimental.configFile": "apps/keycloak/tailwind.config.js",
+  "tailwindCSS.includeLanguages": {
+    "ftl": "html"
+  },
+  "tailwindCSS.files.exclude": [
+    "**/.git/**",
+    "**/node_modules/**",
+    "**/.hg/**",
+    "**/.svn/**"
+  ],
+  "files.associations": {
+    "*.ftl": "html"
+  },
+  "emmet.includeLanguages": {
+    "ftl": "html"
+  },
+  "editor.quickSuggestions": {
+    "strings": true
+  },
+  "css.validate": true,
+  "css.lint.unknownAtRules": "ignore"
+}

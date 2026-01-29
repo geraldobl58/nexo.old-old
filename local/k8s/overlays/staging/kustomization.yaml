@@ -1,0 +1,96 @@
+# ============================================================================
+# NEXO PLATFORM - Staging Overlay
+# ============================================================================
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: nexo-staging
+
+resources:
+  - ../../base
+  - namespace.yaml
+
+commonLabels:
+  app.kubernetes.io/environment: staging
+
+patches:
+  # Backend - 3 replicas para staging (simula prod)
+  - target:
+      kind: Deployment
+      name: nexo-be
+    patch: |
+      - op: replace
+        path: /spec/replicas
+        value: 3
+
+  # Frontend - 3 replicas para staging
+  - target:
+      kind: Deployment
+      name: nexo-fe
+    patch: |
+      - op: replace
+        path: /spec/replicas
+        value: 3
+
+  # HPA - configuração mais agressiva
+  - target:
+      kind: HorizontalPodAutoscaler
+      name: nexo-be
+    patch: |
+      - op: replace
+        path: /spec/minReplicas
+        value: 3
+      - op: replace
+        path: /spec/maxReplicas
+        value: 15
+
+  - target:
+      kind: HorizontalPodAutoscaler
+      name: nexo-fe
+    patch: |
+      - op: replace
+        path: /spec/minReplicas
+        value: 3
+      - op: replace
+        path: /spec/maxReplicas
+        value: 15
+
+  # Ingress - atualizar hosts
+  - target:
+      kind: Ingress
+      name: nexo-ingress
+    patch: |
+      - op: replace
+        path: /spec/rules/0/host
+        value: app.staging.nexo.io
+      - op: replace
+        path: /spec/rules/1/host
+        value: api.staging.nexo.io
+      - op: replace
+        path: /spec/rules/2/host
+        value: auth.staging.nexo.io
+      - op: replace
+        path: /spec/tls/0/hosts
+        value:
+          - app.staging.nexo.io
+          - api.staging.nexo.io
+          - auth.staging.nexo.io
+
+configMapGenerator:
+  - name: nexo-config
+    behavior: merge
+    literals:
+      - NODE_ENV=staging
+      - LOG_LEVEL=info
+      - SWAGGER_ENABLED=false
+      - APP_URL=https://api.staging.nexo.io
+      - FRONTEND_URL=https://app.staging.nexo.io
+      - KEYCLOAK_URL=https://auth.staging.nexo.io
+      - KEYCLOAK_REALM=nexo-staging
+
+  - name: nexo-fe-config
+    behavior: merge
+    literals:
+      - NEXT_PUBLIC_API_URL=https://api.staging.nexo.io
+      - NEXT_PUBLIC_KEYCLOAK_URL=https://auth.staging.nexo.io
+      - NEXT_PUBLIC_KEYCLOAK_REALM=nexo-staging

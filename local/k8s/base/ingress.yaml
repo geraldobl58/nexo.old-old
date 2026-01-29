@@ -1,0 +1,79 @@
+# ============================================================================
+# NEXO PLATFORM - Ingress Configuration
+# ============================================================================
+# Usando NGINX Ingress Controller
+# Em produção, considere usar:
+# - AWS ALB Ingress Controller
+# - GCP Cloud Load Balancer
+# - Azure Application Gateway
+# ============================================================================
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nexo-ingress
+  namespace: nexo-dev
+  labels:
+    app.kubernetes.io/name: nexo
+    app.kubernetes.io/component: ingress
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "60"
+    # Rate limiting
+    nginx.ingress.kubernetes.io/limit-rps: "100"
+    nginx.ingress.kubernetes.io/limit-connections: "50"
+    # CORS
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "https://app.dev.nexo.io"
+    # Security headers
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      add_header X-Frame-Options "SAMEORIGIN" always;
+      add_header X-Content-Type-Options "nosniff" always;
+      add_header X-XSS-Protection "1; mode=block" always;
+      add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    # TLS (usar cert-manager em produção)
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - app.dev.nexo.io
+        - api.dev.nexo.io
+        - auth.dev.nexo.io
+      secretName: nexo-tls
+  rules:
+    # Frontend
+    - host: app.dev.nexo.io
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: nexo-fe
+                port:
+                  number: 80
+    # Backend API
+    - host: api.dev.nexo.io
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: nexo-be
+                port:
+                  number: 80
+    # Keycloak
+    - host: auth.dev.nexo.io
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: keycloak
+                port:
+                  number: 8080

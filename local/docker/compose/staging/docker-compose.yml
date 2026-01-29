@@ -1,0 +1,214 @@
+# ============================================================================
+# NEXO PLATFORM - Docker Compose (Staging)
+# ============================================================================
+# Ambiente de staging - espelho de produção para testes finais
+#
+# Usage:
+#   docker compose -f infra/docker/compose/staging/docker-compose.yml up -d
+# ============================================================================
+
+name: nexo-staging
+
+services:
+  nexo-be:
+    image: docker.io/geraldobl58/nexo-be:${IMAGE_TAG:-latest}
+    container_name: nexo-be-staging
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=staging
+      - PORT=3000
+      - APP_NAME=Nexo
+      - APP_URL=${APP_URL:-https://api.staging.nexo.io}
+      - FRONTEND_URL=${FRONTEND_URL:-https://staging.nexo.io}
+      - DATABASE_URL=postgresql://nexo:${DB_PASSWORD}@postgres:5432/nexo_staging
+      - REDIS_URL=redis://redis:6379
+      - KEYCLOAK_URL=http://keycloak:8080
+      - KEYCLOAK_REALM=nexo-staging
+      - KEYCLOAK_CLIENT_ID=nexo-be
+      - JWT_SECRET=${JWT_SECRET}
+      - LOG_LEVEL=info
+      - SWAGGER_ENABLED=false
+      - METRICS_ENABLED=true
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          cpus: "1"
+          memory: 1024M
+        reservations:
+          cpus: "0.5"
+          memory: 512M
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+    networks:
+      - nexo-staging-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  nexo-fe:
+    image: docker.io/geraldobl58/nexo-fe:${IMAGE_TAG:-latest}
+    container_name: nexo-fe-staging
+    restart: unless-stopped
+    ports:
+      - "3003:3003"
+    environment:
+      - NODE_ENV=staging
+      - NEXT_PUBLIC_API_URL=${API_URL:-https://api.staging.nexo.io}
+      - NEXT_PUBLIC_KEYCLOAK_URL=${KEYCLOAK_URL:-https://auth.staging.nexo.io}
+      - NEXT_PUBLIC_KEYCLOAK_REALM=nexo-staging
+      - NEXT_PUBLIC_KEYCLOAK_CLIENT_ID=nexo-fe
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+    depends_on:
+      nexo-be:
+        condition: service_healthy
+    networks:
+      - nexo-staging-network
+
+  keycloak:
+    image: docker.io/geraldobl58/nexo-auth:${IMAGE_TAG:-latest}
+    container_name: nexo-auth-staging
+    command: start --import-realm --optimized
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+      KC_HTTP_ENABLED: "true"
+      KC_PROXY: edge
+      KC_HOSTNAME_STRICT: "false"
+      KC_HEALTH_ENABLED: "true"
+      KC_METRICS_ENABLED: "true"
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak_staging
+      KC_DB_USERNAME: nexo
+      KC_DB_PASSWORD: ${DB_PASSWORD}
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 1024M
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - nexo-staging-network
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: nexo-postgres-staging
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: nexo
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: nexo_staging
+    volumes:
+      - postgres-data-staging:/var/lib/postgresql/data
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro
+    networks:
+      - nexo-staging-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nexo -d nexo_staging"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    command:
+      - "postgres"
+      - "-c"
+      - "max_connections=200"
+      - "-c"
+      - "shared_buffers=512MB"
+
+  redis:
+    image: redis:7-alpine
+    container_name: nexo-redis-staging
+    restart: unless-stopped
+    volumes:
+      - redis-data-staging:/data
+    networks:
+      - nexo-staging-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    command: redis-server --appendonly yes --maxmemory 1gb --maxmemory-policy allkeys-lru
+
+  prometheus:
+    image: prom/prometheus:v2.48.0
+    container_name: nexo-prometheus-staging
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/rules:/etc/prometheus/rules:ro
+      - prometheus-data-staging:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.retention.time=30d"
+    networks:
+      - nexo-staging-network
+
+  grafana:
+    image: grafana/grafana:10.2.2
+    container_name: nexo-grafana-staging
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafana-data-staging:/var/lib/grafana
+    depends_on:
+      - prometheus
+    networks:
+      - nexo-staging-network
+
+  loki:
+    image: grafana/loki:2.9.2
+    container_name: nexo-loki-staging
+    restart: unless-stopped
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./loki/loki.yml:/etc/loki/loki.yml:ro
+      - loki-data-staging:/loki
+    command: -config.file=/etc/loki/loki.yml
+    networks:
+      - nexo-staging-network
+
+networks:
+  nexo-staging-network:
+    driver: bridge
+    name: nexo-staging-network
+
+volumes:
+  postgres-data-staging:
+    name: nexo-postgres-data-staging
+  redis-data-staging:
+    name: nexo-redis-data-staging
+  prometheus-data-staging:
+    name: nexo-prometheus-data-staging
+  grafana-data-staging:
+    name: nexo-grafana-data-staging
+  loki-data-staging:
+    name: nexo-loki-data-staging

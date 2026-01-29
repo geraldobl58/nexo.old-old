@@ -1,0 +1,79 @@
+# ============================================================================
+# K3D Cluster Configuration
+# ============================================================================
+# Cluster Kubernetes local para desenvolvimento
+# 1 server + 2 agents = simulação de cluster produção
+# ============================================================================
+
+apiVersion: k3d.io/v1alpha5
+kind: Simple
+metadata:
+  name: nexo-develop
+servers: 1
+agents: 2
+image: rancher/k3s:v1.29.0-k3s1
+
+# Mapeamento de portas para acesso local
+ports:
+  # HTTP/HTTPS (Ingress)
+  - port: 80:80
+    nodeFilters:
+      - loadbalancer
+  - port: 443:443
+    nodeFilters:
+      - loadbalancer
+  # ArgoCD
+  - port: 30080:30080
+    nodeFilters:
+      - loadbalancer
+  # Grafana
+  - port: 30030:30030
+    nodeFilters:
+      - loadbalancer
+  # Prometheus
+  - port: 30090:30090
+    nodeFilters:
+      - loadbalancer
+  # Alertmanager
+  - port: 30093:30093
+    nodeFilters:
+      - loadbalancer
+
+# Registries - DockerHub como padrão
+registries:
+  config: |
+    mirrors:
+      "docker.io":
+        endpoint:
+          - "https://registry-1.docker.io"
+
+# Opções do K3s
+options:
+  k3d:
+    wait: true
+    timeout: "300s"
+    disableLoadbalancer: false
+    disableImageVolume: false
+  k3s:
+    extraArgs:
+      - arg: --disable=traefik
+        nodeFilters:
+          - server:*
+      - arg: --tls-san=localhost
+        nodeFilters:
+          - server:*
+  kubeconfig:
+    updateDefaultKubeconfig: true
+    switchCurrentContext: true
+
+# Volumes persistentes
+volumes:
+  - volume: /tmp/k3d-nexo-storage:/var/lib/rancher/k3s/storage
+    nodeFilters:
+      - all
+
+# Labels
+env:
+  - envVar: K3D_CLUSTER_NAME=nexo-local
+    nodeFilters:
+      - all

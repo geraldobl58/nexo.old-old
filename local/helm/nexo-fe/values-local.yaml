@@ -1,0 +1,65 @@
+# =============================================================================
+# Values for Local K3D environment
+# =============================================================================
+# Usa DockerHub como registry e Traefik como Ingress Controller
+# =============================================================================
+
+replicaCount: 1
+
+image:
+  repository: docker.io/geraldobl58/nexo-fe
+  tag: "latest"
+  pullPolicy: Always
+
+# DockerHub público - não precisa de secrets
+imagePullSecrets: []
+
+ingress:
+  enabled: true
+  className: "traefik"
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+    traefik.ingress.kubernetes.io/router.tls: "false"
+    cert-manager.io/cluster-issuer: ""
+  hosts:
+    - host: develop.nexo.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 256Mi
+
+autoscaling:
+  enabled: false
+
+env:
+  NODE_ENV: development
+  NEXT_PUBLIC_API_URL: http://api.nexo.local
+  NEXT_PUBLIC_KEYCLOAK_URL: http://auth.nexo.local
+  NEXT_PUBLIC_KEYCLOAK_REALM: nexo-local
+  NEXT_PUBLIC_KEYCLOAK_CLIENT_ID: nexo-fe
+
+podDisruptionBudget:
+  enabled: false
+
+# Probes ajustados para local
+livenessProbe:
+  httpGet:
+    path: /
+    port: http
+  initialDelaySeconds: 30
+  periodSeconds: 10
+
+readinessProbe:
+  httpGet:
+    path: /
+    port: http
+  initialDelaySeconds: 10
+  periodSeconds: 5

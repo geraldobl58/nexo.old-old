@@ -1,0 +1,13 @@
+{
+  "name": "keycloak-theme",
+  "version": "1.0.0",
+  "description": "Keycloak Custom Theme with Tailwind CSS",
+  "scripts": {
+    "build:css": "tailwindcss -i ./input.css -o ./themes/custom-nexo-ui/login/resources/css/tailwind.css --minify",
+    "watch:css": "tailwindcss -i ./input.css -o ./themes/custom-nexo-ui/login/resources/css/tailwind.css --watch"
+  },
+  "devDependencies": {
+    "@tailwindcss/forms": "^0.5.7",
+    "tailwindcss": "^3.4.1"
+  }
+}

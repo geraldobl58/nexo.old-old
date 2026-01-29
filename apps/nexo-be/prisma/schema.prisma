@@ -1,0 +1,798 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+//
+// ENUMS
+//
+
+enum PropertyPurpose {
+  RENT
+  SALE
+}
+
+enum PropertyType {
+  APARTMENT
+  HOUSE
+  CONDO_HOUSE
+  STUDIO
+  LAND
+  COMMERCIAL
+  FARM
+  OTHER
+}
+
+enum PropertyStatus {
+  DRAFT
+  ACTIVE
+  INACTIVE
+  SOLD
+  RENTED
+}
+
+enum MediaType {
+  IMAGE
+  VIDEO
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  LOST
+  WON
+}
+
+enum BillingInterval {
+  MONTHLY
+  YEARLY
+}
+
+enum SubscriptionStatus {
+  TRIAL
+  ACTIVE
+  PAST_DUE
+  CANCELED
+}
+
+enum NotificationType {
+  EMAIL
+  SMS
+  PUSH
+  WHATSAPP
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  FAILED
+  READ
+}
+
+enum VisitStatus {
+  SCHEDULED
+  CONFIRMED
+  COMPLETED
+  CANCELED
+  NO_SHOW
+}
+
+enum ProposalStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  COUNTER_OFFER
+  EXPIRED
+}
+
+enum IntegrationStatus {
+  ACTIVE
+  INACTIVE
+  ERROR
+}
+
+enum WebhookEventType {
+  PROPERTY_CREATED
+  PROPERTY_UPDATED
+  PROPERTY_DELETED
+  LEAD_CREATED
+  LEAD_UPDATED
+  VISIT_SCHEDULED
+  PROPOSAL_CREATED
+  SUBSCRIPTION_UPDATED
+}
+
+//
+// TENANT (IMOBILIÁRIA)
+//
+
+model Tenant {
+  id        String   @id @default(uuid())
+  slug      String   @unique
+  name      String
+  tradeName String?
+  document  String?  // CNPJ
+  email     String?
+  phone     String?
+  whatsapp  String?
+  logoUrl   String?
+  faviconUrl String?
+  coverUrl  String?
+
+  // Customização (White Label)
+  customDomain String?
+  primaryColor String?   @default("#3b82f6")
+  secondaryColor String? @default("#10b981")
+  fontFamily  String?   @default("Inter")
+  
+  // SEO
+  metaTitle       String?
+  metaDescription String?
+  metaKeywords    String?
+
+  // Endereço
+  address      String?
+  city         String?
+  state        String?
+  zipcode      String?
+  country      String?   @default("BR")
+
+  // Redes Sociais
+  website      String?
+  facebook     String?
+  instagram    String?
+  linkedin     String?
+  youtube      String?
+
+  // Integração com Keycloak (org/group)
+  keycloakOrgId String?  @unique
+  keycloakGroupId String?
+
+  // Configurações
+  timezone     String?   @default("America/Sao_Paulo")
+  language     String?   @default("pt-BR")
+  currency     String?   @default("BRL")
+  
+  // Funcionalidades habilitadas
+  enableWhatsApp Boolean @default(true)
+  enableSMS      Boolean @default(false)
+  enableChat     Boolean @default(true)
+  enableVirtualTour Boolean @default(false)
+
+  // Controle
+  isActive     Boolean  @default(true)
+  isVerified   Boolean  @default(false)
+  deletedAt    DateTime?
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  users         User[]
+  properties    Property[]
+  propertyMedia PropertyMedia[]
+  leads         Lead[]
+  subscriptions Subscription[]
+  integrations  Integration[]
+  webhooks      Webhook[]
+  notifications Notification[]
+  visits        Visit[]
+  proposals     Proposal[]
+
+  @@index([slug])
+  @@index([isActive])
+  @@index([customDomain])
+  @@index([deletedAt])
+}
+
+//
+// USERS (USUÁRIOS INTERNOS – PAINEL)
+// Roles e permissões vêm do Keycloak (realm/client roles)
+//
+
+model User {
+  id          String   @id @default(uuid())
+  keycloakId  String   @unique
+  email       String
+  name        String
+  phone       String?
+  avatar      String?
+  bio         String?
+  
+  // CRECI (Registro profissional)
+  creci       String?
+  creciState  String?
+
+  tenantId    String?
+  tenant      Tenant?  @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+
+  // Preferências
+  timezone    String?  @default("America/Sao_Paulo")
+  language    String?  @default("pt-BR")
+  
+  // Notificações
+  emailNotifications     Boolean @default(true)
+  smsNotifications       Boolean @default(false)
+  whatsappNotifications  Boolean @default(true)
+  pushNotifications      Boolean @default(true)
+
+  isActive    Boolean  @default(true)
+  lastLoginAt DateTime?
+  deletedAt   DateTime?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  propertiesCreated Property[]       @relation("CreatedBy")
+  propertiesOwner   Property[]       @relation("BrokerOwner")
+  leadsAssigned     Lead[]           @relation("AssignedLeads")
+  visitsScheduled   Visit[]          @relation("ScheduledBy")
+  proposalsCreated  Proposal[]       @relation("CreatedBy")
+  activitiesCreated ActivityLog[]
+
+  @@index([tenantId])
+  @@index([deletedAt])
+  @@unique([tenantId, email])
+}
+
+//
+// CUSTOMER (USUÁRIO FINAL DO PORTAL / MARKETPLACE)
+// Pode autenticar via Keycloak ou ser anônimo
+//
+
+model Customer {
+  id          String   @id @default(uuid())
+  keycloakId  String?  @unique
+  email       String?
+  phone       String?
+  name        String?
+  avatar      String?
+  
+  // Documento (CPF)
+  document    String?
+  
+  // Informações adicionais
+  city        String?
+  state       String?
+  occupation  String?
+  
+  // Preferências de busca
+  searchPreferences Json?
+  
+  // Configurações de notificação
+  emailNotifications Boolean @default(true)
+  smsNotifications   Boolean @default(false)
+  
+  // Controle
+  isVerified  Boolean  @default(false)
+  deletedAt   DateTime?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  favorites     FavoriteProperty[]
+  savedSearches SavedSearch[]
+  visits        Visit[]          @relation("CustomerVisits")
+  proposals     Proposal[]       @relation("CustomerProposals")
+
+  @@index([email])
+  @@index([phone])
+  @@index([deletedAt])
+}
+
+//
+// PROPERTY
+//
+
+model Property {
+  id          String   @id @default(uuid())
+  externalId  String?  // ID de integração externa (VivaReal, OLX, etc)
+
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  createdById String?
+  createdBy   User?    @relation("CreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  brokerId    String?
+  broker      User?    @relation("BrokerOwner", fields: [brokerId], references: [id], onDelete: SetNull)
+
+  status      PropertyStatus  @default(DRAFT)
+  purpose     PropertyPurpose
+  type        PropertyType
+
+  title       String
+  description String?  @db.Text
+
+  // Valores
+  price            Int
+  condominiumFee   Int?
+  iptuYearly       Int?
+  
+  // Negociação
+  acceptsExchange  Boolean @default(false)
+  acceptsFinancing Boolean @default(true)
+  
+  // Características
+  areaM2       Int?
+  builtArea    Int?
+  bedrooms     Int?
+  suites       Int?
+  bathrooms    Int?
+  garageSpots  Int?
+  floor        Int?
+  totalFloors  Int?
+  
+  // Recursos adicionais
+  furnished    Boolean? @default(false)
+  petFriendly  Boolean? @default(false)
+  yearBuilt    Int?
+  
+  // Localização
+  city         String
+  state        String
+  district     String
+  street       String?
+  streetNumber String?
+  complement   String?
+  zipcode      String?
+  latitude     Decimal? @db.Decimal(10,7)
+  longitude    Decimal? @db.Decimal(10,7)
+  
+  // SEO e URLs
+  slug         String
+  metaTitle    String?
+  metaDescription String?
+  videoUrl     String?  // Tour virtual
+  virtualTourUrl String?
+
+  // Analytics
+  viewsCount   Int      @default(0)
+  leadsCount   Int      @default(0)
+  favoritesCount Int    @default(0)
+  sharesCount  Int      @default(0)
+  
+  // Destaque
+  isFeatured     Boolean  @default(false)
+  highlightUntil DateTime?
+  
+  // Integração com portais
+  publishToVivaReal Boolean @default(false)
+  publishToOLX      Boolean @default(false)
+  publishToZapImoveis Boolean @default(false)
+  
+  // Controle
+  publishedAt DateTime?
+  deletedAt   DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  media       PropertyMedia[]
+  amenities   PropertyAmenity[]
+  leads       Lead[]
+  favorites   FavoriteProperty[]
+  visits      Visit[]
+  proposals   Proposal[]
+  activities  ActivityLog[]
+
+  @@unique([tenantId, slug])
+  @@index([tenantId, status])
+  @@index([purpose, type])
+  @@index([city, state, district])
+  @@index([price])
+  @@index([bedrooms])
+  @@index([isFeatured])
+  @@index([publishedAt])
+  @@index([deletedAt])
+}
+
+//
+// PROPERTY MEDIA
+//
+
+model PropertyMedia {
+  id          String   @id @default(uuid())
+  tenantId    String
+  propertyId  String
+
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  property    Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  type        MediaType @default(IMAGE)
+  url         String
+  order       Int       @default(0)
+
+  createdAt   DateTime @default(now())
+
+  @@index([propertyId, order])
+}
+
+//
+// AMENITIES
+//
+
+model Amenity {
+  id        String   @id @default(uuid())
+  slug      String   @unique
+  name      String
+  icon      String?
+  isActive  Boolean  @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  properties PropertyAmenity[]
+}
+
+model PropertyAmenity {
+  propertyId String
+  amenityId  String
+
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  amenity    Amenity  @relation(fields: [amenityId], references: [id], onDelete: Cascade)
+
+  @@id([propertyId, amenityId])
+}
+
+//
+// LEADS
+//
+
+model Lead {
+  id           String     @id @default(uuid())
+
+  tenantId     String
+  propertyId   String
+
+  tenant       Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  property     Property   @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  status       LeadStatus @default(NEW)
+
+  name         String
+  email        String?
+  phone        String?
+  message      String?
+  source       String?
+
+  assignedToId String?
+  assignedTo   User?      @relation("AssignedLeads", fields: [assignedToId], references: [id], onDelete: SetNull)
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([tenantId, status])
+  @@index([propertyId])
+}
+
+//
+// FAVORITES (CUSTOMER)
+//
+
+model FavoriteProperty {
+  customerId String
+  propertyId String
+
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  createdAt  DateTime @default(now())
+
+  @@id([customerId, propertyId])
+}
+
+//
+// SAVED SEARCHES (ALERTAS)
+//
+
+model SavedSearch {
+  id          String   @id @default(uuid())
+  customerId  String
+  name        String
+  filters     Json
+
+  createdAt   DateTime @default(now())
+
+  customer    Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([customerId])
+}
+
+//
+// PLANS & SUBSCRIPTIONS
+//
+
+model Plan {
+  id        String   @id @default(uuid())
+  name      String
+  price     Int
+  interval  BillingInterval
+  maxProperties Int
+  highlightProperties Boolean @default(false)
+
+  isActive  Boolean  @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  subscriptions Subscription[]
+}
+
+model Subscription {
+  id        String   @id @default(uuid())
+  tenantId  String
+  planId    String
+
+  status    SubscriptionStatus
+  startedAt DateTime
+  endsAt    DateTime?
+  trialEndsAt DateTime?
+
+  // Integração com Stripe/Gateway de pagamento
+  stripeSubscriptionId String?
+  stripeCustomerId     String?
+
+  tenant    Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  plan      Plan   @relation(fields: [planId], references: [id])
+
+  @@index([tenantId])
+  @@index([status])
+}
+
+//
+// NOTIFICATIONS
+//
+
+model Notification {
+  id         String   @id @default(uuid())
+  tenantId   String
+  userId     String?  // Opcional, se for para todos os users do tenant
+  customerId String?  // Ou para um customer específico
+
+  type       NotificationType
+  status     NotificationStatus @default(PENDING)
+  
+  title      String
+  message    String   @db.Text
+  data       Json?    // Dados adicionais
+  
+  // Controle de envio
+  sentAt     DateTime?
+  readAt     DateTime?
+  failedAt   DateTime?
+  errorMessage String?
+
+  createdAt  DateTime @default(now())
+
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, status])
+  @@index([userId])
+  @@index([customerId])
+  @@index([createdAt])
+}
+
+//
+// VISITS (AGENDAMENTO DE VISITAS)
+//
+
+model Visit {
+  id          String   @id @default(uuid())
+  
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  propertyId  String
+  property    Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  
+  customerId  String?
+  customer    Customer? @relation("CustomerVisits", fields: [customerId], references: [id], onDelete: SetNull)
+  
+  scheduledById String?
+  scheduledBy   User?   @relation("ScheduledBy", fields: [scheduledById], references: [id], onDelete: SetNull)
+  
+  status      VisitStatus @default(SCHEDULED)
+  
+  // Dados do interessado (se não for customer autenticado)
+  name        String
+  email       String?
+  phone       String?
+  
+  // Data e hora da visita
+  scheduledDate DateTime
+  
+  notes       String?  @db.Text
+  
+  // Controle
+  confirmedAt DateTime?
+  completedAt DateTime?
+  canceledAt  DateTime?
+  cancelReason String?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([propertyId, status])
+  @@index([customerId])
+  @@index([scheduledDate])
+}
+
+//
+// PROPOSALS (PROPOSTAS DE COMPRA/LOCAÇÃO)
+//
+
+model Proposal {
+  id          String   @id @default(uuid())
+  
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  propertyId  String
+  property    Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  
+  customerId  String?
+  customer    Customer? @relation("CustomerProposals", fields: [customerId], references: [id], onDelete: SetNull)
+  
+  createdById String?
+  createdBy   User?    @relation("CreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  
+  status      ProposalStatus @default(PENDING)
+  
+  // Dados do proponente
+  name        String
+  email       String
+  phone       String
+  document    String?  // CPF/CNPJ
+  
+  // Proposta
+  proposedPrice Int
+  message       String?  @db.Text
+  
+  // Financiamento
+  financingNeeded Boolean @default(false)
+  financingAmount Int?
+  
+  // Resposta
+  responseMessage String?  @db.Text
+  respondedAt     DateTime?
+  
+  // Validade
+  expiresAt   DateTime
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([propertyId, status])
+  @@index([customerId])
+  @@index([status])
+  @@index([expiresAt])
+}
+
+//
+// INTEGRATIONS (INTEGRAÇÕES COM SERVIÇOS EXTERNOS)
+//
+
+model Integration {
+  id          String   @id @default(uuid())
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  name        String   // VivaReal, OLX, ZapImoveis, WhatsApp Business, etc
+  provider    String   // Identificador único do provedor
+  
+  status      IntegrationStatus @default(ACTIVE)
+  
+  // Credenciais (criptografadas)
+  apiKey      String?
+  apiSecret   String?
+  accessToken String?
+  refreshToken String?
+  config      Json?    // Configurações específicas da integração
+  
+  // Controle de sincronização
+  lastSyncAt  DateTime?
+  nextSyncAt  DateTime?
+  syncErrors  Json?
+  
+  isActive    Boolean  @default(true)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([tenantId, provider])
+  @@index([tenantId, status])
+}
+
+//
+// WEBHOOKS
+//
+
+model Webhook {
+  id          String   @id @default(uuid())
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  name        String
+  url         String
+  secret      String?  // Secret para validar requisições
+  
+  // Eventos que disparam o webhook
+  events      WebhookEventType[]
+  
+  // Headers customizados
+  headers     Json?
+  
+  // Controle
+  isActive    Boolean  @default(true)
+  lastTriggeredAt DateTime?
+  failureCount    Int  @default(0)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  deliveries  WebhookDelivery[]
+
+  @@index([tenantId, isActive])
+}
+
+model WebhookDelivery {
+  id          String   @id @default(uuid())
+  webhookId   String
+  webhook     Webhook  @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+  
+  event       WebhookEventType
+  payload     Json
+  
+  // Resposta
+  statusCode  Int?
+  response    String?  @db.Text
+  
+  // Controle
+  success     Boolean  @default(false)
+  attempts    Int      @default(1)
+  nextRetryAt DateTime?
+  
+  createdAt   DateTime @default(now())
+
+  @@index([webhookId, success])
+  @@index([createdAt])
+}
+
+//
+// ACTIVITY LOG (AUDITORIA)
+//
+
+model ActivityLog {
+  id          String   @id @default(uuid())
+  
+  tenantId    String
+  userId      String?
+  
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  
+  // Recurso afetado
+  entityType  String   // Property, Lead, User, etc
+  entityId    String
+  property    Property? @relation(fields: [entityId], references: [id], onDelete: Cascade)
+  
+  action      String   // created, updated, deleted, published, etc
+  
+  // Dados da mudança
+  oldValues   Json?
+  newValues   Json?
+  
+  // Metadados
+  ipAddress   String?
+  userAgent   String?
+  
+  createdAt   DateTime @default(now())
+
+  @@index([tenantId, entityType, entityId])
+  @@index([userId])
+  @@index([createdAt])
+}

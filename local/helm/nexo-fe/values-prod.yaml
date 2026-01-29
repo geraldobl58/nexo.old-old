@@ -1,0 +1,50 @@
+# Values for Production environment
+replicaCount: 3
+
+image:
+  tag: "" # Set by CI/CD
+
+ingress:
+  enabled: true
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+  hosts:
+    - host: app.nexo.io
+      paths:
+        - path: /
+          pathType: Prefix
+    - host: www.nexo.io
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: nexo-fe-prod-tls
+      hosts:
+        - app.nexo.io
+        - www.nexo.io
+
+resources:
+  limits:
+    cpu: 1000m
+    memory: 1024Mi
+  requests:
+    cpu: 250m
+    memory: 512Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 10
+
+env:
+  NODE_ENV: production
+  NEXT_PUBLIC_API_URL: https://api.nexo.io
+  NEXT_PUBLIC_KEYCLOAK_URL: https://auth.nexo.io
+  NEXT_PUBLIC_KEYCLOAK_REALM: nexo-prod
+  NEXT_PUBLIC_KEYCLOAK_CLIENT_ID: nexo-fe
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 2

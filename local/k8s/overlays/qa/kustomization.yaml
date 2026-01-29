@@ -1,0 +1,77 @@
+# ============================================================================
+# NEXO PLATFORM - QA Overlay
+# ============================================================================
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: nexo-qa
+
+resources:
+  - ../../base
+
+namePrefix: ""
+nameSuffix: ""
+
+commonLabels:
+  app.kubernetes.io/environment: qa
+
+# Patches específicos para QA
+patches:
+  # Backend - 1-2 replicas em QA
+  - target:
+      kind: Deployment
+      name: nexo-be
+    patch: |
+      - op: replace
+        path: /spec/replicas
+        value: 1
+
+  # Frontend - 1-2 replicas em QA
+  - target:
+      kind: Deployment
+      name: nexo-fe
+    patch: |
+      - op: replace
+        path: /spec/replicas
+        value: 1
+
+  # HPA - ajustar para QA
+  - target:
+      kind: HorizontalPodAutoscaler
+      name: nexo-be
+    patch: |
+      - op: replace
+        path: /spec/minReplicas
+        value: 1
+      - op: replace
+        path: /spec/maxReplicas
+        value: 2
+
+  - target:
+      kind: HorizontalPodAutoscaler
+      name: nexo-fe
+    patch: |
+      - op: replace
+        path: /spec/minReplicas
+        value: 1
+      - op: replace
+        path: /spec/maxReplicas
+        value: 2
+
+  # PostgreSQL - storage class para K3D
+  - target:
+      kind: StatefulSet
+      name: postgres
+    patch: |
+      - op: replace
+        path: /spec/volumeClaimTemplates/0/spec/storageClassName
+        value: local-path
+
+# ConfigMap patches
+configMapGenerator:
+  - name: nexo-config
+    behavior: merge
+    literals:
+      - NODE_ENV=qa
+      - LOG_LEVEL=info
+      - SWAGGER_ENABLED=true

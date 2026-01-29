@@ -1,0 +1,45 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "title": "Nexo Platform Overview",
+  "uid": "nexo-overview",
+  "version": 1,
+  "panels": [
+    {
+      "title": "Services Status",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 12, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "up",
+          "legendFormat": "{{job}}"
+        }
+      ]
+    },
+    {
+      "title": "PostgreSQL Connections",
+      "type": "gauge",
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
+      "targets": [
+        {
+          "expr": "pg_stat_activity_count",
+          "legendFormat": "connections"
+        }
+      ]
+    },
+    {
+      "title": "Redis Memory Usage",
+      "type": "gauge",
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 0 },
+      "targets": [
+        {
+          "expr": "redis_memory_used_bytes / 1024 / 1024",
+          "legendFormat": "MB"
+        }
+      ]
+    }
+  ],
+  "schemaVersion": 38,
+  "timezone": "browser"
+}

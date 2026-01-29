@@ -1,0 +1,109 @@
+# Keycloak Realm - Development
+# This file will be automatically imported when Keycloak starts
+
+{
+  "id": "nexo-dev",
+  "realm": "nexo-dev",
+  "displayName": "Nexo (Development)",
+  "enabled": true,
+  "sslRequired": "none",
+  "registrationAllowed": true,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "editUsernameAllowed": false,
+  "bruteForceProtected": true,
+  "permanentLockout": false,
+  "maxFailureWaitSeconds": 900,
+  "minimumQuickLoginWaitSeconds": 60,
+  "waitIncrementSeconds": 60,
+  "quickLoginCheckMilliSeconds": 1000,
+  "maxDeltaTimeSeconds": 43200,
+  "failureFactor": 30,
+  "roles": {
+    "realm": [
+      {
+        "name": "user",
+        "description": "Regular user"
+      },
+      {
+        "name": "admin",
+        "description": "Administrator"
+      }
+    ],
+    "client": {
+      "nexo-be": [
+        {
+          "name": "api:read",
+          "description": "Read API access"
+        },
+        {
+          "name": "api:write",
+          "description": "Write API access"
+        }
+      ]
+    }
+  },
+  "defaultRoles": ["user"],
+  "clients": [
+    {
+      "clientId": "nexo-fe",
+      "name": "Nexo Frontend",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "redirectUris": [
+        "http://localhost:3003/*",
+        "https://app.dev.nexo.io/*"
+      ],
+      "webOrigins": ["+"],
+      "defaultClientScopes": ["openid", "profile", "email"],
+      "optionalClientScopes": ["offline_access"]
+    },
+    {
+      "clientId": "nexo-be",
+      "name": "Nexo Backend",
+      "enabled": true,
+      "publicClient": false,
+      "bearerOnly": true,
+      "serviceAccountsEnabled": true
+    }
+  ],
+  "users": [
+    {
+      "username": "dev@nexo.io",
+      "email": "dev@nexo.io",
+      "firstName": "Developer",
+      "lastName": "User",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "dev123456",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["user"]
+    },
+    {
+      "username": "admin@nexo.io",
+      "email": "admin@nexo.io",
+      "firstName": "Admin",
+      "lastName": "User",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "admin123456",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["user", "admin"]
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+# ============================================================================
+# NEXO PLATFORM - Strict PDB for Production
+# ============================================================================
+# PDBs mais rigorosos para produção
+# ============================================================================
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: nexo-be-strict
+  namespace: nexo-prod
+spec:
+  minAvailable: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: nexo-be
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: nexo-fe-strict
+  namespace: nexo-prod
+spec:
+  minAvailable: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: nexo-fe
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: keycloak-pdb
+  namespace: nexo-prod
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: keycloak

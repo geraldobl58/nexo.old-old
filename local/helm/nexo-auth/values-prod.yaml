@@ -1,0 +1,78 @@
+# Values for Production environment
+replicaCount: 2
+
+image:
+  tag: "latest"
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+  hosts:
+    - host: auth.nexo.io
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: nexo-auth-prod-tls
+      hosts:
+        - auth.nexo.io
+
+resources:
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+  requests:
+    cpu: 200m
+    memory: 512Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 70
+
+env:
+  NODE_ENV: production
+  LOG_LEVEL: info
+  # PostgreSQL config
+  KC_DB: postgres
+  KC_DB_URL: jdbc:postgresql://nexo-auth-prod-postgres:5432/keycloak
+  KC_DB_USERNAME: keycloak
+  # IMPORTANTE: Em produção, use Kubernetes Secrets!
+  # KC_DB_PASSWORD deve vir de um secret, não hardcoded
+  KC_PROXY: edge
+  KC_HTTP_ENABLED: "true"
+  KC_HEALTH_ENABLED: "true"
+  KC_METRICS_ENABLED: "true"
+
+envFrom:
+  - secretRef:
+      name: keycloak-db-secrets
+
+# =============================================================================
+# PostgreSQL - Habilitado para persistência de dados do Keycloak
+# =============================================================================
+postgresql:
+  enabled: true
+  image:
+    repository: postgres
+    tag: "16-alpine"
+    pullPolicy: IfNotPresent
+  database: keycloak
+  username: keycloak
+  # IMPORTANTE: Em produção, a senha deve ser gerenciada via Sealed Secrets ou External Secrets
+  password: "" # Usar secretRef para produção
+  persistence:
+    enabled: true
+    size: 20Gi
+    accessMode: ReadWriteOnce
+    storageClass: "local-path" # K3D local storage
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+    requests:
+      cpu: 250m
+      memory: 512Mi

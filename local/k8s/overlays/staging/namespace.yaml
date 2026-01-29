@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: nexo-staging
+  labels:
+    app.kubernetes.io/name: nexo
+    app.kubernetes.io/environment: staging
+    app.kubernetes.io/managed-by: argocd

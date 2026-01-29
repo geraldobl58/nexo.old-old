@@ -1,0 +1,40 @@
+# ============================================================================
+# NEXO PLATFORM - ConfigMaps
+# ============================================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nexo-config
+  namespace: nexo-dev
+  labels:
+    app.kubernetes.io/name: nexo
+    app.kubernetes.io/component: config
+data:
+  # Application
+  NODE_ENV: "development"
+  LOG_LEVEL: "debug"
+  LOG_FORMAT: "json"
+
+  # URLs
+  APP_URL: "https://api.dev.nexo.io"
+  FRONTEND_URL: "https://app.dev.nexo.io"
+
+  # Keycloak
+  KEYCLOAK_URL: "https://auth.dev.nexo.io"
+  KEYCLOAK_REALM: "nexo-dev"
+  KEYCLOAK_CLIENT_ID: "nexo-be"
+
+  # Features
+  SWAGGER_ENABLED: "true"
+  METRICS_ENABLED: "true"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nexo-fe-config
+  namespace: nexo-dev
+data:
+  NEXT_PUBLIC_API_URL: "https://api.dev.nexo.io"
+  NEXT_PUBLIC_KEYCLOAK_URL: "https://auth.dev.nexo.io"
+  NEXT_PUBLIC_KEYCLOAK_REALM: "nexo-dev"
+  NEXT_PUBLIC_KEYCLOAK_CLIENT_ID: "nexo-fe"

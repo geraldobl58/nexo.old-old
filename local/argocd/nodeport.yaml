@@ -1,0 +1,27 @@
+# ============================================================================
+# ArgoCD NodePort Service
+# ============================================================================
+# Expõe o ArgoCD server na porta 30080 para acesso local
+# ============================================================================
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: argocd-server-nodeport
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: argocd-server
+    app.kubernetes.io/component: server
+spec:
+  type: NodePort
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
+      nodePort: 30080
+    - name: https
+      port: 443
+      targetPort: 8080
+      nodePort: 30443
+  selector:
+    app.kubernetes.io/name: argocd-server

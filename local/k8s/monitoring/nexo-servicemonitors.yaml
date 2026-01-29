@@ -1,0 +1,68 @@
+# ServiceMonitors para aplicações Nexo
+# Estes recursos dizem ao Prometheus para coletar métricas das apps
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: nexo-be-monitor
+  namespace: monitoring
+  labels:
+    release: prometheus
+spec:
+  namespaceSelector:
+    matchNames:
+      - nexo-dev
+      - nexo-hlg
+      - nexo-staging
+      - nexo-prod
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: nexo-be
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 30s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: nexo-fe-monitor
+  namespace: monitoring
+  labels:
+    release: prometheus
+spec:
+  namespaceSelector:
+    matchNames:
+      - nexo-dev
+      - nexo-hlg
+      - nexo-staging
+      - nexo-prod
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: nexo-fe
+  endpoints:
+    - port: http
+      path: /api/health
+      interval: 30s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: nexo-auth-monitor
+  namespace: monitoring
+  labels:
+    release: prometheus
+spec:
+  namespaceSelector:
+    matchNames:
+      - nexo-dev
+      - nexo-hlg
+      - nexo-staging
+      - nexo-prod
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: nexo-auth
+  endpoints:
+    - port: http
+      path: /health
+      interval: 30s

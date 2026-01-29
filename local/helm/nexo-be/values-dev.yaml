@@ -1,0 +1,47 @@
+# Values for Development environment
+replicaCount: 1
+
+image:
+  # Para desenvolvimento local com K3D
+  repository: docker.io/geraldobl58/nexo-be
+  tag: "develop"
+  pullPolicy: Always
+
+# Para ambientes remotos, usar dockerhub-secret
+# Para K3D local, deixar vazio
+imagePullSecrets: []
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations: {}
+  hosts:
+    - host: nexo-be.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 256Mi
+
+autoscaling:
+  enabled: false
+
+env:
+  NODE_ENV: development
+  LOG_LEVEL: debug
+  SWAGGER_ENABLED: "true"
+  METRICS_ENABLED: "true"
+  KEYCLOAK_REALM: nexo-dev
+
+# Remover secrets para ambiente de dev local
+envFrom: []
+
+podDisruptionBudget:
+  enabled: false

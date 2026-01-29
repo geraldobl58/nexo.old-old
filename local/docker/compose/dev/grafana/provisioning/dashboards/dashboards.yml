@@ -1,0 +1,14 @@
+# Grafana Dashboards Provisioning
+apiVersion: 1
+
+providers:
+  - name: "Nexo Dashboards"
+    orgId: 1
+    folder: "Nexo"
+    folderUid: "nexo"
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards

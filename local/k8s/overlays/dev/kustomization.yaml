@@ -1,0 +1,68 @@
+# ============================================================================
+# NEXO PLATFORM - Development Overlay
+# ============================================================================
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: nexo-dev
+
+resources:
+  - ../../base
+
+namePrefix: ""
+nameSuffix: ""
+
+commonLabels:
+  app.kubernetes.io/environment: dev
+
+# Patches específicos para dev
+patches:
+  # Backend - menos replicas em dev
+  - target:
+      kind: Deployment
+      name: nexo-be
+    patch: |
+      - op: replace
+        path: /spec/replicas
+        value: 1
+
+  # Frontend - menos replicas em dev
+  - target:
+      kind: Deployment
+      name: nexo-fe
+    patch: |
+      - op: replace
+        path: /spec/replicas
+        value: 1
+
+  # HPA - ajustar para dev
+  - target:
+      kind: HorizontalPodAutoscaler
+      name: nexo-be
+    patch: |
+      - op: replace
+        path: /spec/minReplicas
+        value: 1
+      - op: replace
+        path: /spec/maxReplicas
+        value: 3
+
+  - target:
+      kind: HorizontalPodAutoscaler
+      name: nexo-fe
+    patch: |
+      - op: replace
+        path: /spec/minReplicas
+        value: 1
+      - op: replace
+        path: /spec/maxReplicas
+        value: 3
+
+# ConfigMap patches
+configMapGenerator:
+  - name: nexo-config
+    behavior: merge
+    literals:
+      - NODE_ENV=development
+      - LOG_LEVEL=debug
+      - SWAGGER_ENABLED=true
