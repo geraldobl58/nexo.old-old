@@ -1,16 +1,13 @@
 # Values for Development environment
 replicaCount: 1
-
 image:
   # Para desenvolvimento local com K3D
   repository: docker.io/geraldobl58/nexo-fe
   tag: "develop"
   pullPolicy: Always
-
 # Para ambientes remotos, usar dockerhub-secret
 # Para K3D local, deixar vazio
 imagePullSecrets: []
-
 ingress:
   enabled: true
   className: "nginx"
@@ -21,7 +18,6 @@ ingress:
         - path: /
           pathType: Prefix
   tls: []
-
 resources:
   limits:
     cpu: 500m
@@ -29,16 +25,15 @@ resources:
   requests:
     cpu: 100m
     memory: 256Mi
-
 autoscaling:
   enabled: false
-
 env:
   NODE_ENV: development
   NEXT_PUBLIC_API_URL: http://nexo-be.local
   NEXT_PUBLIC_KEYCLOAK_URL: http://nexo-auth.local
   NEXT_PUBLIC_KEYCLOAK_REALM: nexo-dev
   NEXT_PUBLIC_KEYCLOAK_CLIENT_ID: nexo-fe
-
 podDisruptionBudget:
   enabled: false
+podAnnotations:
+  app.kubernetes.io/commit: acb3254
