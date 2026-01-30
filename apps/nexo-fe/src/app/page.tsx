@@ -1,7 +1,7 @@
 const HomePage = () => {
   return (
     <>
-      <div>🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀</div>
+      <div>Deploy de finalização 🚀</div>
     </>
   );
 };
