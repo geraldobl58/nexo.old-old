@@ -1,7 +1,7 @@
 const HomePage = () => {
   return (
     <>
-      <div>Deploy de finalização 🚀</div>
+      <div>Iniciar desenvolvimento</div>
     </>
   );
 };
