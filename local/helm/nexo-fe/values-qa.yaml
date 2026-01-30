@@ -13,18 +13,13 @@ imagePullSecrets:
 ingress:
   enabled: true
   className: "traefik"
-  annotations:
-    cert-manager.io/cluster-issuer: "letsencrypt-prod"
-    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+  annotations: {}
   hosts:
-    - host: qa.nexo.io
+    - host: qa.nexo.local
       paths:
         - path: /
           pathType: Prefix
-  tls:
-    - secretName: nexo-fe-qa-tls
-      hosts:
-        - qa.nexo.io
+  tls: []
 
 resources:
   limits:

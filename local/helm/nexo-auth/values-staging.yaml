@@ -1,18 +1,21 @@
 # Values for Staging environment
 replicaCount: 1
+
 image:
   tag: "staging"
+
 ingress:
   enabled: true
   hosts:
-    - host: auth.staging.nexo.io
+    - host: auth.staging.nexo.local
       paths:
         - path: /
           pathType: Prefix
   tls:
     - secretName: nexo-auth-staging-tls
       hosts:
-        - auth.staging.nexo.io
+        - auth.staging.nexo.local
+
 resources:
   limits:
     cpu: 500m
@@ -20,8 +23,10 @@ resources:
   requests:
     cpu: 100m
     memory: 256Mi
+
 autoscaling:
   enabled: false
+
 env:
   NODE_ENV: staging
   LOG_LEVEL: debug
@@ -34,6 +39,7 @@ env:
   KC_HTTP_ENABLED: "true"
   KC_HEALTH_ENABLED: "true"
   KC_METRICS_ENABLED: "true"
+
 # =============================================================================
 # PostgreSQL - Habilitado para persistência de dados do Keycloak
 # =============================================================================
@@ -58,5 +64,3 @@ postgresql:
     requests:
       cpu: 100m
       memory: 256Mi
-podAnnotations:
-  app.kubernetes.io/commit: 063112b
