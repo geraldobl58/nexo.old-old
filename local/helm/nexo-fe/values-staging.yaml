@@ -47,9 +47,8 @@ env:
   NEXT_PUBLIC_KEYCLOAK_REALM: nexo-staging
   NEXT_PUBLIC_KEYCLOAK_CLIENT_ID: nexo-fe
 
-envFrom:
-  - secretRef:
-      name: nexo-secrets
+# Para ambiente local, sem secrets externos
+envFrom: []
 
 podDisruptionBudget:
   enabled: true

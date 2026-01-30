@@ -1,12 +1,15 @@
 # Values for QA environment
 # Deploy automático via branch 'qa'
 replicaCount: 1
+
 image:
   repository: docker.io/geraldobl58/nexo-be
   tag: "qa"
   pullPolicy: Always
+
 imagePullSecrets:
   - name: dockerhub-secret
+
 ingress:
   enabled: true
   className: "nginx"
@@ -22,6 +25,7 @@ ingress:
     - secretName: nexo-be-qa-tls
       hosts:
         - api.qa.nexo.io
+
 resources:
   limits:
     cpu: 500m
@@ -29,21 +33,22 @@ resources:
   requests:
     cpu: 100m
     memory: 256Mi
+
 autoscaling:
   enabled: true
   minReplicas: 1
   maxReplicas: 2
   targetCPUUtilizationPercentage: 80
+
 env:
   NODE_ENV: qa
   LOG_LEVEL: info
   SWAGGER_ENABLED: "true"
   METRICS_ENABLED: "true"
   KEYCLOAK_REALM: nexo-qa
-envFrom:
-  - secretRef:
-      name: nexo-secrets
+
+# Para ambiente local, sem secrets externos
+envFrom: []
+
 podDisruptionBudget:
   enabled: false
-podAnnotations:
-  app.kubernetes.io/commit: acb3254
