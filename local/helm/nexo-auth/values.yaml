@@ -23,7 +23,9 @@ serviceAccount:
   annotations: {}
   name: ""
 
-podAnnotations: {}
+# CD updates this with commit SHA to force pod restart
+podAnnotations:
+  app.kubernetes.io/commit: "latest"
 
 podSecurityContext: {}
 

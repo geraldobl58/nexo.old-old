@@ -19,14 +19,16 @@ O pipeline usa GitHub Actions + DockerHub + ArgoCD:
 ### Fluxo Simplificado
 
 1. **Commit/Push** → Dispara CI
-2. **CI** → Build da imagem + Push para DockerHub (tags: branch, sha)
-3. **CD** → Atualiza `image.tag` no values.yaml com o SHA
-4. **Git** → Commit automático com nova tag `[skip ci]`
-5. **ArgoCD** → Detecta mudança no Git e faz sync
-6. **Kubernetes** → Recria pods com a nova imagem
+2. **CI** → Build da imagem + Push para DockerHub (tag: `develop`)
+3. **CD** → Atualiza `podAnnotations.app.kubernetes.io/commit` com SHA curto
+4. **Git** → Commit automático `[skip ci]`
+5. **ArgoCD** → Detecta mudança na annotation e faz sync
+6. **Kubernetes** → Recria pods (annotation mudou) + baixa nova imagem
 
-> **GitOps completo**: A tag da imagem é versionada no Git.
-> Cada commit gera uma tag única (SHA), garantindo rollout automático.
+> **GitOps completo**: 
+> - Tag da imagem: fixa (`develop`, `staging`, `prod`)
+> - `imagePullPolicy: Always`: sempre baixa a imagem mais recente
+> - Annotation com commit SHA: garante que pods sejam recriados
 
 ---
 
