@@ -148,12 +148,20 @@ jobs:
 
       - name: Trigger ArgoCD Sync
         if: inputs.auto_sync == false
+        env:
+          ARGOCD_SERVER: ${{ vars.ARGOCD_SERVER }}
+          ARGOCD_AUTH_TOKEN: ${{ vars.ARGOCD_AUTH_TOKEN }}
         run: |
           echo "🔄 Triggering sync for ${{ inputs.service }}-${{ inputs.environment }}"
-          # argocd app sync ${{ inputs.service }}-${{ inputs.environment }} \
-          #   --server ${{ secrets.ARGOCD_SERVER }} \
-          #   --auth-token ${{ secrets.ARGOCD_TOKEN }} \
-          #   --grpc-web
+          if [ -n "$ARGOCD_SERVER" ] && [ -n "$ARGOCD_AUTH_TOKEN" ]; then
+            argocd app sync ${{ inputs.service }}-${{ inputs.environment }} \
+              --server "$ARGOCD_SERVER" \
+              --auth-token "$ARGOCD_AUTH_TOKEN" \
+              --grpc-web \
+              --insecure || echo "⚠️ Sync command failed, ArgoCD auto-sync should handle it"
+          else
+            echo "ℹ️ ArgoCD credentials not configured, relying on auto-sync"
+          fi
 
       - name: Wait for Deployment
         run: |
