@@ -155,7 +155,7 @@ jobs:
       environment: ${{ needs.prepare.outputs.environment }}
       image_tag: ${{ needs.prepare.outputs.image_tag }}
       helm_chart_path: local/helm/nexo-be
-      values_file: local/helm/nexo-be/values-${{ needs.prepare.outputs.environment }}.yaml
+      values_file: local/helm/nexo-be/values.yaml
       namespace: nexo-${{ needs.prepare.outputs.environment }}
       auto_sync: ${{ needs.prepare.outputs.environment == 'dev' }}
       require_approval: ${{ needs.prepare.outputs.environment == 'prod' }}
@@ -174,7 +174,7 @@ jobs:
       environment: ${{ needs.prepare.outputs.environment }}
       image_tag: ${{ needs.prepare.outputs.image_tag }}
       helm_chart_path: local/helm/nexo-fe
-      values_file: local/helm/nexo-fe/values-${{ needs.prepare.outputs.environment }}.yaml
+      values_file: local/helm/nexo-fe/values.yaml
       namespace: nexo-${{ needs.prepare.outputs.environment }}
       auto_sync: ${{ needs.prepare.outputs.environment == 'dev' }}
       require_approval: ${{ needs.prepare.outputs.environment == 'prod' }}
@@ -193,7 +193,7 @@ jobs:
       environment: ${{ needs.prepare.outputs.environment }}
       image_tag: ${{ needs.prepare.outputs.image_tag }}
       helm_chart_path: local/helm/nexo-auth
-      values_file: local/helm/nexo-auth/values-${{ needs.prepare.outputs.environment }}.yaml
+      values_file: local/helm/nexo-auth/values.yaml
       namespace: nexo-${{ needs.prepare.outputs.environment }}
       auto_sync: ${{ needs.prepare.outputs.environment == 'dev' }}
       require_approval: ${{ needs.prepare.outputs.environment == 'prod' }}
