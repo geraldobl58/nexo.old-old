@@ -464,6 +464,67 @@ metadata:
 
 ---
 
+## 📁 Configuração de Values Files por Ambiente
+
+### Mapeamento Ambiente → Branch → Values File
+
+| Ambiente | Branch  | Values File          | Namespace      |
+|----------|---------|---------------------|----------------|
+| develop  | develop | `values-dev.yaml`   | nexo-develop   |
+| qa       | qa      | `values-qa.yaml`    | nexo-qa        |
+| staging  | staging | `values-staging.yaml` | nexo-staging |
+| prod     | main    | `values-prod.yaml`  | nexo-prod      |
+
+### Workflow CD: Target Branch
+
+O workflow CD precisa saber em qual branch fazer checkout e push das atualizações:
+
+```yaml
+# cd-main.yml
+set-env:
+  outputs:
+    target_branch: ${{ steps.set.outputs.target_branch }}
+  steps:
+    - id: set
+      run: |
+        if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+          echo "target_branch=main" >> $GITHUB_OUTPUT
+        elif [[ "${{ github.ref }}" == "refs/heads/staging" ]]; then
+          echo "target_branch=staging" >> $GITHUB_OUTPUT
+        elif [[ "${{ github.ref }}" == "refs/heads/qa" ]]; then
+          echo "target_branch=qa" >> $GITHUB_OUTPUT
+        else
+          echo "target_branch=develop" >> $GITHUB_OUTPUT
+        fi
+```
+
+### Configuração nos Helm Charts
+
+Os arquivos de values específicos sobrescrevem o base:
+
+```yaml
+# local/helm/nexo-be/values-qa.yaml
+ingress:
+  enabled: true
+  className: "traefik"  # Para K3D local
+  annotations: {}       # Sem TLS para local
+  hosts:
+    - host: qa.api.nexo.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []  # Sem TLS para local
+
+envFrom: []  # Sobrescreve secrets do values.yaml base
+```
+
+> ⚠️ **Importante para ambiente local K3D:**
+> - Use `className: "traefik"` (não `nginx`)
+> - Configure `tls: []` (sem TLS)
+> - Configure `envFrom: []` para evitar erros de secrets não encontrados
+
+---
+
 ## ⚡ Estratégia de Cache e Rate Limit
 
 ### Problema: Rate Limit do DockerHub
