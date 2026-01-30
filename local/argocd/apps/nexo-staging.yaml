@@ -28,7 +28,7 @@ spec:
     helm:
       valueFiles:
         - values.yaml
-        - values-local.yaml
+        - values-staging.yaml
       parameters:
         - name: image.repository
           value: docker.io/geraldobl58/nexo-be
@@ -83,7 +83,7 @@ spec:
     helm:
       valueFiles:
         - values.yaml
-        - values-local.yaml
+        - values-staging.yaml
       parameters:
         - name: image.repository
           value: docker.io/geraldobl58/nexo-fe
@@ -138,7 +138,7 @@ spec:
     helm:
       valueFiles:
         - values.yaml
-        - values-local.yaml
+        - values-staging.yaml
       parameters:
         # Imagem - usando oficial Keycloak
         - name: image.repository
