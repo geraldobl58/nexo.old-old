@@ -14,17 +14,15 @@ ingress:
   enabled: true
   className: "traefik"
   annotations:
-    cert-manager.io/cluster-issuer: "letsencrypt-prod"
-    nginx.ingress.kubernetes.io/ssl-redirect: "true"
   hosts:
-    - host: staging.nexo.io
+    - host: staging.nexo.local
       paths:
         - path: /
           pathType: Prefix
   tls:
     - secretName: nexo-fe-staging-tls
       hosts:
-        - staging.nexo.io
+        - staging.nexo.local
 
 resources:
   limits:
@@ -42,8 +40,8 @@ autoscaling:
 
 env:
   NODE_ENV: staging
-  NEXT_PUBLIC_API_URL: https://api.staging.nexo.io
-  NEXT_PUBLIC_KEYCLOAK_URL: https://auth.staging.nexo.io
+  NEXT_PUBLIC_API_URL: https://api.staging.nexo.local
+  NEXT_PUBLIC_KEYCLOAK_URL: https://auth.staging.nexo.local
   NEXT_PUBLIC_KEYCLOAK_REALM: nexo-staging
   NEXT_PUBLIC_KEYCLOAK_CLIENT_ID: nexo-fe
 
