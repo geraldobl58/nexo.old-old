@@ -13,12 +13,10 @@ spec:
       {{- include "nexo-be.selectorLabels" . | nindent 6 }}
   template:
     metadata:
+      {{- with .Values.podAnnotations }}
       annotations:
-        {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
-        {{- end }}
-        # Force rollout when image changes (CI sets this value)
-        rollme: {{ .Values.image.digest | default (now | date "20060102150405") | quote }}
+      {{- end }}
       labels:
         {{- include "nexo-be.selectorLabels" . | nindent 8 }}
     spec:

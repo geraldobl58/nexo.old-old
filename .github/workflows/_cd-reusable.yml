@@ -2,7 +2,7 @@
 # NEXO PLATFORM - CD Reusable Workflow
 # ============================================================================
 # Workflow reutilizável para deploy de qualquer serviço em qualquer ambiente.
-# Padrão enterprise: Um único workflow de CD, parametrizado por ambiente.
+# Padrão GitOps: Atualiza o values.yaml com a nova tag e ArgoCD faz o sync.
 # ============================================================================
 
 name: _CD Reusable
@@ -48,6 +48,8 @@ on:
       DOCKERHUB_USERNAME:
         required: false
       DOCKERHUB_TOKEN:
+        required: false
+      GH_TOKEN:
         required: false
 
 env:
@@ -110,7 +112,7 @@ jobs:
           echo "Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ inputs.image_tag }}"
 
   # ============================================
-  # Job 3: Notify ArgoCD to Sync
+  # Job 3: Update Image Tag in Git (GitOps)
   # ============================================
   deploy:
     name: 🚀 Deploy
@@ -122,8 +124,43 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_TOKEN || github.token }}
+          fetch-depth: 0
 
-      - name: Notify ArgoCD to Refresh
+      - name: Setup yq
+        uses: mikefarah/yq@master
+
+      - name: Update image tag in values file
+        run: |
+          VALUES_FILE="${{ inputs.values_file }}"
+          NEW_TAG="${{ inputs.image_tag }}"
+          
+          echo "📝 Updating $VALUES_FILE with tag: $NEW_TAG"
+          
+          # Update the image.tag in the values file
+          yq e '.image.tag = "'$NEW_TAG'"' -i "$VALUES_FILE"
+          
+          # Show the change
+          echo "✅ Updated image.tag:"
+          yq e '.image' "$VALUES_FILE"
+
+      - name: Commit and Push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Check if there are changes
+          if git diff --quiet; then
+            echo "ℹ️ No changes to commit (tag already up to date)"
+          else
+            git add ${{ inputs.values_file }}
+            git commit -m "deploy(${{ inputs.environment }}): ${{ inputs.service }} → ${{ inputs.image_tag }} [skip ci]"
+            git push
+            echo "✅ Pushed new image tag to Git"
+          fi
+
+      - name: Notify ArgoCD to Sync
         env:
           ARGOCD_SERVER: ${{ vars.ARGOCD_SERVER }}
           ARGOCD_AUTH_TOKEN: ${{ vars.ARGOCD_AUTH_TOKEN }}
@@ -138,10 +175,9 @@ jobs:
               -H "Authorization: Bearer $ARGOCD_AUTH_TOKEN" \
               --insecure || echo "⚠️ Could not refresh, ArgoCD will sync automatically"
             
-            echo "✅ ArgoCD notified! Auto-sync will deploy the new image."
+            echo "✅ ArgoCD notified!"
           else
-            echo "ℹ️ ArgoCD credentials not configured"
-            echo "📋 ArgoCD will auto-sync within 60 seconds"
+            echo "ℹ️ ArgoCD will auto-sync within 60 seconds"
           fi
 
       - name: Summary
@@ -151,8 +187,7 @@ jobs:
           echo "Environment: ${{ inputs.environment }}"
           echo "Image Tag: ${{ inputs.image_tag }}"
           echo ""
-          echo "📋 ArgoCD will automatically sync the new image."
-          echo "🔗 Check: https://${{ vars.ARGOCD_SERVER }}/applications/${{ inputs.service }}-${{ inputs.environment }}"
+          echo "📋 Git updated with new tag. ArgoCD will sync automatically."
 
   # ============================================
   # Job 4: Post-Deploy Verification
@@ -169,4 +204,4 @@ jobs:
           echo "Environment: ${{ inputs.environment }}"
           echo "Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ inputs.image_tag }}"
           echo ""
-          echo "📋 ArgoCD auto-sync will apply the changes within 60 seconds."
+          echo "📋 Flow: Git updated → ArgoCD detects change → Pods recreated with new image"

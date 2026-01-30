@@ -20,12 +20,13 @@ O pipeline usa GitHub Actions + DockerHub + ArgoCD:
 
 1. **Commit/Push** → Dispara CI
 2. **CI** → Build da imagem + Push para DockerHub (tags: branch, sha)
-3. **CD** → Notifica ArgoCD para fazer refresh
-4. **ArgoCD** → Detecta nova imagem e aplica no cluster automaticamente
+3. **CD** → Atualiza `image.tag` no values.yaml com o SHA
+4. **Git** → Commit automático com nova tag `[skip ci]`
+5. **ArgoCD** → Detecta mudança no Git e faz sync
+6. **Kubernetes** → Recria pods com a nova imagem
 
-> O ArgoCD é o único responsável por aplicar mudanças no cluster.
-> Usa `imagePullPolicy: Always` para sempre baixar a imagem mais recente.
-> Os templates Helm têm uma annotation `rollme` que força rollout a cada sync.
+> **GitOps completo**: A tag da imagem é versionada no Git.
+> Cada commit gera uma tag única (SHA), garantindo rollout automático.
 
 ---
 
