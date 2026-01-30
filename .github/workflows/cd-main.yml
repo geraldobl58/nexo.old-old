@@ -93,6 +93,8 @@ jobs:
       services: ${{ steps.set-matrix.outputs.services }}
       environment: ${{ steps.set-env.outputs.environment }}
       image_tag: ${{ steps.set-tag.outputs.image_tag }}
+      auto_sync: ${{ steps.set-env.outputs.auto_sync }}
+      require_approval: ${{ steps.set-env.outputs.require_approval }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -115,22 +117,40 @@ jobs:
             case "$BRANCH" in
               develop)
                 echo "environment=dev" >> $GITHUB_OUTPUT
+                echo "auto_sync=true" >> $GITHUB_OUTPUT
+                echo "require_approval=false" >> $GITHUB_OUTPUT
                 ;;
               qa)
                 echo "environment=qa" >> $GITHUB_OUTPUT
+                echo "auto_sync=true" >> $GITHUB_OUTPUT
+                echo "require_approval=false" >> $GITHUB_OUTPUT
                 ;;
               staging)
                 echo "environment=staging" >> $GITHUB_OUTPUT
+                echo "auto_sync=false" >> $GITHUB_OUTPUT
+                echo "require_approval=true" >> $GITHUB_OUTPUT
                 ;;
               main)
                 echo "environment=prod" >> $GITHUB_OUTPUT
+                echo "auto_sync=false" >> $GITHUB_OUTPUT
+                echo "require_approval=true" >> $GITHUB_OUTPUT
                 ;;
               *)
                 echo "environment=dev" >> $GITHUB_OUTPUT
+                echo "auto_sync=true" >> $GITHUB_OUTPUT
+                echo "require_approval=false" >> $GITHUB_OUTPUT
                 ;;
             esac
           else
-            echo "environment=${{ github.event.inputs.environment }}" >> $GITHUB_OUTPUT
+            ENV="${{ github.event.inputs.environment }}"
+            echo "environment=$ENV" >> $GITHUB_OUTPUT
+            if [ "$ENV" == "dev" ] || [ "$ENV" == "qa" ]; then
+              echo "auto_sync=true" >> $GITHUB_OUTPUT
+              echo "require_approval=false" >> $GITHUB_OUTPUT
+            else
+              echo "auto_sync=false" >> $GITHUB_OUTPUT
+              echo "require_approval=true" >> $GITHUB_OUTPUT
+            fi
           fi
 
       - name: Set Image Tag
@@ -157,8 +177,8 @@ jobs:
       helm_chart_path: local/helm/nexo-be
       values_file: local/helm/nexo-be/values.yaml
       namespace: nexo-${{ needs.prepare.outputs.environment }}
-      auto_sync: ${{ needs.prepare.outputs.environment == 'dev' }}
-      require_approval: ${{ needs.prepare.outputs.environment == 'prod' }}
+      auto_sync: ${{ fromJson(needs.prepare.outputs.auto_sync) }}
+      require_approval: ${{ fromJson(needs.prepare.outputs.require_approval) }}
     secrets: inherit
 
   # ============================================
@@ -176,8 +196,8 @@ jobs:
       helm_chart_path: local/helm/nexo-fe
       values_file: local/helm/nexo-fe/values.yaml
       namespace: nexo-${{ needs.prepare.outputs.environment }}
-      auto_sync: ${{ needs.prepare.outputs.environment == 'dev' }}
-      require_approval: ${{ needs.prepare.outputs.environment == 'prod' }}
+      auto_sync: ${{ fromJson(needs.prepare.outputs.auto_sync) }}
+      require_approval: ${{ fromJson(needs.prepare.outputs.require_approval) }}
     secrets: inherit
 
   # ============================================
@@ -195,8 +215,8 @@ jobs:
       helm_chart_path: local/helm/nexo-auth
       values_file: local/helm/nexo-auth/values.yaml
       namespace: nexo-${{ needs.prepare.outputs.environment }}
-      auto_sync: ${{ needs.prepare.outputs.environment == 'dev' }}
-      require_approval: ${{ needs.prepare.outputs.environment == 'prod' }}
+      auto_sync: ${{ fromJson(needs.prepare.outputs.auto_sync) }}
+      require_approval: ${{ fromJson(needs.prepare.outputs.require_approval) }}
     secrets: inherit
 
   # ============================================

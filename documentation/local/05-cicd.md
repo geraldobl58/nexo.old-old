@@ -25,7 +25,8 @@ O pipeline usa GitHub Actions + DockerHub + ArgoCD:
 5. **ArgoCD** → Detecta mudança na annotation e faz sync
 6. **Kubernetes** → Recria pods (annotation mudou) + baixa nova imagem
 
-> **GitOps completo**: 
+> **GitOps completo**:
+>
 > - Tag da imagem: fixa (`develop`, `staging`, `prod`)
 > - `imagePullPolicy: Always`: sempre baixa a imagem mais recente
 > - Annotation com commit SHA: garante que pods sejam recriados

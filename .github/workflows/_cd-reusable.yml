@@ -136,12 +136,12 @@ jobs:
           VALUES_FILE="${{ inputs.values_file }}"
           COMMIT_SHA="${{ github.sha }}"
           SHORT_SHA="${COMMIT_SHA:0:7}"
-          
+
           echo "📝 Updating $VALUES_FILE with commit: $SHORT_SHA"
-          
+
           # Update the podAnnotations.app.kubernetes.io/commit in the values file
           yq e '.podAnnotations."app.kubernetes.io/commit" = "'$SHORT_SHA'"' -i "$VALUES_FILE"
-          
+
           # Show the change
           echo "✅ Updated podAnnotations:"
           yq e '.podAnnotations' "$VALUES_FILE"
@@ -150,7 +150,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          
+
           # Check if there are changes
           if git diff --quiet; then
             echo "ℹ️ No changes to commit (commit already up to date)"
