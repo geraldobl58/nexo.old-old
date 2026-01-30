@@ -1,7 +1,9 @@
 # Values for Production environment
 replicaCount: 3
+
 image:
   tag: "" # Set by CI/CD
+
 ingress:
   enabled: true
   annotations:
@@ -18,6 +20,7 @@ ingress:
     - secretName: nexo-be-prod-tls
       hosts:
         - api.nexo.io
+
 resources:
   limits:
     cpu: 2000m
@@ -25,21 +28,28 @@ resources:
   requests:
     cpu: 500m
     memory: 1024Mi
+
 autoscaling:
   enabled: true
   minReplicas: 3
   maxReplicas: 10
   targetCPUUtilizationPercentage: 70
   targetMemoryUtilizationPercentage: 80
+
 env:
   NODE_ENV: production
   LOG_LEVEL: warn
   SWAGGER_ENABLED: "false"
   METRICS_ENABLED: "true"
   KEYCLOAK_REALM: nexo-prod
+
+# Para ambiente local, sem secrets externos
+envFrom: []
+
 podDisruptionBudget:
   enabled: true
   minAvailable: 2
+
 affinity:
   podAntiAffinity:
     requiredDuringSchedulingIgnoredDuringExecution:
@@ -50,5 +60,3 @@ affinity:
               values:
                 - nexo-be
         topologyKey: kubernetes.io/hostname
-podAnnotations:
-  app.kubernetes.io/commit: 063112b
