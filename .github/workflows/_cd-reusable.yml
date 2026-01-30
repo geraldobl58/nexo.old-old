@@ -160,6 +160,14 @@ jobs:
           else
             git add ${{ inputs.values_file }}
             git commit -m "deploy(${{ inputs.environment }}): ${{ inputs.service }} → ${SHORT_SHA} [skip ci]"
+            
+            # Pull with rebase to handle parallel pushes
+            for i in 1 2 3 4 5; do
+              git pull --rebase origin ${{ github.ref_name }} && break
+              echo "⚠️ Rebase attempt $i failed, retrying..."
+              sleep $((i * 2))
+            done
+            
             git push
             echo "✅ Pushed new commit annotation to Git"
           fi
