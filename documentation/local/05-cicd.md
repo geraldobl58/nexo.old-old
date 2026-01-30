@@ -25,6 +25,7 @@ O pipeline usa GitHub Actions + DockerHub + ArgoCD:
 
 > O ArgoCD é o único responsável por aplicar mudanças no cluster.
 > Usa `imagePullPolicy: Always` para sempre baixar a imagem mais recente.
+> Os templates Helm têm uma annotation `rollme` que força rollout a cada sync.
 
 ---
 
