@@ -151,12 +151,15 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
+          SHORT_SHA="${{ github.sha }}"
+          SHORT_SHA="${SHORT_SHA:0:7}"
+
           # Check if there are changes
           if git diff --quiet; then
             echo "ℹ️ No changes to commit (commit already up to date)"
           else
             git add ${{ inputs.values_file }}
-            git commit -m "deploy(${{ inputs.environment }}): ${{ inputs.service }} → ${{ github.sha::7 }} [skip ci]"
+            git commit -m "deploy(${{ inputs.environment }}): ${{ inputs.service }} → ${SHORT_SHA} [skip ci]"
             git push
             echo "✅ Pushed new commit annotation to Git"
           fi
