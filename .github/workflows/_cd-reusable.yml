@@ -34,6 +34,10 @@ on:
         description: "Namespace Kubernetes"
         required: true
         type: string
+      target_branch:
+        description: "Branch alvo para push das atualizações"
+        required: true
+        type: string
       auto_sync:
         description: "Habilitar auto-sync no ArgoCD"
         required: false
@@ -125,6 +129,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
+          ref: ${{ inputs.target_branch }}
           token: ${{ secrets.GH_TOKEN || github.token }}
           fetch-depth: 0
 
@@ -163,7 +168,7 @@ jobs:
             
             # Pull with rebase to handle parallel pushes
             for i in 1 2 3 4 5; do
-              git pull --rebase origin ${{ github.ref_name }} && break
+              git pull --rebase origin ${{ inputs.target_branch }} && break
               echo "⚠️ Rebase attempt $i failed, retrying..."
               sleep $((i * 2))
             done

@@ -95,6 +95,7 @@ jobs:
       image_tag: ${{ steps.set-tag.outputs.image_tag }}
       auto_sync: ${{ steps.set-env.outputs.auto_sync }}
       require_approval: ${{ steps.set-env.outputs.require_approval }}
+      target_branch: ${{ steps.set-env.outputs.target_branch }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -114,6 +115,7 @@ jobs:
           if [ -z "${{ github.event.inputs.environment }}" ]; then
             # Auto-detect based on branch (from workflow_run)
             BRANCH="${{ github.event.workflow_run.head_branch || github.ref_name }}"
+            echo "target_branch=$BRANCH" >> $GITHUB_OUTPUT
             case "$BRANCH" in
               develop)
                 echo "environment=dev" >> $GITHUB_OUTPUT
@@ -144,6 +146,7 @@ jobs:
           else
             ENV="${{ github.event.inputs.environment }}"
             echo "environment=$ENV" >> $GITHUB_OUTPUT
+            echo "target_branch=${{ github.ref_name }}" >> $GITHUB_OUTPUT
             if [ "$ENV" == "dev" ] || [ "$ENV" == "qa" ]; then
               echo "auto_sync=true" >> $GITHUB_OUTPUT
               echo "require_approval=false" >> $GITHUB_OUTPUT
@@ -175,8 +178,9 @@ jobs:
       environment: ${{ needs.prepare.outputs.environment }}
       image_tag: ${{ needs.prepare.outputs.image_tag }}
       helm_chart_path: local/helm/nexo-be
-      values_file: local/helm/nexo-be/values.yaml
+      values_file: local/helm/nexo-be/values-${{ needs.prepare.outputs.environment }}.yaml
       namespace: nexo-${{ needs.prepare.outputs.environment }}
+      target_branch: ${{ needs.prepare.outputs.target_branch }}
       auto_sync: ${{ fromJson(needs.prepare.outputs.auto_sync) }}
       require_approval: ${{ fromJson(needs.prepare.outputs.require_approval) }}
     secrets: inherit
@@ -194,8 +198,9 @@ jobs:
       environment: ${{ needs.prepare.outputs.environment }}
       image_tag: ${{ needs.prepare.outputs.image_tag }}
       helm_chart_path: local/helm/nexo-fe
-      values_file: local/helm/nexo-fe/values.yaml
+      values_file: local/helm/nexo-fe/values-${{ needs.prepare.outputs.environment }}.yaml
       namespace: nexo-${{ needs.prepare.outputs.environment }}
+      target_branch: ${{ needs.prepare.outputs.target_branch }}
       auto_sync: ${{ fromJson(needs.prepare.outputs.auto_sync) }}
       require_approval: ${{ fromJson(needs.prepare.outputs.require_approval) }}
     secrets: inherit
@@ -213,8 +218,9 @@ jobs:
       environment: ${{ needs.prepare.outputs.environment }}
       image_tag: ${{ needs.prepare.outputs.image_tag }}
       helm_chart_path: local/helm/nexo-auth
-      values_file: local/helm/nexo-auth/values.yaml
+      values_file: local/helm/nexo-auth/values-${{ needs.prepare.outputs.environment }}.yaml
       namespace: nexo-${{ needs.prepare.outputs.environment }}
+      target_branch: ${{ needs.prepare.outputs.target_branch }}
       auto_sync: ${{ fromJson(needs.prepare.outputs.auto_sync) }}
       require_approval: ${{ fromJson(needs.prepare.outputs.require_approval) }}
     secrets: inherit
