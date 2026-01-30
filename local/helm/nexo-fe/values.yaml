@@ -1,40 +1,30 @@
 # Default values for nexo-fe
 replicaCount: 2
-
 image:
   repository: docker.io/geraldobl58/nexo-fe
   pullPolicy: Always
-  tag: "develop"
-
+  tag: "5c464c3c9d70d5eda0f19734f770733d87402712"
 imagePullSecrets:
   - name: dockerhub-secret
-
 nameOverride: ""
 fullnameOverride: ""
-
 serviceAccount:
   create: true
   annotations: {}
   name: ""
-
 podAnnotations: {}
-
 podSecurityContext:
   fsGroup: 1000
   runAsNonRoot: true
-
 securityContext:
   allowPrivilegeEscalation: false
   readOnlyRootFilesystem: true
   runAsNonRoot: true
   runAsUser: 1000
-
 containerPort: 3000
-
 service:
   type: ClusterIP
   port: 3000
-
 ingress:
   enabled: true
   className: "traefik"
@@ -51,7 +41,6 @@ ingress:
     - secretName: nexo-fe-tls
       hosts:
         - app.nexo.io
-
 resources:
   limits:
     cpu: 500m
@@ -59,16 +48,13 @@ resources:
   requests:
     cpu: 100m
     memory: 256Mi
-
 autoscaling:
   enabled: true
   minReplicas: 2
   maxReplicas: 8
   targetCPUUtilizationPercentage: 70
-
 nodeSelector: {}
 tolerations: []
-
 affinity:
   podAntiAffinity:
     preferredDuringSchedulingIgnoredDuringExecution:
@@ -81,28 +67,24 @@ affinity:
                 values:
                   - nexo-fe
           topologyKey: kubernetes.io/hostname
-
 livenessProbe:
   httpGet:
     path: /
     port: http
   initialDelaySeconds: 20
   periodSeconds: 10
-
 readinessProbe:
   httpGet:
     path: /
     port: http
   initialDelaySeconds: 10
   periodSeconds: 5
-
 env:
   NODE_ENV: production
   NEXT_PUBLIC_API_URL: https://api.nexo.io
   NEXT_PUBLIC_KEYCLOAK_URL: https://auth.nexo.io
   NEXT_PUBLIC_KEYCLOAK_REALM: nexo-prod
   NEXT_PUBLIC_KEYCLOAK_CLIENT_ID: nexo-fe
-
 podDisruptionBudget:
   enabled: true
   minAvailable: 1
