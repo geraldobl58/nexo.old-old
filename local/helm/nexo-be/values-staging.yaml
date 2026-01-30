@@ -36,6 +36,9 @@ env:
   METRICS_ENABLED: "true"
   KEYCLOAK_REALM: nexo-staging
 
+# Para ambiente local, sem secrets externos
+envFrom: []
+
 podDisruptionBudget:
   enabled: true
   minAvailable: 1
