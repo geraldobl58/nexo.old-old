@@ -163,7 +163,7 @@ jobs:
           fi
 
   # ============================================
-  # Deploy Backend
+  # Deploy Backend (runs first)
   # ============================================
   deploy-backend:
     name: 🔵 Deploy Backend
@@ -182,12 +182,12 @@ jobs:
     secrets: inherit
 
   # ============================================
-  # Deploy Frontend
+  # Deploy Frontend (waits for backend)
   # ============================================
   deploy-frontend:
     name: 🟢 Deploy Frontend
-    needs: prepare
-    if: contains(fromJson(needs.prepare.outputs.services), 'nexo-fe')
+    needs: [prepare, deploy-backend]
+    if: always() && contains(fromJson(needs.prepare.outputs.services), 'nexo-fe')
     uses: ./.github/workflows/_cd-reusable.yml
     with:
       service: nexo-fe
@@ -201,12 +201,12 @@ jobs:
     secrets: inherit
 
   # ============================================
-  # Deploy Nexo Auth (Keycloak Theme)
+  # Deploy Nexo Auth (waits for frontend)
   # ============================================
   deploy-nexo-auth:
     name: 🟡 Deploy Nexo Auth
-    needs: prepare
-    if: contains(fromJson(needs.prepare.outputs.services), 'nexo-auth')
+    needs: [prepare, deploy-frontend]
+    if: always() && contains(fromJson(needs.prepare.outputs.services), 'nexo-auth')
     uses: ./.github/workflows/_cd-reusable.yml
     with:
       service: nexo-auth
