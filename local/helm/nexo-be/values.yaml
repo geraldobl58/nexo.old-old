@@ -19,7 +19,7 @@ podAnnotations:
   prometheus.io/port: "3000"
   prometheus.io/path: "/metrics"
   # CD updates this with commit SHA to force pod restart
-  app.kubernetes.io/commit: "82335ac"
+  app.kubernetes.io/commit: "3d2fbd5"
 podSecurityContext:
   fsGroup: 1000
   runAsNonRoot: true
