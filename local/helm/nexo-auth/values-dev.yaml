@@ -64,3 +64,5 @@ postgresql:
     requests:
       cpu: 100m
       memory: 256Mi
+podAnnotations:
+  app.kubernetes.io/commit: acb3254
