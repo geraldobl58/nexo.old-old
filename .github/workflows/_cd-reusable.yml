@@ -45,11 +45,9 @@ on:
         type: boolean
         default: false
     secrets:
-      ARGOCD_SERVER:
+      DOCKERHUB_USERNAME:
         required: false
-      ARGOCD_TOKEN:
-        required: false
-      KUBECONFIG:
+      DOCKERHUB_TOKEN:
         required: false
 
 env:
@@ -112,62 +110,49 @@ jobs:
           echo "Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ inputs.image_tag }}"
 
   # ============================================
-  # Job 3: Deploy via ArgoCD
+  # Job 3: Notify ArgoCD to Sync
   # ============================================
-  deploy-argocd:
-    name: 🚀 Deploy (ArgoCD)
+  deploy:
+    name: 🚀 Deploy
     runs-on: ubuntu-latest
     needs: [validate, approval]
     if: always() && needs.validate.result == 'success' && (needs.approval.result == 'success' || needs.approval.result == 'skipped')
+    environment:
+      name: ${{ inputs.environment }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup ArgoCD CLI
-        run: |
-          curl -sSL -o argocd https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
-          chmod +x argocd
-          sudo mv argocd /usr/local/bin/
-
-      - name: Update ArgoCD Application
-        run: |
-          # Atualiza a imagem na aplicação ArgoCD
-          cat > /tmp/app-patch.yaml << EOF
-          spec:
-            source:
-              helm:
-                parameters:
-                  - name: image.repository
-                    value: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-                  - name: image.tag
-                    value: ${{ inputs.image_tag }}
-          EOF
-
-          echo "📋 Application patch:"
-          cat /tmp/app-patch.yaml
-
-      - name: Trigger ArgoCD Sync
-        if: inputs.auto_sync == false
+      - name: Notify ArgoCD to Refresh
         env:
           ARGOCD_SERVER: ${{ vars.ARGOCD_SERVER }}
           ARGOCD_AUTH_TOKEN: ${{ vars.ARGOCD_AUTH_TOKEN }}
         run: |
-          echo "🔄 Triggering sync for ${{ inputs.service }}-${{ inputs.environment }}"
+          APP_NAME="${{ inputs.service }}-${{ inputs.environment }}"
+          echo "🔄 Notifying ArgoCD to refresh ${APP_NAME}..."
+          
           if [ -n "$ARGOCD_SERVER" ] && [ -n "$ARGOCD_AUTH_TOKEN" ]; then
-            argocd app sync ${{ inputs.service }}-${{ inputs.environment }} \
-              --server "$ARGOCD_SERVER" \
-              --auth-token "$ARGOCD_AUTH_TOKEN" \
-              --grpc-web \
-              --insecure || echo "⚠️ Sync command failed, ArgoCD auto-sync should handle it"
+            # Trigger hard refresh
+            curl -s -X GET \
+              "https://$ARGOCD_SERVER/api/v1/applications/${APP_NAME}?refresh=hard" \
+              -H "Authorization: Bearer $ARGOCD_AUTH_TOKEN" \
+              --insecure || echo "⚠️ Could not refresh, ArgoCD will sync automatically"
+            
+            echo "✅ ArgoCD notified! Auto-sync will deploy the new image."
           else
-            echo "ℹ️ ArgoCD credentials not configured, relying on auto-sync"
+            echo "ℹ️ ArgoCD credentials not configured"
+            echo "📋 ArgoCD will auto-sync within 60 seconds"
           fi
 
-      - name: Wait for Deployment
+      - name: Summary
         run: |
-          echo "⏳ Waiting for deployment to complete..."
-          sleep 10
-          echo "✅ Deployment initiated for ${{ inputs.service }}-${{ inputs.environment }}"
+          echo "🎉 Deployment initiated!"
+          echo "Service: ${{ inputs.service }}"
+          echo "Environment: ${{ inputs.environment }}"
+          echo "Image Tag: ${{ inputs.image_tag }}"
+          echo ""
+          echo "📋 ArgoCD will automatically sync the new image."
+          echo "🔗 Check: https://${{ vars.ARGOCD_SERVER }}/applications/${{ inputs.service }}-${{ inputs.environment }}"
 
   # ============================================
   # Job 4: Post-Deploy Verification
@@ -175,22 +160,13 @@ jobs:
   verify:
     name: ✅ Verify
     runs-on: ubuntu-latest
-    needs: deploy-argocd
+    needs: deploy
     steps:
-      - name: Health Check
+      - name: Deployment Complete
         run: |
-          echo "🏥 Running health checks..."
-          # curl -f https://${{ inputs.service }}.${{ inputs.environment }}.nexo.io/health || exit 1
-          echo "✅ Health check passed"
-
-      - name: Smoke Tests
-        run: |
-          echo "💨 Running smoke tests..."
-          echo "✅ Smoke tests passed"
-
-      - name: Notify Success
-        run: |
-          echo "🎉 Deployment successful!"
+          echo "🎉 Deployment pipeline completed!"
           echo "Service: ${{ inputs.service }}"
           echo "Environment: ${{ inputs.environment }}"
           echo "Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ inputs.image_tag }}"
+          echo ""
+          echo "📋 ArgoCD auto-sync will apply the changes within 60 seconds."

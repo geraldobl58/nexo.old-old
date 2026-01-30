@@ -5,8 +5,8 @@ replicaCount: 2
 
 image:
   repository: docker.io/geraldobl58/nexo-be
-  pullPolicy: IfNotPresent
-  tag: "latest"
+  pullPolicy: Always
+  tag: "develop"
 
 imagePullSecrets:
   - name: dockerhub-secret
