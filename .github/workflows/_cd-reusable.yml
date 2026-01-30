@@ -130,7 +130,7 @@ jobs:
         run: |
           APP_NAME="${{ inputs.service }}-${{ inputs.environment }}"
           echo "🔄 Notifying ArgoCD to refresh ${APP_NAME}..."
-          
+
           if [ -n "$ARGOCD_SERVER" ] && [ -n "$ARGOCD_AUTH_TOKEN" ]; then
             # Trigger hard refresh
             curl -s -X GET \

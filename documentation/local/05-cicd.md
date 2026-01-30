@@ -11,9 +11,20 @@ O pipeline usa GitHub Actions + DockerHub + ArgoCD:
 ```
 ┌─────────┐    ┌──────────┐    ┌───────────┐    ┌────────┐    ┌──────┐
 │ Commit  │───▶│    CI    │───▶│    CD     │───▶│ ArgoCD │───▶│ K3D  │
-│         │    │ (tests)  │    │(DockerHub)│    │ (sync) │    │      │
+│         │    │(build+   │    │(notifica) │    │(deploy)│    │      │
+│         │    │  push)   │    │           │    │        │    │      │
 └─────────┘    └──────────┘    └───────────┘    └────────┘    └──────┘
 ```
+
+### Fluxo Simplificado
+
+1. **Commit/Push** → Dispara CI
+2. **CI** → Build da imagem + Push para DockerHub (tags: branch, sha)
+3. **CD** → Notifica ArgoCD para fazer refresh
+4. **ArgoCD** → Detecta nova imagem e aplica no cluster automaticamente
+
+> O ArgoCD é o único responsável por aplicar mudanças no cluster.
+> Usa `imagePullPolicy: Always` para sempre baixar a imagem mais recente.
 
 ---
 
@@ -23,8 +34,8 @@ O pipeline usa GitHub Actions + DockerHub + ArgoCD:
 .github/workflows/
 ├── ci-main.yml          # Orquestrador CI
 ├── cd-main.yml          # Orquestrador CD
-├── _ci-reusable.yml     # Job reutilizável - testes
-└── _cd-reusable.yml     # Job reutilizável - build/push
+├── _ci-reusable.yml     # Job reutilizável - build/push
+└── _cd-reusable.yml     # Job reutilizável - notifica ArgoCD
 ```
 
 ---
@@ -35,35 +46,31 @@ O pipeline usa GitHub Actions + DockerHub + ArgoCD:
 
 Acessar: **Settings → Secrets and variables → Actions → Secrets**
 
-| Nome                 | Descrição                   | Como Obter                                      |
-| -------------------- | --------------------------- | ----------------------------------------------- |
-| `DOCKERHUB_USERNAME` | Usuário DockerHub           | hub.docker.com → Account Settings               |
-| `DOCKERHUB_TOKEN`    | Access Token DockerHub      | hub.docker.com → Security → New Access Token    |
-| `GH_TOKEN`           | GitHub Personal Token       | GitHub → Settings → Developer → Personal tokens |
-| `KUBECONFIG_DEV`     | Kubeconfig ambiente dev     | Base64 do arquivo kubeconfig                    |
-| `KUBECONFIG_QA`      | Kubeconfig ambiente qa      | Base64 do arquivo kubeconfig                    |
-| `KUBECONFIG_STAGING` | Kubeconfig ambiente staging | Base64 do arquivo kubeconfig                    |
-| `KUBECONFIG_PROD`    | Kubeconfig ambiente prod    | Base64 do arquivo kubeconfig                    |
+| Nome                 | Descrição              | Como Obter                                   |
+| -------------------- | ---------------------- | -------------------------------------------- |
+| `DOCKERHUB_USERNAME` | Usuário DockerHub      | hub.docker.com → Account Settings            |
+| `DOCKERHUB_TOKEN`    | Access Token DockerHub | hub.docker.com → Security → New Access Token |
+| `GH_TOKEN`           | GitHub Personal Token  | GitHub → Settings → Developer → Tokens       |
+
+> ⚠️ **Nota**: Os secrets `KUBECONFIG_*` **não são mais necessários**.
+> O ArgoCD gerencia os deploys automaticamente.
 
 ### Repository Variables (obrigatórios)
 
 Acessar: **Settings → Secrets and variables → Actions → Variables**
 
-| Nome                    | Valor Exemplo     | Descrição                   |
-| ----------------------- | ----------------- | --------------------------- |
-| `REGISTRY`              | `docker.io`       | Registry Docker (DockerHub) |
-| `ARGOCD_SERVER`         | `argocd.nexo.io`  | URL do ArgoCD               |
-| `ARGOCD_AUTH_TOKEN`     | `eyJhb...`        | Token auth do ArgoCD        |
-| `DOMAIN_DEV`            | `develop.nexo.io` | Domínio ambiente develop    |
-| `DOMAIN_STAGING`        | `staging.nexo.io` | Domínio ambiente staging    |
-| `DOMAIN_PROD`           | `prod.nexo.io`    | Domínio ambiente production |
-| `K8S_NAMESPACE_DEV`     | `nexo-develop`    | Namespace K8s develop       |
-| `K8S_NAMESPACE_QA`      | `nexo-qa`         | Namespace K8s qa            |
-| `K8S_NAMESPACE_STAGING` | `nexo-staging`    | Namespace K8s staging       |
-| `K8S_NAMESPACE_PROD`    | `nexo-prod`       | Namespace K8s production    |
-
-> ⚠️ **IMPORTANTE**: A variável `REGISTRY` deve ser `docker.io` (não `ghcr.io`).
-> Se estiver como `ghcr.io/geraldobl58`, altere para `docker.io`.
+| Nome                    | Valor Exemplo     | Descrição                |
+| ----------------------- | ----------------- | ------------------------ |
+| `REGISTRY`              | `docker.io`       | Registry Docker          |
+| `ARGOCD_SERVER`         | `argocd.nexo.io`  | URL do ArgoCD            |
+| `ARGOCD_AUTH_TOKEN`     | `eyJhb...`        | Token auth do ArgoCD     |
+| `DOMAIN_DEV`            | `develop.nexo.io` | Domínio ambiente develop |
+| `DOMAIN_STAGING`        | `staging.nexo.io` | Domínio ambiente staging |
+| `DOMAIN_PROD`           | `prod.nexo.io`    | Domínio ambiente prod    |
+| `K8S_NAMESPACE_DEV`     | `nexo-develop`    | Namespace K8s develop    |
+| `K8S_NAMESPACE_QA`      | `nexo-qa`         | Namespace K8s qa         |
+| `K8S_NAMESPACE_STAGING` | `nexo-staging`    | Namespace K8s staging    |
+| `K8S_NAMESPACE_PROD`    | `nexo-prod`       | Namespace K8s production |
 
 ### Environments (proteção de branches)
 
