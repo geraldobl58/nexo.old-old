@@ -1,7 +1,7 @@
 const HomePage = () => {
   return (
     <>
-      <div>Deployed by Nexo - Soluções em Tecnologia para o Varejo</div>
+      <div>Deploy finalizado com sucesso!</div>
     </>
   );
 };
