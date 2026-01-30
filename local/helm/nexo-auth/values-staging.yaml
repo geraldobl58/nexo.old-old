@@ -7,14 +7,14 @@ image:
 ingress:
   enabled: true
   hosts:
-    - host: auth.staging.nexo.io
+    - host: auth.staging.nexo.local
       paths:
         - path: /
           pathType: Prefix
   tls:
     - secretName: nexo-auth-staging-tls
       hosts:
-        - auth.staging.nexo.io
+        - auth.staging.nexo.local
 
 resources:
   limits:

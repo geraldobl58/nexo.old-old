@@ -1,62 +1,65 @@
 # Values for Production environment
-replicaCount: 3
-
+replicaCount: 1
 image:
-  tag: "" # Set by CI/CD
+  repository: docker.io/geraldobl58/nexo-be
+  tag: "main"
+  pullPolicy: Al  pullPolicy: Al  pullPolicy: Al  pullPolicy: Alt
+iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiam# Values for Staging environment
+replicaCount: 1
+imaprreplicaCount: 1
+image:
+  reposi  image:
+  repos/
+  rep    tag: "staging"
+  pullPolicy: Always
+imag l  pullPolicy: A 5imagePullSecrets:
+ Mi  - name: docker cingress:
+  enabled: true
+i
+  enablli  className: " f  annotations: {}
+  h p  hosts:
+    - hLE    - hrn      paths:
+        - path: /
+  RI        - p "          pathTy_R  tls: []
+resources:
+  li[]resourceup  limits:t:    cpu:ed    memory: ec  requests:
+    in    cpu: 1 d    m cd /Users/geraldoluiz/Development/fullstack/nexo
 
+# Corrigir nexo-fe values-staging
+cat > local/helm/nexo-fe/values-staging.yaml << 'EOF'
+# Values for Staging environment
+replicaCount: 1
+image:
+  repository: docker.io/geraldobl58/nexo-fe
+  tag: "staging"
+  pullPolicy: Always
+imagePullSecrets:
+  - name: dockerhub-secret
 ingress:
   enabled: true
-  annotations:
-    traefik.ingress.kubernetes.io/router.entrypoints: websecure
-    traefik.ingress.kubernetes.io/router.tls: "true"
-    cert-manager.io/cluster-issuer: "letsencrypt-prod"
-    traefik.ingress.kubernetes.io/router.middlewares: nexo-prod-ratelimit@kubernetescrd
+  className: "traefik"
+  annotations: {}
   hosts:
-    - host: api.nexo.io
+    - host: staging.nexo.local
       paths:
         - path: /
           pathType: Prefix
-  tls:
-    - secretName: nexo-be-prod-tls
-      hosts:
-        - api.nexo.io
-
+  tls: []
 resources:
   limits:
-    cpu: 2000m
-    memory: 2048Mi
-  requests:
     cpu: 500m
-    memory: 1024Mi
-
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 256Mi
 autoscaling:
-  enabled: true
-  minReplicas: 3
-  maxReplicas: 10
-  targetCPUUtilizationPercentage: 70
-  targetMemoryUtilizationPercentage: 80
-
+  enabled: false
 env:
-  NODE_ENV: production
-  LOG_LEVEL: warn
-  SWAGGER_ENABLED: "false"
-  METRICS_ENABLED: "true"
-  KEYCLOAK_REALM: nexo-prod
-
-# Para ambiente local, sem secrets externos
+  NODE_ENV: staging
+  NEXT_PUBLIC_API_URL: http://staging.api.nexo.local
+  NEXT_PUBLIC_KEYCLOAK_URL: http://staging.auth.nexo.local
+  NEXT_PUBLIC_KEYCLOAK_REALM: nexo-staging
+  NEXT_PUBLIC_KEYCLOAK_CLIENT_ID: nexo-fe
 envFrom: []
-
 podDisruptionBudget:
-  enabled: true
-  minAvailable: 2
-
-affinity:
-  podAntiAffinity:
-    requiredDuringSchedulingIgnoredDuringExecution:
-      - labelSelector:
-          matchExpressions:
-            - key: app.kubernetes.io/name
-              operator: In
-              values:
-                - nexo-be
-        topologyKey: kubernetes.io/hostname
+  enabled: false

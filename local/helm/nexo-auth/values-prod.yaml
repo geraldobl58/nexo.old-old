@@ -8,16 +8,15 @@ ingress:
   enabled: true
   className: nginx
   annotations:
-    cert-manager.io/cluster-issuer: letsencrypt-prod
   hosts:
-    - host: auth.nexo.io
+    - host: prod.auth.nexo.local
       paths:
         - path: /
           pathType: Prefix
   tls:
     - secretName: nexo-auth-prod-tls
       hosts:
-        - auth.nexo.io
+        - prod.auth.nexo.local
 
 resources:
   limits:
