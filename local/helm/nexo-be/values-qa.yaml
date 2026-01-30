@@ -34,3 +34,5 @@ env:
 envFrom: []
 podDisruptionBudget:
   enabled: false
+podAnnotations:
+  app.kubernetes.io/commit: bad51f0
