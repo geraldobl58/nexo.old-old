@@ -1,40 +1,29 @@
 # Default values for nexo-auth
 replicaCount: 1
-
 image:
   repository: quay.io/keycloak/keycloak
   pullPolicy: IfNotPresent
   tag: "23.0"
-
 # Keycloak specific config
 command: []
 args:
   - start-dev
-
 containerPort: 8080
-
 imagePullSecrets: []
-
 nameOverride: ""
 fullnameOverride: ""
-
 serviceAccount:
   create: true
   annotations: {}
   name: ""
-
 # CD updates this with commit SHA to force pod restart
 podAnnotations:
-  app.kubernetes.io/commit: "latest"
-
+  app.kubernetes.io/commit: "a0a00a7"
 podSecurityContext: {}
-
 securityContext: {}
-
 service:
   type: ClusterIP
   port: 8080
-
 livenessProbe:
   httpGet:
     path: /health/live
@@ -43,7 +32,6 @@ livenessProbe:
   periodSeconds: 15
   timeoutSeconds: 10
   failureThreshold: 10
-
 readinessProbe:
   httpGet:
     path: /health/ready
@@ -52,7 +40,6 @@ readinessProbe:
   periodSeconds: 10
   timeoutSeconds: 5
   failureThreshold: 10
-
 ingress:
   enabled: false
   className: ""
@@ -63,7 +50,6 @@ ingress:
         - path: /
           pathType: Prefix
   tls: []
-
 resources:
   limits:
     cpu: 500m
@@ -71,26 +57,19 @@ resources:
   requests:
     cpu: 100m
     memory: 256Mi
-
 autoscaling:
   enabled: false
   minReplicas: 1
   maxReplicas: 3
   targetCPUUtilizationPercentage: 80
-
 nodeSelector: {}
-
 tolerations: []
-
 affinity: {}
-
 podDisruptionBudget:
   enabled: false
   minAvailable: 1
-
 env:
   NODE_ENV: production
-
 # =============================================================================
 # PostgreSQL Configuration for Keycloak persistence
 # =============================================================================
