@@ -1,7 +1,7 @@
 const HomePage = () => {
   return (
     <>
-      <div>Deploy Teste</div>
+      <div>Deploy Automático Funcionando! 🚀</div>
     </>
   );
 };
