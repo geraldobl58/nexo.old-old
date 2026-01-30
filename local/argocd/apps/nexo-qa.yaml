@@ -12,7 +12,7 @@ metadata:
   annotations:
     argocd-image-updater.argoproj.io/image-list: nexo-be=docker.io/geraldobl58/nexo-be:qa
     argocd-image-updater.argoproj.io/nexo-be.update-strategy: digest
-    argocd-image-updater.argoproj.io/nexo-be.pull-secret: secret:argocd/dockerhub-creds#creds
+    argocd-image-updater.argoproj.io/nexo-be.pull-secret: secret:argocd/dockerhub-secret#creds
     argocd-image-updater.argoproj.io/write-back-method: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
@@ -39,7 +39,7 @@ spec:
         - name: ingress.hosts[0].host
           value: qa.api.nexo.local
         - name: imagePullSecrets[0].name
-          value: dockerhub-creds
+          value: dockerhub-secret
   destination:
     server: https://kubernetes.default.svc
     namespace: nexo-qa
@@ -67,7 +67,7 @@ metadata:
   annotations:
     argocd-image-updater.argoproj.io/image-list: nexo-fe=docker.io/geraldobl58/nexo-fe:qa
     argocd-image-updater.argoproj.io/nexo-fe.update-strategy: digest
-    argocd-image-updater.argoproj.io/nexo-fe.pull-secret: secret:argocd/dockerhub-creds#creds
+    argocd-image-updater.argoproj.io/nexo-fe.pull-secret: secret:argocd/dockerhub-secret#creds
     argocd-image-updater.argoproj.io/write-back-method: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
@@ -94,7 +94,7 @@ spec:
         - name: ingress.hosts[0].host
           value: qa.nexo.local
         - name: imagePullSecrets[0].name
-          value: dockerhub-creds
+          value: dockerhub-secret
   destination:
     server: https://kubernetes.default.svc
     namespace: nexo-qa
@@ -122,7 +122,7 @@ metadata:
   annotations:
     argocd-image-updater.argoproj.io/image-list: nexo-auth=docker.io/geraldobl58/nexo-auth:qa
     argocd-image-updater.argoproj.io/nexo-auth.update-strategy: digest
-    argocd-image-updater.argoproj.io/nexo-auth.pull-secret: secret:argocd/dockerhub-creds#creds
+    argocd-image-updater.argoproj.io/nexo-auth.pull-secret: secret:argocd/dockerhub-secret#creds
     argocd-image-updater.argoproj.io/write-back-method: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io

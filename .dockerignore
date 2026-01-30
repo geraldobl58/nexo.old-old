@@ -148,9 +148,8 @@ Taskfile.*
 # =========================
 apps/**/node_modules
 packages/**/node_modules
-turbo.json
-pnpm-workspace.yaml
-pnpm-lock.yaml
+# NOTA: turbo.json, pnpm-workspace.yaml e pnpm-lock.yaml
+# são NECESSÁRIOS para o build e NÃO devem ser ignorados
 
 # =========================
 # ARQUIVOS DE CONFIGURAÇÃO DESNECESSÁRIOS

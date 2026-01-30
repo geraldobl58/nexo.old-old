@@ -139,16 +139,19 @@ Branch name pattern: develop
 
 ```
 ┌──────────────┐     ┌──────────────┐     ┌──────────────┐
-│  git push    │────▶│   CI Tests   │────▶│  CD Build    │
-│  (branch)    │     │  (lint/test) │     │  (DockerHub) │
+│  git push    │────▶│   CI Build   │────▶│  CD Notify   │
+│  (branch)    │     │  (DockerHub) │     │   (ArgoCD)   │
 └──────────────┘     └──────────────┘     └──────────────┘
                                                  │
                                                  ▼
 ┌──────────────┐     ┌──────────────┐     ┌──────────────┐
-│    K3D       │◀────│    ArgoCD    │◀────│   Image      │
-│   (pods)     │     │    Sync      │     │  Updater     │
+│    K3D       │◀────│    ArgoCD    │◀────│   Refresh    │
+│   (pods)     │     │  Auto-Sync   │     │   (60s)      │
 └──────────────┘     └──────────────┘     └──────────────┘
 ```
+
+> **Nota**: O ArgoCD Image Updater foi desabilitado.
+> O ArgoCD faz sync automático com `imagePullPolicy: Always`.
 
 ### Trigger por Branch
 
@@ -195,13 +198,27 @@ Crie os repositórios no DockerHub:
 
 ☑️ DOCKERHUB_USERNAME    = geraldobl58
 ☑️ DOCKERHUB_TOKEN       = <token>
-☑️ DOCKERHUB_NAMESPACE   = geraldobl58 (variable)
+☑️ GH_TOKEN              = <github token>
+
+# Verificar variables
+# GitHub → Settings → Variables → Actions
+
+☑️ REGISTRY              = docker.io
+☑️ ARGOCD_SERVER         = argocd.nexo.io
+☑️ ARGOCD_AUTH_TOKEN     = <token>
+☑️ DOMAIN_DEV            = develop.nexo.io
+☑️ DOMAIN_STAGING        = staging.nexo.io
+☑️ DOMAIN_PROD           = prod.nexo.io
+☑️ K8S_NAMESPACE_DEV     = nexo-develop
+☑️ K8S_NAMESPACE_QA      = nexo-qa
+☑️ K8S_NAMESPACE_STAGING = nexo-staging
+☑️ K8S_NAMESPACE_PROD    = nexo-prod
 
 # Verificar environments
 ☑️ develop    (branch: develop)
 ☑️ qa         (branch: qa)
 ☑️ staging    (branch: staging)
-☑️ production (branch: main, com aprovação)
+☑️ prod       (branch: main, com aprovação)
 
 # Verificar DockerHub repos
 ☑️ geraldobl58/nexo-fe

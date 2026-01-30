@@ -93,6 +93,8 @@ jobs:
       services: ${{ steps.set-matrix.outputs.services }}
       environment: ${{ steps.set-env.outputs.environment }}
       image_tag: ${{ steps.set-tag.outputs.image_tag }}
+      auto_sync: ${{ steps.set-env.outputs.auto_sync }}
+      require_approval: ${{ steps.set-env.outputs.require_approval }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -115,22 +117,40 @@ jobs:
             case "$BRANCH" in
               develop)
                 echo "environment=dev" >> $GITHUB_OUTPUT
+                echo "auto_sync=true" >> $GITHUB_OUTPUT
+                echo "require_approval=false" >> $GITHUB_OUTPUT
                 ;;
               qa)
                 echo "environment=qa" >> $GITHUB_OUTPUT
+                echo "auto_sync=true" >> $GITHUB_OUTPUT
+                echo "require_approval=false" >> $GITHUB_OUTPUT
                 ;;
               staging)
                 echo "environment=staging" >> $GITHUB_OUTPUT
+                echo "auto_sync=false" >> $GITHUB_OUTPUT
+                echo "require_approval=true" >> $GITHUB_OUTPUT
                 ;;
               main)
                 echo "environment=prod" >> $GITHUB_OUTPUT
+                echo "auto_sync=false" >> $GITHUB_OUTPUT
+                echo "require_approval=true" >> $GITHUB_OUTPUT
                 ;;
               *)
                 echo "environment=dev" >> $GITHUB_OUTPUT
+                echo "auto_sync=true" >> $GITHUB_OUTPUT
+                echo "require_approval=false" >> $GITHUB_OUTPUT
                 ;;
             esac
           else
-            echo "environment=${{ github.event.inputs.environment }}" >> $GITHUB_OUTPUT
+            ENV="${{ github.event.inputs.environment }}"
+            echo "environment=$ENV" >> $GITHUB_OUTPUT
+            if [ "$ENV" == "dev" ] || [ "$ENV" == "qa" ]; then
+              echo "auto_sync=true" >> $GITHUB_OUTPUT
+              echo "require_approval=false" >> $GITHUB_OUTPUT
+            else
+              echo "auto_sync=false" >> $GITHUB_OUTPUT
+              echo "require_approval=true" >> $GITHUB_OUTPUT
+            fi
           fi
 
       - name: Set Image Tag
@@ -143,7 +163,7 @@ jobs:
           fi
 
   # ============================================
-  # Deploy Backend
+  # Deploy Backend (runs first)
   # ============================================
   deploy-backend:
     name: 🔵 Deploy Backend
@@ -155,48 +175,48 @@ jobs:
       environment: ${{ needs.prepare.outputs.environment }}
       image_tag: ${{ needs.prepare.outputs.image_tag }}
       helm_chart_path: local/helm/nexo-be
-      values_file: local/helm/nexo-be/values-${{ needs.prepare.outputs.environment }}.yaml
+      values_file: local/helm/nexo-be/values.yaml
       namespace: nexo-${{ needs.prepare.outputs.environment }}
-      auto_sync: ${{ needs.prepare.outputs.environment == 'dev' }}
-      require_approval: ${{ needs.prepare.outputs.environment == 'prod' }}
+      auto_sync: ${{ fromJson(needs.prepare.outputs.auto_sync) }}
+      require_approval: ${{ fromJson(needs.prepare.outputs.require_approval) }}
     secrets: inherit
 
   # ============================================
-  # Deploy Frontend
+  # Deploy Frontend (waits for backend)
   # ============================================
   deploy-frontend:
     name: 🟢 Deploy Frontend
-    needs: prepare
-    if: contains(fromJson(needs.prepare.outputs.services), 'nexo-fe')
+    needs: [prepare, deploy-backend]
+    if: always() && contains(fromJson(needs.prepare.outputs.services), 'nexo-fe')
     uses: ./.github/workflows/_cd-reusable.yml
     with:
       service: nexo-fe
       environment: ${{ needs.prepare.outputs.environment }}
       image_tag: ${{ needs.prepare.outputs.image_tag }}
       helm_chart_path: local/helm/nexo-fe
-      values_file: local/helm/nexo-fe/values-${{ needs.prepare.outputs.environment }}.yaml
+      values_file: local/helm/nexo-fe/values.yaml
       namespace: nexo-${{ needs.prepare.outputs.environment }}
-      auto_sync: ${{ needs.prepare.outputs.environment == 'dev' }}
-      require_approval: ${{ needs.prepare.outputs.environment == 'prod' }}
+      auto_sync: ${{ fromJson(needs.prepare.outputs.auto_sync) }}
+      require_approval: ${{ fromJson(needs.prepare.outputs.require_approval) }}
     secrets: inherit
 
   # ============================================
-  # Deploy Nexo Auth (Keycloak Theme)
+  # Deploy Nexo Auth (waits for frontend)
   # ============================================
   deploy-nexo-auth:
     name: 🟡 Deploy Nexo Auth
-    needs: prepare
-    if: contains(fromJson(needs.prepare.outputs.services), 'nexo-auth')
+    needs: [prepare, deploy-frontend]
+    if: always() && contains(fromJson(needs.prepare.outputs.services), 'nexo-auth')
     uses: ./.github/workflows/_cd-reusable.yml
     with:
       service: nexo-auth
       environment: ${{ needs.prepare.outputs.environment }}
       image_tag: ${{ needs.prepare.outputs.image_tag }}
       helm_chart_path: local/helm/nexo-auth
-      values_file: local/helm/nexo-auth/values-${{ needs.prepare.outputs.environment }}.yaml
+      values_file: local/helm/nexo-auth/values.yaml
       namespace: nexo-${{ needs.prepare.outputs.environment }}
-      auto_sync: ${{ needs.prepare.outputs.environment == 'dev' }}
-      require_approval: ${{ needs.prepare.outputs.environment == 'prod' }}
+      auto_sync: ${{ fromJson(needs.prepare.outputs.auto_sync) }}
+      require_approval: ${{ fromJson(needs.prepare.outputs.require_approval) }}
     secrets: inherit
 
   # ============================================

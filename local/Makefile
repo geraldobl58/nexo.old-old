@@ -50,6 +50,18 @@ dockerhub-secret: ## Cria o secret do DockerHub em todos os namespaces
 	@chmod +x $(SCRIPTS_DIR)/*.sh
 	@$(SCRIPTS_DIR)/create-dockerhub-secret.sh
 
+argocd-refresh: ## Força refresh de todas as aplicações ArgoCD
+	@chmod +x $(SCRIPTS_DIR)/*.sh
+	@$(SCRIPTS_DIR)/argocd-refresh.sh
+
+argocd-sync: ## Força sync de todas as aplicações ArgoCD
+	@echo "$(C)🔄 Syncing all ArgoCD applications...$(N)"
+	@for app in $$(kubectl get applications -n argocd -o jsonpath='{.items[*].metadata.name}'); do \
+		echo "  Syncing $$app..."; \
+		kubectl patch application $$app -n argocd --type merge -p '{"operation":{"initiatedBy":{"username":"admin"},"sync":{}}}' 2>/dev/null || true; \
+	done
+	@echo "$(G)✅ Sync triggered for all applications$(N)"
+
 # ============================================================================
 # Status e Monitoramento
 # ============================================================================
