@@ -47,9 +47,8 @@ env:
   METRICS_ENABLED: "true"
   KEYCLOAK_REALM: nexo-qa
 
-envFrom:
-  - secretRef:
-      name: nexo-secrets
+# Para ambiente local, sem secrets externos
+envFrom: []
 
 podDisruptionBudget:
   enabled: false
