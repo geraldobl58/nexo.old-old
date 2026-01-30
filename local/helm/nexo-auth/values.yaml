@@ -18,7 +18,7 @@ serviceAccount:
   name: ""
 # CD updates this with commit SHA to force pod restart
 podAnnotations:
-  app.kubernetes.io/commit: "094694c"
+  app.kubernetes.io/commit: "cb3f597"
 podSecurityContext: {}
 securityContext: {}
 service:
