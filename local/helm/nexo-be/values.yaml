@@ -2,34 +2,27 @@
 # This is a YAML-formatted file.
 
 replicaCount: 2
-
 image:
   repository: docker.io/geraldobl58/nexo-be
   pullPolicy: Always
   tag: "develop"
-
 imagePullSecrets:
   - name: dockerhub-secret
-
 nameOverride: ""
 fullnameOverride: ""
-
 serviceAccount:
   create: true
   annotations: {}
   name: ""
-
 podAnnotations:
   prometheus.io/scrape: "true"
   prometheus.io/port: "3000"
   prometheus.io/path: "/metrics"
   # CD updates this with commit SHA to force pod restart
-  app.kubernetes.io/commit: "latest"
-
+  app.kubernetes.io/commit: "a0a00a7"
 podSecurityContext:
   fsGroup: 1000
   runAsNonRoot: true
-
 securityContext:
   allowPrivilegeEscalation: false
   readOnlyRootFilesystem: true
@@ -38,11 +31,9 @@ securityContext:
   capabilities:
     drop:
       - ALL
-
 service:
   type: ClusterIP
   port: 3000
-
 ingress:
   enabled: true
   className: "traefik"
@@ -59,7 +50,6 @@ ingress:
     - secretName: nexo-be-tls
       hosts:
         - api.nexo.io
-
 resources:
   limits:
     cpu: 1000m
@@ -67,18 +57,14 @@ resources:
   requests:
     cpu: 250m
     memory: 512Mi
-
 autoscaling:
   enabled: true
   minReplicas: 2
   maxReplicas: 10
   targetCPUUtilizationPercentage: 70
   targetMemoryUtilizationPercentage: 80
-
 nodeSelector: {}
-
 tolerations: []
-
 affinity:
   podAntiAffinity:
     preferredDuringSchedulingIgnoredDuringExecution:
@@ -91,7 +77,6 @@ affinity:
                 values:
                   - nexo-be
           topologyKey: kubernetes.io/hostname
-
 livenessProbe:
   httpGet:
     path: /health
@@ -100,7 +85,6 @@ livenessProbe:
   periodSeconds: 10
   timeoutSeconds: 5
   failureThreshold: 3
-
 readinessProbe:
   httpGet:
     path: /health
@@ -109,27 +93,22 @@ readinessProbe:
   periodSeconds: 5
   timeoutSeconds: 3
   failureThreshold: 3
-
 env:
   NODE_ENV: production
   PORT: "3000"
   LOG_LEVEL: info
   SWAGGER_ENABLED: "false"
   METRICS_ENABLED: "true"
-
 envFrom:
   - secretRef:
       name: nexo-be-secrets
   - configMapRef:
       name: nexo-be-config
-
 volumes: []
 volumeMounts: []
-
 podDisruptionBudget:
   enabled: true
   minAvailable: 1
-
 networkPolicy:
   enabled: true
   ingress:
