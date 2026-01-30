@@ -1,9 +1,7 @@
 # Values for Staging environment
 replicaCount: 2
-
 image:
   tag: "main"
-
 ingress:
   enabled: true
   hosts:
@@ -15,7 +13,6 @@ ingress:
     - secretName: nexo-be-staging-tls
       hosts:
         - api.staging.nexo.io
-
 resources:
   limits:
     cpu: 1000m
@@ -23,19 +20,18 @@ resources:
   requests:
     cpu: 250m
     memory: 512Mi
-
 autoscaling:
   enabled: true
   minReplicas: 2
   maxReplicas: 5
-
 env:
   NODE_ENV: staging
   LOG_LEVEL: info
   SWAGGER_ENABLED: "false"
   METRICS_ENABLED: "true"
   KEYCLOAK_REALM: nexo-staging
-
 podDisruptionBudget:
   enabled: true
   minAvailable: 1
+podAnnotations:
+  app.kubernetes.io/commit: 063112b
