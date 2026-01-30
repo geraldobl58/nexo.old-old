@@ -104,6 +104,34 @@ kubectl describe pod <pod-name> -n nexo-develop
 | Error 1          | App falhou ao iniciar | Ver logs, corrigir código      |
 | ImagePullBackOff | Imagem não existe     | Verificar DockerHub            |
 
+### CreateContainerConfigError
+
+```bash
+# Ver detalhes do erro
+kubectl describe pod <pod-name> -n nexo-develop
+
+# Erro típico: secret não encontrado
+# "secret 'nexo-secrets' not found"
+```
+
+**Causa:** O pod referencia um Secret que não existe via `envFrom`.
+
+**Solução:** Para ambiente local, remover referências a secrets inexistentes nos arquivos `values-*.yaml`:
+
+```yaml
+# Antes (ERRO)
+envFrom:
+  - secretRef:
+      name: nexo-secrets
+
+# Depois (CORRETO para local)
+envFrom: []
+```
+
+> ⚠️ **Nota**: Os arquivos `values.yaml` base podem ter secrets configurados
+> para produção real. Use `envFrom: []` nos arquivos `values-dev.yaml`,
+> `values-qa.yaml`, `values-staging.yaml` e `values-prod.yaml` para sobrescrever.
+
 ### Pod em Pending
 
 ```bash
@@ -193,6 +221,34 @@ kubectl get svc nexo-fe -n nexo-develop
 kubectl get endpoints nexo-fe -n nexo-develop
 ```
 
+**Causas comuns de 404 no ambiente local K3D:**
+
+| Causa | Verificação | Solução |
+|-------|-------------|---------|
+| Ingress class errado | `kubectl get ingress -n nexo-qa -o yaml \| grep className` | Alterar de `nginx` para `traefik` |
+| TLS habilitado sem cert | `kubectl get ingress -o yaml \| grep tls` | Remover configuração TLS |
+| Annotations TLS | `kubectl get ingress -o jsonpath='{.metadata.annotations}'` | Remover annotations de TLS |
+
+**Corrigir ingress class e TLS:**
+
+Os arquivos `values-*.yaml` em `local/helm/` devem ter:
+
+```yaml
+ingress:
+  enabled: true
+  className: "traefik"  # NÃO use "nginx" no K3D
+  annotations: {}       # Sem annotations de TLS para local
+  hosts:
+    - host: qa.nexo.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []  # Vazio para ambiente local
+```
+
+> ⚠️ **Importante**: No K3D local, o único ingress controller é o **Traefik**.
+> Não use `nginx` como className. Também não configure TLS pois não há cert-manager.
+
 ### 502 Bad Gateway
 
 ```bash
@@ -209,6 +265,40 @@ kubectl get svc nexo-be -n nexo-develop -o yaml
 ---
 
 ## 🔄 ArgoCD
+
+### App usando values file errado
+
+```bash
+# Verificar qual values file o app está usando
+kubectl get app nexo-fe-qa -n argocd -o yaml | grep -A5 valueFiles
+```
+
+**Problema:** App ArgoCD pode estar usando `values-local.yaml` ou `values.yaml` 
+em vez do arquivo específico do ambiente (`values-qa.yaml`, `values-prod.yaml`, etc.).
+
+**Solução:** Editar os arquivos de Application em `local/argocd/apps/`:
+
+```yaml
+# local/argocd/apps/nexo-qa.yaml
+spec:
+  sources:
+    - repoURL: https://github.com/geraldobl58/nexo.git
+      path: local/helm/nexo-fe
+      targetRevision: qa  # Branch correto
+      helm:
+        valueFiles:
+          - values.yaml
+          - values-qa.yaml  # Arquivo específico do ambiente
+```
+
+**Mapping ambiente → values file:**
+
+| Ambiente | Branch  | Values File        |
+|----------|---------|-------------------|
+| develop  | develop | `values-dev.yaml` |
+| qa       | qa      | `values-qa.yaml`  |
+| staging  | staging | `values-staging.yaml` |
+| prod     | main    | `values-prod.yaml` |
 
 ### App OutOfSync
 

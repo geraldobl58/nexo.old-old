@@ -6,23 +6,14 @@ image:
 
 ingress:
   enabled: true
-  annotations:
-    traefik.ingress.kubernetes.io/router.entrypoints: websecure
-    traefik.ingress.kubernetes.io/router.tls: "true"
+  className: "traefik"
+  annotations: {}
   hosts:
     - host: prod.nexo.local
       paths:
         - path: /
           pathType: Prefix
-    - host: prod.nexo.local
-      paths:
-        - path: /
-          pathType: Prefix
-  tls:
-    - secretName: nexo-fe-prod-tls
-      hosts:
-        - prod.nexo.local
-        - prod.nexo.local
+  tls: []
 
 resources:
   limits:
