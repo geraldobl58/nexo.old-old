@@ -10,7 +10,7 @@ metadata:
   name: nexo-be-prod
   namespace: argocd
   annotations:
-    argocd-image-updater.argoproj.io/image-list: nexo-be=docker.io/geraldobl58/nexo-be:main
+    argocd-image-updater.argoproj.io/image-list: nexo-be=docker.io/geraldobl58/nexo-be:latest
     argocd-image-updater.argoproj.io/nexo-be.update-strategy: digest
     argocd-image-updater.argoproj.io/nexo-be.pull-secret: secret:argocd/dockerhub-secret#creds
     argocd-image-updater.argoproj.io/write-back-method: argocd
@@ -33,7 +33,7 @@ spec:
         - name: image.repository
           value: docker.io/geraldobl58/nexo-be
         - name: image.tag
-          value: main
+          value: latest
         - name: image.pullPolicy
           value: Always
         - name: ingress.hosts[0].host
@@ -65,7 +65,7 @@ metadata:
   name: nexo-fe-prod
   namespace: argocd
   annotations:
-    argocd-image-updater.argoproj.io/image-list: nexo-fe=docker.io/geraldobl58/nexo-fe:main
+    argocd-image-updater.argoproj.io/image-list: nexo-fe=docker.io/geraldobl58/nexo-fe:latest
     argocd-image-updater.argoproj.io/nexo-fe.update-strategy: digest
     argocd-image-updater.argoproj.io/nexo-fe.pull-secret: secret:argocd/dockerhub-secret#creds
     argocd-image-updater.argoproj.io/write-back-method: argocd
@@ -88,7 +88,7 @@ spec:
         - name: image.repository
           value: docker.io/geraldobl58/nexo-fe
         - name: image.tag
-          value: main
+          value: latest
         - name: image.pullPolicy
           value: Always
         - name: ingress.hosts[0].host
@@ -120,7 +120,7 @@ metadata:
   name: nexo-auth-prod
   namespace: argocd
   annotations:
-    argocd-image-updater.argoproj.io/image-list: nexo-auth=docker.io/geraldobl58/nexo-auth:main
+    argocd-image-updater.argoproj.io/image-list: nexo-auth=docker.io/geraldobl58/nexo-auth:latest
     argocd-image-updater.argoproj.io/nexo-auth.update-strategy: digest
     argocd-image-updater.argoproj.io/nexo-auth.pull-secret: secret:argocd/dockerhub-secret#creds
     argocd-image-updater.argoproj.io/write-back-method: argocd
