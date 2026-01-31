@@ -38,4 +38,4 @@ envFrom: []
 podDisruptionBudget:
   enabled: false
 podAnnotations:
-  app.kubernetes.io/commit: 47b986a
+  app.kubernetes.io/commit: "1114473"
