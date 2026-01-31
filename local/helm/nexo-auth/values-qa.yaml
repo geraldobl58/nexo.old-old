@@ -70,4 +70,4 @@ postgresql:
       cpu: 100m
       memory: 256Mi
 podAnnotations:
-  app.kubernetes.io/commit: 892abdb
+  app.kubernetes.io/commit: 113fa62
