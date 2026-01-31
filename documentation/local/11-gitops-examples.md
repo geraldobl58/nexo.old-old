@@ -3,6 +3,7 @@
 ## Cenário 1: Nova Feature
 
 ### Desenvolvimento
+
 ```bash
 # 1. Criar branch de feature
 git checkout develop
@@ -30,6 +31,7 @@ git push origin feature/add-user-profile
 ```
 
 ### Promoção
+
 ```bash
 # Após validação no develop
 ./scripts/promote.sh develop qa

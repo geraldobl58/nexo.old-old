@@ -113,12 +113,12 @@
 
 ### Branches → Tags → Namespaces
 
-| Git Branch | Docker Tag | K8s Namespace | ArgoCD App | Auto Sync |
-|------------|------------|---------------|------------|-----------|
-| `develop` | `develop` | `nexo-develop` | `nexo-be-develop` | ✅ Yes |
-| `qa` | `qa` | `nexo-qa` | `nexo-be-qa` | ✅ Yes |
-| `staging` | `staging` | `nexo-staging` | `nexo-be-staging` | ✅ Yes |
-| `main` | `latest` | `nexo-prod` | `nexo-be-prod` | ❌ No (Manual) |
+| Git Branch | Docker Tag | K8s Namespace  | ArgoCD App        | Auto Sync      |
+| ---------- | ---------- | -------------- | ----------------- | -------------- |
+| `develop`  | `develop`  | `nexo-develop` | `nexo-be-develop` | ✅ Yes         |
+| `qa`       | `qa`       | `nexo-qa`      | `nexo-be-qa`      | ✅ Yes         |
+| `staging`  | `staging`  | `nexo-staging` | `nexo-be-staging` | ✅ Yes         |
+| `main`     | `latest`   | `nexo-prod`    | `nexo-be-prod`    | ❌ No (Manual) |
 
 ### Domínios por Ambiente
 
@@ -145,7 +145,7 @@
 
    ┌────────────┐
    │  Feature   │  Desenvolvimento local
-   │  Branch    │  
+   │  Branch    │
    └─────┬──────┘
          │
          │ PR / Merge
@@ -184,28 +184,33 @@
 ## Componentes do Sistema
 
 ### 1. GitHub Actions (CI)
+
 - **Responsabilidade:** Build, Test, Package
 - **Triggers:** Push em branches principais
 - **Output:** Docker images no Docker Hub
 
 ### 2. Docker Hub (Registry)
+
 - **Responsabilidade:** Armazenar imagens Docker
 - **Tags:** develop, qa, staging, latest
 - **Acesso:** Público para pull, autenticado para push
 
 ### 3. ArgoCD Image Updater (CD - Detector)
+
 - **Responsabilidade:** Detectar novas imagens
 - **Polling:** A cada 2 minutos
 - **Estratégia:** Digest-based (SHA256)
 - **Action:** Atualiza manifestos do ArgoCD
 
 ### 4. ArgoCD (CD - Deployer)
+
 - **Responsabilidade:** Deploy no Kubernetes
 - **Sync:** Automático (exceto prod)
 - **Source of Truth:** Git + Docker Hub
 - **Prune:** Sim (remove recursos órfãos)
 
 ### 5. Kubernetes (Runtime)
+
 - **Responsabilidade:** Executar aplicações
 - **Isolamento:** Namespaces por ambiente
 - **Health Checks:** Liveness + Readiness probes
@@ -214,18 +219,21 @@
 ## Checklist de Deploy
 
 ### ✅ Pre-Deploy
+
 - [ ] Testes passando no CI
 - [ ] Build bem-sucedido
 - [ ] Image pushed to registry
 - [ ] Ambiente anterior validado
 
 ### ✅ Durante Deploy
+
 - [ ] Image Updater detectou nova versão
 - [ ] ArgoCD sync iniciado
 - [ ] Pods sendo recriados
 - [ ] Health checks passando
 
 ### ✅ Post-Deploy
+
 - [ ] Todos os pods healthy
 - [ ] Endpoints respondendo
 - [ ] Logs sem erros críticos
