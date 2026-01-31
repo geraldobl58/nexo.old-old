@@ -1,7 +1,7 @@
 const HomePage = () => {
   return (
     <>
-      <div>Vamos lá! Verifica se a FRONT está funcionando</div>
+      <div>1</div>
     </>
   );
 };
