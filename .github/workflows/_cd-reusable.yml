@@ -164,6 +164,8 @@ jobs:
             echo "ℹ️ No changes to commit (commit already up to date)"
           else
             git add ${{ inputs.values_file }}
+            # [skip ci] é reconhecido pelo GitHub Actions e evita loops
+            # O CI tem lógica para NÃO pular em merges de PR
             git commit -m "deploy(${{ inputs.environment }}): ${{ inputs.service }} → ${SHORT_SHA} [skip ci]"
             
             # Pull with rebase to handle parallel pushes

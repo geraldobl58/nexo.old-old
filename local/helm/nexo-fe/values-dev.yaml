@@ -36,4 +36,4 @@ env:
 podDisruptionBudget:
   enabled: false
 podAnnotations:
-  app.kubernetes.io/commit: 5d607bb
+  app.kubernetes.io/commit: "16ff42f"
