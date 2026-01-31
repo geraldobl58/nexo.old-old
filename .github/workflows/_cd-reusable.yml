@@ -164,7 +164,11 @@ jobs:
             echo "ℹ️ No changes to commit (commit already up to date)"
           else
             git add ${{ inputs.values_file }}
-            git commit -m "deploy(${{ inputs.environment }}): ${{ inputs.service }} → ${SHORT_SHA} [skip ci]"
+            # Usar trailer skip-checks ao invés de [skip ci] na mensagem
+            # Isso evita que merges subsequentes pulem o CI
+            git commit -m "deploy(${{ inputs.environment }}): ${{ inputs.service }} → ${SHORT_SHA}" \
+              -m "" \
+              -m "skip-checks: true"
             
             # Pull with rebase to handle parallel pushes
             for i in 1 2 3 4 5; do

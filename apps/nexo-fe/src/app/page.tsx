@@ -1,7 +1,7 @@
 const HomePage = () => {
   return (
     <>
-      <div>Iniciar desenvolvimento 2</div>
+      <div>Vamos lá! Verifica se a API está funcionando</div>
     </>
   );
 };
