@@ -1,12 +1,14 @@
 # Values for Staging environment
 # Deploy automático via branch 'staging'
 replicaCount: 2
+
 image:
   repository: docker.io/geraldobl58/nexo-fe
   tag: "staging"
   pullPolicy: Always
-imagePullSecrets:
-  - name: dockerhub-secret
+
+imagePullSecrets: []
+
 ingress:
   enabled: true
   className: "traefik"
@@ -20,6 +22,7 @@ ingress:
     - secretName: nexo-fe-staging-tls
       hosts:
         - staging.nexo.local
+
 resources:
   limits:
     cpu: 1000m
@@ -27,21 +30,26 @@ resources:
   requests:
     cpu: 250m
     memory: 512Mi
+
 autoscaling:
   enabled: true
   minReplicas: 2
   maxReplicas: 4
   targetCPUUtilizationPercentage: 70
+
 env:
   NODE_ENV: staging
   NEXT_PUBLIC_API_URL: https://api.staging.nexo.local
   NEXT_PUBLIC_KEYCLOAK_URL: https://auth.staging.nexo.local
   NEXT_PUBLIC_KEYCLOAK_REALM: nexo-staging
   NEXT_PUBLIC_KEYCLOAK_CLIENT_ID: nexo-fe
+
 # Para ambiente local, sem secrets externos
 envFrom: []
+
 podDisruptionBudget:
   enabled: true
   minAvailable: 1
+
 podAnnotations:
-  app.kubernetes.io/commit: bad51f0
+  app.kubernetes.io/commit: "initial"

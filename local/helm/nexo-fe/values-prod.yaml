@@ -1,8 +1,13 @@
 # Values for Production environment
+# Deploy automático via branch 'main'
 replicaCount: 3
 
 image:
-  tag: "" # Set by CI/CD
+  repository: docker.io/geraldobl58/nexo-fe
+  tag: "main"
+  pullPolicy: Always
+
+imagePullSecrets: []
 
 ingress:
   enabled: true
@@ -38,3 +43,6 @@ env:
 podDisruptionBudget:
   enabled: true
   minAvailable: 2
+
+podAnnotations:
+  app.kubernetes.io/commit: "initial"

@@ -1,8 +1,13 @@
 # Values for Production environment
+# Deploy automático via branch 'main'
 replicaCount: 2
 
 image:
-  tag: "latest"
+  repository: docker.io/geraldobl58/nexo-auth
+  tag: "main"
+  pullPolicy: Always
+
+imagePullSecrets: []
 
 ingress:
   enabled: true
@@ -63,3 +68,6 @@ postgresql:
     requests:
       cpu: 250m
       memory: 512Mi
+
+podAnnotations:
+  app.kubernetes.io/commit: "initial"
