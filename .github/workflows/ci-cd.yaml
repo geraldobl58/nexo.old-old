@@ -102,9 +102,9 @@ jobs:
         run: |
           BRANCH="${{ steps.branch.outputs.name }}"
           CHANGES='${{ steps.filter.outputs.changes }}'
-
+          
           echo "Filter detected: $CHANGES"
-
+          
           # Se é um merge (qa, staging, main) E não detectou mudanças específicas,
           # builda todos os apps que têm Dockerfile
           if [[ "$BRANCH" != "develop" && ("$CHANGES" == "[]" || -z "$CHANGES") ]]; then
