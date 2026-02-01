@@ -125,19 +125,25 @@ Adicione ao `/etc/hosts`:
 
 ## 📖 Documentação
 
-Toda a documentação está consolidada em `/documentation/local`:
+Toda a documentação está consolidada em `/documentation`:
 
-| Documento                                                     | Descrição                     |
-| ------------------------------------------------------------- | ----------------------------- |
-| [README K3D](documentation/local/README.md)                   | Guia completo do ambiente K3D |
-| [Quick Start](documentation/local/quick-start.md)             | Setup em 5 minutos            |
-| [Environments](documentation/local/environments.md)           | Diferenças entre ambientes    |
-| [Kubernetes](documentation/local/kubernetes.md)               | Namespaces, Ingress, PVC      |
-| [Deploy](documentation/local/deploy.md)                       | CI/CD e deploy                |
-| [GitHub Actions](documentation/local/github-actions.md)       | CI/CD pipelines               |
-| [GitHub Secrets](documentation/local/github-secrets.md)       | Secrets necessários           |
-| [Observabilidade](documentation/local/observability-guide.md) | Prometheus, Grafana, Alertas  |
-| [Troubleshooting](documentation/local/troubleshooting.md)     | Erros comuns e soluções       |
+| Documento                                                                 | Descrição                                                                                       |
+| ------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| **[🚀 Enterprise Pipeline](documentation/enterprise-pipeline/README.md)** | **⭐ NOVO** - Pipeline CI/CD enterprise-grade (Netflix/Spotify/Uber patterns) adaptada para K3D |
+| [README K3D](documentation/local/README.md)                               | Guia completo do ambiente K3D                                                                   |
+| [Quick Start](documentation/local/01-quick-start.md)                      | Setup em 5 minutos                                                                              |
+| [Environments](documentation/local/03-environment.md)                     | Diferenças entre ambientes                                                                      |
+| [Kubernetes](documentation/local/02-architecture.md)                      | Arquitetura técnica                                                                             |
+| [Deploy](documentation/local/05-cicd.md)                                  | CI/CD e deploy (implementação atual)                                                            |
+| [GitHub Actions](documentation/local/04-github-setup.md)                  | GitHub Secrets e Variables                                                                      |
+| [Observabilidade](documentation/local/09-observability.md)                | Prometheus, Grafana, Alertas                                                                    |
+| [Troubleshooting](documentation/local/10-troubleshooting.md)              | Erros comuns e soluções                                                                         |
+
+**🎯 Por onde começar:**
+
+1. **Arquitetura & Estratégia**: [Enterprise Pipeline Overview](documentation/enterprise-pipeline/00-k3d-integration.md)
+2. **Setup Prático**: [Quick Start K3D](documentation/local/01-quick-start.md)
+3. **Operação Diária**: [Development Guide](documentation/local/07-development.md)
 
 ---
 
