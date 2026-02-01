@@ -1,7 +1,14 @@
 # Values for Production environment
+# Deploy automático via branch 'main'
 replicaCount: 2
+
 image:
-  tag: "latest"
+  repository: docker.io/geraldobl58/nexo-auth
+  tag: "main"
+  pullPolicy: Always
+
+imagePullSecrets: []
+
 ingress:
   enabled: true
   className: "traefik"
@@ -12,6 +19,7 @@ ingress:
         - path: /
           pathType: Prefix
   tls: []
+
 resources:
   limits:
     cpu: 1000m
@@ -19,11 +27,13 @@ resources:
   requests:
     cpu: 200m
     memory: 512Mi
+
 autoscaling:
   enabled: true
   minReplicas: 2
   maxReplicas: 5
   targetCPUUtilizationPercentage: 70
+
 env:
   NODE_ENV: production
   LOG_LEVEL: info
@@ -34,7 +44,9 @@ env:
   KC_HTTP_ENABLED: "true"
   KC_HEALTH_ENABLED: "true"
   KC_METRICS_ENABLED: "true"
+
 envFrom: []
+
 postgresql:
   enabled: true
   image:
@@ -56,5 +68,6 @@ postgresql:
     requests:
       cpu: 250m
       memory: 512Mi
+
 podAnnotations:
-  app.kubernetes.io/commit: bad51f0
+  app.kubernetes.io/commit: "initial"
