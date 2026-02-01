@@ -52,4 +52,4 @@ podDisruptionBudget:
   minAvailable: 1
 
 podAnnotations:
-  app.kubernetes.io/commit: "initial"
+  app.kubernetes.io/commit: "bc725db"
