@@ -1,7 +1,7 @@
 const HomePage = () => {
   return (
     <>
-      <div>1</div>
+      <div>Novo deploy 1</div>
     </>
   );
 };
