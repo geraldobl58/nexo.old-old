@@ -464,9 +464,10 @@ jobs:
       github.event_name == 'push' &&
       needs.preflight.outputs.is_pr == 'false' &&
       needs.preflight.outputs.environment != 'unknown' &&
-      (needs.build-backend.result == 'success' || 
-       needs.build-frontend.result == 'success' || 
-       needs.build-auth.result == 'success')
+      needs.detect-changes.outputs.any-change == 'true' &&
+      (needs.build-backend.result == 'success' || needs.build-backend.result == 'skipped') &&
+      (needs.build-frontend.result == 'success' || needs.build-frontend.result == 'skipped') &&
+      (needs.build-auth.result == 'success' || needs.build-auth.result == 'skipped')
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -479,63 +480,33 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Update Backend values
-        if: needs.build-backend.result == 'success'
+      - name: Update all values files
         run: |
           ENV="${{ needs.preflight.outputs.environment }}"
           COMMIT_SHA="${{ github.sha }}"
           SHORT_SHA="${COMMIT_SHA:0:7}"
-
-          VALUES_FILE="local/helm/nexo-be/values-${ENV}.yaml"
-
-          if [ -f "$VALUES_FILE" ]; then
-            # Atualizar annotation com commit SHA
-            sed -i.bak "s/app.kubernetes.io\/commit: \".*\"/app.kubernetes.io\/commit: \"$SHORT_SHA\"/" "$VALUES_FILE"
-            rm -f "${VALUES_FILE}.bak"
+          
+          echo "🔄 Updating values for environment: $ENV"
+          echo "📝 Commit SHA: $SHORT_SHA"
+          
+          # Atualizar todos os serviços que tiveram build ou foram forçados
+          for SERVICE in nexo-be nexo-fe nexo-auth; do
+            VALUES_FILE="local/helm/${SERVICE}/values-${ENV}.yaml"
             
-            git add "$VALUES_FILE"
-            echo "✅ Updated $VALUES_FILE with commit $SHORT_SHA"
-          else
-            echo "⚠️ Values file not found: $VALUES_FILE"
-          fi
-
-      - name: Update Frontend values
-        if: needs.build-frontend.result == 'success'
-        run: |
-          ENV="${{ needs.preflight.outputs.environment }}"
-          COMMIT_SHA="${{ github.sha }}"
-          SHORT_SHA="${COMMIT_SHA:0:7}"
-
-          VALUES_FILE="local/helm/nexo-fe/values-${ENV}.yaml"
-
-          if [ -f "$VALUES_FILE" ]; then
-            sed -i.bak "s/app.kubernetes.io\/commit: \".*\"/app.kubernetes.io\/commit: \"$SHORT_SHA\"/" "$VALUES_FILE"
-            rm -f "${VALUES_FILE}.bak"
-            
-            git add "$VALUES_FILE"
-            echo "✅ Updated $VALUES_FILE with commit $SHORT_SHA"
-          else
-            echo "⚠️ Values file not found: $VALUES_FILE"
-          fi
-
-      - name: Update Auth values
-        if: needs.build-auth.result == 'success'
-        run: |
-          ENV="${{ needs.preflight.outputs.environment }}"
-          COMMIT_SHA="${{ github.sha }}"
-          SHORT_SHA="${COMMIT_SHA:0:7}"
-
-          VALUES_FILE="local/helm/nexo-auth/values-${ENV}.yaml"
-
-          if [ -f "$VALUES_FILE" ]; then
-            sed -i.bak "s/app.kubernetes.io\/commit: \".*\"/app.kubernetes.io\/commit: \"$SHORT_SHA\"/" "$VALUES_FILE"
-            rm -f "${VALUES_FILE}.bak"
-            
-            git add "$VALUES_FILE"
-            echo "✅ Updated $VALUES_FILE with commit $SHORT_SHA"
-          else
-            echo "⚠️ Values file not found: $VALUES_FILE"
-          fi
+            if [ -f "$VALUES_FILE" ]; then
+              # macOS sed requer argumento vazio para -i
+              if [[ "$OSTYPE" == "darwin"* ]]; then
+                sed -i '' "s/app.kubernetes.io\/commit: \"[^\"]*\"/app.kubernetes.io\/commit: \"$SHORT_SHA\"/" "$VALUES_FILE"
+              else
+                sed -i "s/app.kubernetes.io\/commit: \"[^\"]*\"/app.kubernetes.io\/commit: \"$SHORT_SHA\"/" "$VALUES_FILE"
+              fi
+              
+              git add "$VALUES_FILE"
+              echo "✅ Updated $VALUES_FILE with commit $SHORT_SHA"
+            else
+              echo "⚠️ Values file not found: $VALUES_FILE"
+            fi
+          done
 
       - name: Commit and push
         run: |
@@ -543,14 +514,14 @@ jobs:
           NAMESPACE="${{ needs.preflight.outputs.namespace }}"
           SHORT_SHA="${{ github.sha }}"
           SHORT_SHA="${SHORT_SHA:0:7}"
-
+          
           # Verificar se há mudanças
           if git diff --cached --quiet; then
             echo "⚠️ No changes to commit"
             exit 0
           fi
-
-          # Commit com [skip ci] para evitar loop
+          
+          # Listar serviços que foram deployados baseado em quais builds rodaram
           SERVICES=""
           if [ "${{ needs.build-backend.result }}" == "success" ]; then
             SERVICES="${SERVICES} nexo-be"
@@ -560,6 +531,11 @@ jobs:
           fi
           if [ "${{ needs.build-auth.result }}" == "success" ]; then
             SERVICES="${SERVICES} nexo-auth"
+          fi
+          
+          # Se nenhum build rodou (todos skipped), significa que forçamos build de tudo
+          if [ -z "$SERVICES" ]; then
+            SERVICES=" nexo-be nexo-fe nexo-auth"
           fi
 
           git commit -m "deploy($ENV):$SERVICES → $SHORT_SHA [skip ci]"
