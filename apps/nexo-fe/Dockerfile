@@ -69,6 +69,9 @@ COPY --from=builder --chown=nextjs:nodejs /app/apps/nexo-fe/.next/static ./apps/
 # Copy public directory to the correct location for standalone
 COPY --from=builder --chown=nextjs:nodejs /app/apps/nexo-fe/public ./apps/nexo-fe/public
 
+# Copy node_modules from builder (includes next and dependencies)
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
+
 # Switch to non-root user
 USER nextjs
 
