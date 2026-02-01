@@ -16,10 +16,6 @@ on:
       - qa # Ambiente de QA/testes
       - staging # Ambiente de staging/homologação
       - main # Ambiente de produção
-    paths:
-      - "apps/**"
-      - "packages/**"
-      - ".github/workflows/**"
   pull_request:
     branches:
       - develop
@@ -42,26 +38,15 @@ jobs:
     name: Detect Changes
     runs-on: ubuntu-latest
     outputs:
-      apps: ${{ steps.filter.outputs.changes }}
+      apps: ${{ steps.set-matrix.outputs.apps }}
+      has_changes: ${{ steps.set-matrix.outputs.has_changes }}
       branch: ${{ steps.branch.outputs.name }}
       tag: ${{ steps.tag.outputs.name }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Detect changed apps
-        uses: dorny/paths-filter@v3
-        id: filter
         with:
-          filters: |
-            nexo-be:
-              - 'apps/nexo-be/**'
-              - 'packages/**'
-            nexo-fe:
-              - 'apps/nexo-fe/**'
-              - 'packages/**'
-            nexo-auth:
-              - 'apps/nexo-auth/**'
+          fetch-depth: 0
 
       - name: Get branch name
         id: branch
@@ -96,6 +81,57 @@ jobs:
               ;;
           esac
 
+      - name: Detect changed apps
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          # Para merges, compara com o commit base do merge
+          base: ${{ github.event.before }}
+          filters: |
+            nexo-be:
+              - 'apps/nexo-be/**'
+              - 'packages/**'
+            nexo-fe:
+              - 'apps/nexo-fe/**'
+              - 'packages/**'
+            nexo-auth:
+              - 'apps/nexo-auth/**'
+
+      - name: Set matrix output
+        id: set-matrix
+        run: |
+          BRANCH="${{ steps.branch.outputs.name }}"
+          CHANGES='${{ steps.filter.outputs.changes }}'
+          
+          echo "Filter detected: $CHANGES"
+          
+          # Se é um merge (qa, staging, main) E não detectou mudanças específicas,
+          # builda todos os apps que têm Dockerfile
+          if [[ "$BRANCH" != "develop" && ("$CHANGES" == "[]" || -z "$CHANGES") ]]; then
+            echo "Merge detected on $BRANCH without specific changes - building all apps"
+            # Verificar quais apps existem
+            APPS="[]"
+            if [ -f "apps/nexo-be/Dockerfile" ]; then
+              APPS=$(echo "$APPS" | jq '. + ["nexo-be"]')
+            fi
+            if [ -f "apps/nexo-fe/Dockerfile" ]; then
+              APPS=$(echo "$APPS" | jq '. + ["nexo-fe"]')
+            fi
+            if [ -f "apps/nexo-auth/Dockerfile" ]; then
+              APPS=$(echo "$APPS" | jq '. + ["nexo-auth"]')
+            fi
+            echo "apps=$APPS" >> $GITHUB_OUTPUT
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          elif [[ "$CHANGES" != "[]" && -n "$CHANGES" ]]; then
+            echo "Changes detected: $CHANGES"
+            echo "apps=$CHANGES" >> $GITHUB_OUTPUT
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          else
+            echo "No changes detected"
+            echo "apps=[]" >> $GITHUB_OUTPUT
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          fi
+
   # ============================================================================
   # Job 2: Build e Testes (executa em PRs e pushes)
   # ============================================================================
@@ -103,8 +139,9 @@ jobs:
     name: Test - ${{ matrix.app }}
     runs-on: ubuntu-latest
     needs: detect-changes
-    if: needs.detect-changes.outputs.apps != '[]'
+    if: needs.detect-changes.outputs.has_changes == 'true'
     strategy:
+      fail-fast: false
       matrix:
         app: ${{ fromJSON(needs.detect-changes.outputs.apps) }}
     steps:
@@ -145,12 +182,13 @@ jobs:
     needs: [detect-changes, test]
     if: |
       github.event_name == 'push' && 
-      needs.detect-changes.outputs.apps != '[]' &&
+      needs.detect-changes.outputs.has_changes == 'true' &&
       (github.ref == 'refs/heads/develop' || 
        github.ref == 'refs/heads/qa' || 
        github.ref == 'refs/heads/staging' || 
        github.ref == 'refs/heads/main')
     strategy:
+      fail-fast: false
       matrix:
         app: ${{ fromJSON(needs.detect-changes.outputs.apps) }}
     steps:
