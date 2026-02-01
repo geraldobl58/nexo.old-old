@@ -162,7 +162,7 @@ jobs:
         id: merge-check
         run: |
           BRANCH="${{ needs.preflight.outputs.branch }}"
-          
+
           # Verificar se é um merge commit (tem mais de 1 parent)
           if git rev-parse --verify HEAD^2 >/dev/null 2>&1; then
             echo "is_merge=true" >> $GITHUB_OUTPUT
@@ -171,7 +171,7 @@ jobs:
             echo "is_merge=false" >> $GITHUB_OUTPUT
             echo "📝 Regular commit"
           fi
-          
+
           # Para qa, staging e main, sempre buildar tudo em caso de merge
           if [[ "$BRANCH" =~ ^(qa|staging|main)$ ]]; then
             echo "force_build=true" >> $GITHUB_OUTPUT
@@ -190,7 +190,7 @@ jobs:
           FORCE_BUILD="${{ steps.merge-check.outputs.force_build }}"
           IS_MERGE="${{ steps.merge-check.outputs.is_merge }}"
           BRANCH="${{ needs.preflight.outputs.branch }}"
-          
+
           echo "📊 Detection Results:"
           echo "  - Branch: $BRANCH"
           echo "  - Is Merge: $IS_MERGE"
@@ -198,12 +198,12 @@ jobs:
           echo "  - Filter BE: $BE"
           echo "  - Filter FE: $FE"
           echo "  - Filter AUTH: $AUTH"
-          
+
           # Lógica de decisão:
           # 1. Se force_all=true (manual), buildar tudo
           # 2. Se é qa/staging/main, buildar tudo (promoção)
           # 3. Senão, usar detecção de paths
-          
+
           if [[ "$FORCE" == "true" || "$FORCE_BUILD" == "true" ]]; then
             echo "🚀 Building all services (force mode)"
             echo "nexo-be=true" >> $GITHUB_OUTPUT
@@ -485,10 +485,10 @@ jobs:
           ENV="${{ needs.preflight.outputs.environment }}"
           COMMIT_SHA="${{ github.sha }}"
           SHORT_SHA="${COMMIT_SHA:0:7}"
-          
+
           echo "🔄 Updating values for environment: $ENV"
           echo "📝 Commit SHA: $SHORT_SHA"
-          
+
           # Atualizar todos os serviços que tiveram build ou foram forçados
           for SERVICE in nexo-be nexo-fe nexo-auth; do
             VALUES_FILE="local/helm/${SERVICE}/values-${ENV}.yaml"
@@ -514,13 +514,13 @@ jobs:
           NAMESPACE="${{ needs.preflight.outputs.namespace }}"
           SHORT_SHA="${{ github.sha }}"
           SHORT_SHA="${SHORT_SHA:0:7}"
-          
+
           # Verificar se há mudanças
           if git diff --cached --quiet; then
             echo "⚠️ No changes to commit"
             exit 0
           fi
-          
+
           # Listar serviços que foram deployados baseado em quais builds rodaram
           SERVICES=""
           if [ "${{ needs.build-backend.result }}" == "success" ]; then
@@ -532,7 +532,7 @@ jobs:
           if [ "${{ needs.build-auth.result }}" == "success" ]; then
             SERVICES="${SERVICES} nexo-auth"
           fi
-          
+
           # Se nenhum build rodou (todos skipped), significa que forçamos build de tudo
           if [ -z "$SERVICES" ]; then
             SERVICES=" nexo-be nexo-fe nexo-auth"
