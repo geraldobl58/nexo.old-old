@@ -122,14 +122,20 @@ git merge develop
 git push origin qa
 
 # 3. O que acontece:
-# ✅ Detect changes: detecta todas as mudanças do merge
-# ✅ CI de todos os serviços alterados
+# ✅ Detect changes: FORÇA build de TODOS os serviços (qa/staging/main sempre buildam tudo)
+# ✅ CI de todos os serviços (nexo-be, nexo-fe, nexo-auth)
 # ✅ Build & Push com tag: qa
 # ✅ Deploy: Atualiza APENAS values-qa.yaml
 # ✅ ArgoCD: Sync APENAS no namespace nexo-qa
 ```
 
-**Importante**: Deploy acontece **APENAS no ambiente QA**, não toca develop!
+**Importante**: 
+- Deploy acontece **APENAS no ambiente QA**, não toca develop!
+- **Todos os serviços são buildados** em qa/staging/main, mesmo que paths-filter não detecte mudanças
+- Isso garante que promoções entre ambientes sempre funcionem
+
+**Por quê buildar tudo em qa/staging/main?**
+Em merges, o `paths-filter` compara com o último commit da branch de destino, e pode não detectar mudanças corretamente. Para garantir que promoções sempre funcionem, forçamos build de todos os serviços nessas branches.
 
 ### Cenário 4: Hotfix em produção
 
