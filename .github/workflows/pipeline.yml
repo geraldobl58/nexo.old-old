@@ -401,6 +401,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -416,9 +419,7 @@ jobs:
           context: .
           file: ./apps/nexo-fe/Dockerfile
           push: true
-          # NOTA: Apenas amd64 - Next.js build falha com QEMU emulation (SIGILL)
-          # K3D em Mac M1 usa Rosetta para emular amd64
-          platforms: linux/amd64
+          platforms: linux/amd64,linux/arm64
           tags: |
             ${{ env.REGISTRY }}/${{ env.DOCKERHUB_USERNAME }}/nexo-fe:${{ needs.preflight.outputs.branch }}
             ${{ env.REGISTRY }}/${{ env.DOCKERHUB_USERNAME }}/nexo-fe:${{ needs.preflight.outputs.branch }}-${{ github.sha }}

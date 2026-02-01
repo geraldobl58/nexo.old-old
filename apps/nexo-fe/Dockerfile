@@ -2,8 +2,9 @@
 
 # ============================================
 # Base Stage - Common dependencies
+# Uses BUILDPLATFORM to run on native arch (no QEMU for install)
 # ============================================
-FROM node:20-alpine AS base
+FROM --platform=$BUILDPLATFORM node:20-alpine AS base
 
 # Install pnpm globally
 RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
@@ -26,8 +27,9 @@ RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
 
 # ============================================
 # Builder Stage - Build Next.js application
+# Uses BUILDPLATFORM to build natively (no QEMU for build)
 # ============================================
-FROM dependencies AS builder
+FROM --platform=$BUILDPLATFORM dependencies AS builder
 
 # Copy application source code
 COPY apps/nexo-fe ./apps/nexo-fe
@@ -36,9 +38,10 @@ COPY turbo.json ./
 # Set working directory to web app
 WORKDIR /app/apps/nexo-fe
 
-# Build Next.js app
+# Build Next.js app (runs on build platform natively - no QEMU)
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
+ENV NEXT_PRIVATE_STANDALONE=true
 
 RUN pnpm build
 
@@ -65,9 +68,6 @@ COPY --from=builder --chown=nextjs:nodejs /app/apps/nexo-fe/.next/static ./apps/
 
 # Copy public directory to the correct location for standalone
 COPY --from=builder --chown=nextjs:nodejs /app/apps/nexo-fe/public ./apps/nexo-fe/public
-
-# Install next directly to avoid pnpm symlink issues
-RUN npm install next@14.2.35 --omit=dev --no-save 2>/dev/null || yarn add next@14.2.35 --production 2>/dev/null || true
 
 # Switch to non-root user
 USER nextjs
