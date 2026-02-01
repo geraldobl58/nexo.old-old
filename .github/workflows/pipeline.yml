@@ -1,0 +1,534 @@
+# ============================================================================
+# Nexo Platform - Unified CI/CD Pipeline
+# ============================================================================
+# Pipeline unificada que:
+# - Detecta mudanças por serviço (nexo-be, nexo-fe, nexo-auth)
+# - Executa CI apenas para serviços alterados
+# - Faz build e push de imagens
+# - Deploy APENAS no ambiente correspondente à branch
+#
+# Branch → Environment:
+#   develop → nexo-develop
+#   qa → nexo-qa
+#   staging → nexo-staging
+#   main → nexo-prod
+# ============================================================================
+
+name: Pipeline
+
+on:
+  push:
+    branches:
+      - develop
+      - qa
+      - staging
+      - main
+    paths:
+      - "apps/**"
+      - "packages/**"
+      - "pnpm-lock.yaml"
+
+  pull_request:
+    branches:
+      - develop
+      - qa
+      - staging
+      - main
+    paths:
+      - "apps/**"
+      - "packages/**"
+      - "pnpm-lock.yaml"
+
+  workflow_dispatch:
+    inputs:
+      force_all:
+        description: "Forçar build de todos os serviços"
+        type: boolean
+        default: false
+
+env:
+  REGISTRY: docker.io
+  DOCKERHUB_USERNAME: geraldobl58
+
+# Evita execuções concorrentes na mesma branch
+concurrency:
+  group: pipeline-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  # ==========================================================================
+  # STAGE 1: Pre-flight Checks
+  # ==========================================================================
+  preflight:
+    name: 🔍 Pre-flight
+    runs-on: ubuntu-latest
+    # Pula se for commit do bot ou contiver [skip ci]
+    if: |
+      !contains(github.event.head_commit.message, '[skip ci]') &&
+      github.actor != 'github-actions[bot]'
+    outputs:
+      should_run: ${{ steps.check.outputs.should_run }}
+      branch: ${{ steps.info.outputs.branch }}
+      environment: ${{ steps.info.outputs.environment }}
+      namespace: ${{ steps.info.outputs.namespace }}
+      is_pr: ${{ steps.info.outputs.is_pr }}
+    steps:
+      - name: Check Skip
+        id: check
+        run: |
+          echo "✅ Pipeline will run"
+          echo "should_run=true" >> $GITHUB_OUTPUT
+
+      - name: Extract Info
+        id: info
+        run: |
+          # Determinar branch
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            BRANCH="${{ github.base_ref }}"
+            IS_PR="true"
+          else
+            BRANCH="${{ github.ref_name }}"
+            IS_PR="false"
+          fi
+
+          echo "branch=$BRANCH" >> $GITHUB_OUTPUT
+          echo "is_pr=$IS_PR" >> $GITHUB_OUTPUT
+
+          # Mapear branch → environment → namespace
+          case "$BRANCH" in
+            develop)
+              echo "environment=dev" >> $GITHUB_OUTPUT
+              echo "namespace=nexo-develop" >> $GITHUB_OUTPUT
+              ;;
+            qa)
+              echo "environment=qa" >> $GITHUB_OUTPUT
+              echo "namespace=nexo-qa" >> $GITHUB_OUTPUT
+              ;;
+            staging)
+              echo "environment=staging" >> $GITHUB_OUTPUT
+              echo "namespace=nexo-staging" >> $GITHUB_OUTPUT
+              ;;
+            main)
+              echo "environment=prod" >> $GITHUB_OUTPUT
+              echo "namespace=nexo-prod" >> $GITHUB_OUTPUT
+              ;;
+            *)
+              echo "environment=unknown" >> $GITHUB_OUTPUT
+              echo "namespace=unknown" >> $GITHUB_OUTPUT
+              ;;
+          esac
+
+          echo "📋 Branch: $BRANCH"
+          echo "🎯 Environment: $(cat $GITHUB_OUTPUT | grep environment | cut -d= -f2)"
+          echo "📦 Namespace: $(cat $GITHUB_OUTPUT | grep namespace | cut -d= -f2)"
+
+  # ==========================================================================
+  # STAGE 2: Detect Changes
+  # ==========================================================================
+  detect-changes:
+    name: 🔎 Detect Changes
+    runs-on: ubuntu-latest
+    needs: preflight
+    outputs:
+      nexo-be: ${{ steps.filter.outputs.nexo-be }}
+      nexo-fe: ${{ steps.filter.outputs.nexo-fe }}
+      nexo-auth: ${{ steps.filter.outputs.nexo-auth }}
+      any-change: ${{ steps.summary.outputs.any-change }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Detect changed paths
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            nexo-be:
+              - 'apps/nexo-be/**'
+              - 'packages/**'
+            nexo-fe:
+              - 'apps/nexo-fe/**'
+              - 'packages/**'
+            nexo-auth:
+              - 'apps/nexo-auth/**'
+
+      - name: Summary
+        id: summary
+        run: |
+          BE="${{ steps.filter.outputs.nexo-be }}"
+          FE="${{ steps.filter.outputs.nexo-fe }}"
+          AUTH="${{ steps.filter.outputs.nexo-auth }}"
+          FORCE="${{ inputs.force_all }}"
+
+          # Se force_all ou alguma mudança detectada
+          if [[ "$FORCE" == "true" || "$BE" == "true" || "$FE" == "true" || "$AUTH" == "true" ]]; then
+            echo "any-change=true" >> $GITHUB_OUTPUT
+          else
+            echo "any-change=false" >> $GITHUB_OUTPUT
+          fi
+
+          echo "### 📦 Services Changed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Service | Changed |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|---------|" >> $GITHUB_STEP_SUMMARY
+          echo "| nexo-be | $BE |" >> $GITHUB_STEP_SUMMARY
+          echo "| nexo-fe | $FE |" >> $GITHUB_STEP_SUMMARY
+          echo "| nexo-auth | $AUTH |" >> $GITHUB_STEP_SUMMARY
+
+  # ==========================================================================
+  # STAGE 3: CI - Backend
+  # ==========================================================================
+  ci-backend:
+    name: 🔵 CI Backend
+    runs-on: ubuntu-latest
+    needs: [preflight, detect-changes]
+    if: |
+      needs.detect-changes.outputs.nexo-be == 'true' || 
+      inputs.force_all == true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm --filter nexo-be lint
+        continue-on-error: true
+
+      - name: Test
+        run: pnpm --filter nexo-be test
+        continue-on-error: true
+
+      - name: Build
+        run: pnpm --filter nexo-be build
+
+  # ==========================================================================
+  # STAGE 4: CI - Frontend
+  # ==========================================================================
+  ci-frontend:
+    name: 🟢 CI Frontend
+    runs-on: ubuntu-latest
+    needs: [preflight, detect-changes]
+    if: |
+      needs.detect-changes.outputs.nexo-fe == 'true' || 
+      inputs.force_all == true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm --filter nexo-fe lint
+        continue-on-error: true
+
+      - name: Build
+        run: pnpm --filter nexo-fe build
+
+  # ==========================================================================
+  # STAGE 5: CI - Auth (apenas Docker build)
+  # ==========================================================================
+  ci-auth:
+    name: 🟡 CI Auth
+    runs-on: ubuntu-latest
+    needs: [preflight, detect-changes]
+    if: |
+      needs.detect-changes.outputs.nexo-auth == 'true' || 
+      inputs.force_all == true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate Dockerfile
+        run: |
+          if [ -f apps/nexo-auth/Dockerfile ]; then
+            echo "✅ Dockerfile exists"
+          else
+            echo "❌ Dockerfile not found"
+            exit 1
+          fi
+
+  # ==========================================================================
+  # STAGE 6: Build & Push - Backend
+  # ==========================================================================
+  build-backend:
+    name: 🐳 Build Backend
+    runs-on: ubuntu-latest
+    needs: [preflight, detect-changes, ci-backend]
+    if: |
+      github.event_name == 'push' &&
+      needs.preflight.outputs.is_pr == 'false' &&
+      (needs.detect-changes.outputs.nexo-be == 'true' || inputs.force_all == true)
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ env.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./apps/nexo-be/Dockerfile
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.DOCKERHUB_USERNAME }}/nexo-be:${{ needs.preflight.outputs.branch }}
+            ${{ env.REGISTRY }}/${{ env.DOCKERHUB_USERNAME }}/nexo-be:${{ needs.preflight.outputs.branch }}-${{ github.sha }}
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.DOCKERHUB_USERNAME }}/nexo-be:${{ needs.preflight.outputs.branch }}
+          cache-to: type=inline
+
+      - name: Summary
+        run: |
+          echo "✅ Backend image pushed: nexo-be:${{ needs.preflight.outputs.branch }}"
+
+  # ==========================================================================
+  # STAGE 7: Build & Push - Frontend
+  # ==========================================================================
+  build-frontend:
+    name: 🐳 Build Frontend
+    runs-on: ubuntu-latest
+    needs: [preflight, detect-changes, ci-frontend]
+    if: |
+      github.event_name == 'push' &&
+      needs.preflight.outputs.is_pr == 'false' &&
+      (needs.detect-changes.outputs.nexo-fe == 'true' || inputs.force_all == true)
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ env.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./apps/nexo-fe/Dockerfile
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.DOCKERHUB_USERNAME }}/nexo-fe:${{ needs.preflight.outputs.branch }}
+            ${{ env.REGISTRY }}/${{ env.DOCKERHUB_USERNAME }}/nexo-fe:${{ needs.preflight.outputs.branch }}-${{ github.sha }}
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.DOCKERHUB_USERNAME }}/nexo-fe:${{ needs.preflight.outputs.branch }}
+          cache-to: type=inline
+
+      - name: Summary
+        run: |
+          echo "✅ Frontend image pushed: nexo-fe:${{ needs.preflight.outputs.branch }}"
+
+  # ==========================================================================
+  # STAGE 8: Build & Push - Auth
+  # ==========================================================================
+  build-auth:
+    name: 🐳 Build Auth
+    runs-on: ubuntu-latest
+    needs: [preflight, detect-changes, ci-auth]
+    if: |
+      github.event_name == 'push' &&
+      needs.preflight.outputs.is_pr == 'false' &&
+      (needs.detect-changes.outputs.nexo-auth == 'true' || inputs.force_all == true)
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ env.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./apps/nexo-auth/Dockerfile
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.DOCKERHUB_USERNAME }}/nexo-auth:${{ needs.preflight.outputs.branch }}
+            ${{ env.REGISTRY }}/${{ env.DOCKERHUB_USERNAME }}/nexo-auth:${{ needs.preflight.outputs.branch }}-${{ github.sha }}
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.DOCKERHUB_USERNAME }}/nexo-auth:${{ needs.preflight.outputs.branch }}
+          cache-to: type=inline
+
+      - name: Summary
+        run: |
+          echo "✅ Auth image pushed: nexo-auth:${{ needs.preflight.outputs.branch }}"
+
+  # ==========================================================================
+  # STAGE 9: Deploy (Update K8s values)
+  # ==========================================================================
+  deploy:
+    name: 🚀 Deploy ${{ needs.preflight.outputs.environment }}
+    runs-on: ubuntu-latest
+    needs:
+      - preflight
+      - detect-changes
+      - build-backend
+      - build-frontend
+      - build-auth
+    if: |
+      always() &&
+      github.event_name == 'push' &&
+      needs.preflight.outputs.is_pr == 'false' &&
+      needs.preflight.outputs.environment != 'unknown' &&
+      (needs.build-backend.result == 'success' || 
+       needs.build-frontend.result == 'success' || 
+       needs.build-auth.result == 'success')
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Update Backend values
+        if: needs.build-backend.result == 'success'
+        run: |
+          ENV="${{ needs.preflight.outputs.environment }}"
+          COMMIT_SHA="${{ github.sha }}"
+          SHORT_SHA="${COMMIT_SHA:0:7}"
+
+          VALUES_FILE="local/helm/nexo-be/values-${ENV}.yaml"
+
+          if [ -f "$VALUES_FILE" ]; then
+            # Atualizar annotation com commit SHA
+            sed -i.bak "s/app.kubernetes.io\/commit: \".*\"/app.kubernetes.io\/commit: \"$SHORT_SHA\"/" "$VALUES_FILE"
+            rm -f "${VALUES_FILE}.bak"
+            
+            git add "$VALUES_FILE"
+            echo "✅ Updated $VALUES_FILE with commit $SHORT_SHA"
+          else
+            echo "⚠️ Values file not found: $VALUES_FILE"
+          fi
+
+      - name: Update Frontend values
+        if: needs.build-frontend.result == 'success'
+        run: |
+          ENV="${{ needs.preflight.outputs.environment }}"
+          COMMIT_SHA="${{ github.sha }}"
+          SHORT_SHA="${COMMIT_SHA:0:7}"
+
+          VALUES_FILE="local/helm/nexo-fe/values-${ENV}.yaml"
+
+          if [ -f "$VALUES_FILE" ]; then
+            sed -i.bak "s/app.kubernetes.io\/commit: \".*\"/app.kubernetes.io\/commit: \"$SHORT_SHA\"/" "$VALUES_FILE"
+            rm -f "${VALUES_FILE}.bak"
+            
+            git add "$VALUES_FILE"
+            echo "✅ Updated $VALUES_FILE with commit $SHORT_SHA"
+          else
+            echo "⚠️ Values file not found: $VALUES_FILE"
+          fi
+
+      - name: Update Auth values
+        if: needs.build-auth.result == 'success'
+        run: |
+          ENV="${{ needs.preflight.outputs.environment }}"
+          COMMIT_SHA="${{ github.sha }}"
+          SHORT_SHA="${COMMIT_SHA:0:7}"
+
+          VALUES_FILE="local/helm/nexo-auth/values-${ENV}.yaml"
+
+          if [ -f "$VALUES_FILE" ]; then
+            sed -i.bak "s/app.kubernetes.io\/commit: \".*\"/app.kubernetes.io\/commit: \"$SHORT_SHA\"/" "$VALUES_FILE"
+            rm -f "${VALUES_FILE}.bak"
+            
+            git add "$VALUES_FILE"
+            echo "✅ Updated $VALUES_FILE with commit $SHORT_SHA"
+          else
+            echo "⚠️ Values file not found: $VALUES_FILE"
+          fi
+
+      - name: Commit and push
+        run: |
+          ENV="${{ needs.preflight.outputs.environment }}"
+          NAMESPACE="${{ needs.preflight.outputs.namespace }}"
+          SHORT_SHA="${{ github.sha }}"
+          SHORT_SHA="${SHORT_SHA:0:7}"
+
+          # Verificar se há mudanças
+          if git diff --cached --quiet; then
+            echo "⚠️ No changes to commit"
+            exit 0
+          fi
+
+          # Commit com [skip ci] para evitar loop
+          SERVICES=""
+          if [ "${{ needs.build-backend.result }}" == "success" ]; then
+            SERVICES="${SERVICES} nexo-be"
+          fi
+          if [ "${{ needs.build-frontend.result }}" == "success" ]; then
+            SERVICES="${SERVICES} nexo-fe"
+          fi
+          if [ "${{ needs.build-auth.result }}" == "success" ]; then
+            SERVICES="${SERVICES} nexo-auth"
+          fi
+
+          git commit -m "deploy($ENV):$SERVICES → $SHORT_SHA [skip ci]"
+          git push origin ${{ github.ref_name }}
+
+          echo "✅ Deployed to $NAMESPACE"
+
+      - name: Summary
+        run: |
+          echo "## 🚀 Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment**: ${{ needs.preflight.outputs.environment }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Namespace**: ${{ needs.preflight.outputs.namespace }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Services Deployed" >> $GITHUB_STEP_SUMMARY
+          echo "| Service | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| nexo-be | ${{ needs.build-backend.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| nexo-fe | ${{ needs.build-frontend.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| nexo-auth | ${{ needs.build-auth.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "ArgoCD detectará as mudanças e fará sync automaticamente." >> $GITHUB_STEP_SUMMARY
