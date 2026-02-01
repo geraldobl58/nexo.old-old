@@ -1,8 +1,13 @@
 # Values for Staging environment
+# Deploy automático via branch 'staging'
 replicaCount: 1
 
 image:
+  repository: docker.io/geraldobl58/nexo-auth
   tag: "staging"
+  pullPolicy: Always
+
+imagePullSecrets: []
 
 ingress:
   enabled: true
@@ -64,3 +69,6 @@ postgresql:
     requests:
       cpu: 100m
       memory: 256Mi
+
+podAnnotations:
+  app.kubernetes.io/commit: "initial"

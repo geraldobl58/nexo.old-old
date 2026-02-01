@@ -27,7 +27,7 @@ service:
 livenessProbe:
   httpGet:
     path: /health/live
-    port: http
+    port: management
   initialDelaySeconds: 120
   periodSeconds: 15
   timeoutSeconds: 10
@@ -35,7 +35,7 @@ livenessProbe:
 readinessProbe:
   httpGet:
     path: /health/ready
-    port: http
+    port: management
   initialDelaySeconds: 60
   periodSeconds: 10
   timeoutSeconds: 5
