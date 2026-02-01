@@ -27,6 +27,7 @@ on:
       - "apps/**"
       - "packages/**"
       - "pnpm-lock.yaml"
+      - ".github/workflows/pipeline.yml"
 
   pull_request:
     branches:
@@ -38,6 +39,7 @@ on:
       - "apps/**"
       - "packages/**"
       - "pnpm-lock.yaml"
+      - ".github/workflows/pipeline.yml"
 
   workflow_dispatch:
     inputs:
