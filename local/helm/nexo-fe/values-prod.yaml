@@ -45,4 +45,4 @@ podDisruptionBudget:
   minAvailable: 2
 
 podAnnotations:
-  app.kubernetes.io/commit: "initial"
+  app.kubernetes.io/commit: "555551a"
