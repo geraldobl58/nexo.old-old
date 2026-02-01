@@ -1,7 +1,7 @@
 const HomePage = () => {
   return (
     <>
-      <div>Novo deploy 1</div>
+      <div>Pipeline Unificada - Teste 1 🚀</div>
     </>
   );
 };
