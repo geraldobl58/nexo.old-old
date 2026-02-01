@@ -78,7 +78,13 @@ jobs:
       environment: ${{ steps.info.outputs.environment }}
       namespace: ${{ steps.info.outputs.namespace }}
       is_pr: ${{ steps.info.outputs.is_pr }}
+      build_number: ${{ steps.build_number.outputs.number }}
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: Check Skip
         id: check
         run: |
@@ -127,6 +133,16 @@ jobs:
           echo "📋 Branch: $BRANCH"
           echo "🎯 Environment: $(cat $GITHUB_OUTPUT | grep environment | cut -d= -f2)"
           echo "📦 Namespace: $(cat $GITHUB_OUTPUT | grep namespace | cut -d= -f2)"
+
+      - name: Generate Build Number
+        id: build_number
+        run: |
+          # Contar commits na branch atual para gerar número de build
+          BUILD_NUM=$(git rev-list --count HEAD)
+          # Formatar como #001, #002, etc
+          FORMATTED=$(printf "#%03d" $BUILD_NUM)
+          echo "number=$FORMATTED" >> $GITHUB_OUTPUT
+          echo "🔢 Build Number: $FORMATTED"
 
   # ==========================================================================
   # STAGE 2: Detect Changes
@@ -400,7 +416,9 @@ jobs:
           context: .
           file: ./apps/nexo-fe/Dockerfile
           push: true
-          platforms: linux/amd64,linux/arm64
+          # NOTA: Apenas amd64 - Next.js build falha com QEMU emulation (SIGILL)
+          # K3D em Mac M1 usa Rosetta para emular amd64
+          platforms: linux/amd64
           tags: |
             ${{ env.REGISTRY }}/${{ env.DOCKERHUB_USERNAME }}/nexo-fe:${{ needs.preflight.outputs.branch }}
             ${{ env.REGISTRY }}/${{ env.DOCKERHUB_USERNAME }}/nexo-fe:${{ needs.preflight.outputs.branch }}-${{ github.sha }}
@@ -517,6 +535,7 @@ jobs:
         run: |
           ENV="${{ needs.preflight.outputs.environment }}"
           NAMESPACE="${{ needs.preflight.outputs.namespace }}"
+          BUILD_NUM="${{ needs.preflight.outputs.build_number }}"
           SHORT_SHA="${{ github.sha }}"
           SHORT_SHA="${SHORT_SHA:0:7}"
 
@@ -543,7 +562,8 @@ jobs:
             SERVICES=" nexo-be nexo-fe nexo-auth"
           fi
 
-          git commit -m "deploy($ENV):$SERVICES → $SHORT_SHA [skip ci]"
+          # Formato: #001 : deploy(prod): nexo-be nexo-fe → abc1234
+          git commit -m "${BUILD_NUM} : deploy(${ENV}):${SERVICES} → ${SHORT_SHA} [skip ci]"
           git push origin ${{ github.ref_name }}
 
           echo "✅ Deployed to $NAMESPACE"
