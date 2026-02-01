@@ -27,6 +27,7 @@ on:
       - "apps/**"
       - "packages/**"
       - "pnpm-lock.yaml"
+      - ".github/workflows/pipeline.yml"
 
   pull_request:
     branches:
@@ -38,6 +39,7 @@ on:
       - "apps/**"
       - "packages/**"
       - "pnpm-lock.yaml"
+      - ".github/workflows/pipeline.yml"
 
   workflow_dispatch:
     inputs:
@@ -162,7 +164,7 @@ jobs:
         id: merge-check
         run: |
           BRANCH="${{ needs.preflight.outputs.branch }}"
-          
+
           # Verificar se é um merge commit (tem mais de 1 parent)
           if git rev-parse --verify HEAD^2 >/dev/null 2>&1; then
             echo "is_merge=true" >> $GITHUB_OUTPUT
@@ -171,7 +173,7 @@ jobs:
             echo "is_merge=false" >> $GITHUB_OUTPUT
             echo "📝 Regular commit"
           fi
-          
+
           # Para qa, staging e main, sempre buildar tudo em caso de merge
           if [[ "$BRANCH" =~ ^(qa|staging|main)$ ]]; then
             echo "force_build=true" >> $GITHUB_OUTPUT
@@ -190,7 +192,7 @@ jobs:
           FORCE_BUILD="${{ steps.merge-check.outputs.force_build }}"
           IS_MERGE="${{ steps.merge-check.outputs.is_merge }}"
           BRANCH="${{ needs.preflight.outputs.branch }}"
-          
+
           echo "📊 Detection Results:"
           echo "  - Branch: $BRANCH"
           echo "  - Is Merge: $IS_MERGE"
@@ -198,12 +200,12 @@ jobs:
           echo "  - Filter BE: $BE"
           echo "  - Filter FE: $FE"
           echo "  - Filter AUTH: $AUTH"
-          
+
           # Lógica de decisão:
           # 1. Se force_all=true (manual), buildar tudo
           # 2. Se é qa/staging/main, buildar tudo (promoção)
           # 3. Senão, usar detecção de paths
-          
+
           if [[ "$FORCE" == "true" || "$FORCE_BUILD" == "true" ]]; then
             echo "🚀 Building all services (force mode)"
             echo "nexo-be=true" >> $GITHUB_OUTPUT
@@ -357,6 +359,7 @@ jobs:
           context: .
           file: ./apps/nexo-be/Dockerfile
           push: true
+          platforms: linux/amd64,linux/arm64
           tags: |
             ${{ env.REGISTRY }}/${{ env.DOCKERHUB_USERNAME }}/nexo-be:${{ needs.preflight.outputs.branch }}
             ${{ env.REGISTRY }}/${{ env.DOCKERHUB_USERNAME }}/nexo-be:${{ needs.preflight.outputs.branch }}-${{ github.sha }}
@@ -397,6 +400,7 @@ jobs:
           context: .
           file: ./apps/nexo-fe/Dockerfile
           push: true
+          platforms: linux/amd64,linux/arm64
           tags: |
             ${{ env.REGISTRY }}/${{ env.DOCKERHUB_USERNAME }}/nexo-fe:${{ needs.preflight.outputs.branch }}
             ${{ env.REGISTRY }}/${{ env.DOCKERHUB_USERNAME }}/nexo-fe:${{ needs.preflight.outputs.branch }}-${{ github.sha }}
@@ -437,6 +441,7 @@ jobs:
           context: .
           file: ./apps/nexo-auth/Dockerfile
           push: true
+          platforms: linux/amd64,linux/arm64
           tags: |
             ${{ env.REGISTRY }}/${{ env.DOCKERHUB_USERNAME }}/nexo-auth:${{ needs.preflight.outputs.branch }}
             ${{ env.REGISTRY }}/${{ env.DOCKERHUB_USERNAME }}/nexo-auth:${{ needs.preflight.outputs.branch }}-${{ github.sha }}
@@ -464,9 +469,10 @@ jobs:
       github.event_name == 'push' &&
       needs.preflight.outputs.is_pr == 'false' &&
       needs.preflight.outputs.environment != 'unknown' &&
-      (needs.build-backend.result == 'success' || 
-       needs.build-frontend.result == 'success' || 
-       needs.build-auth.result == 'success')
+      needs.detect-changes.outputs.any-change == 'true' &&
+      (needs.build-backend.result == 'success' || needs.build-backend.result == 'skipped') &&
+      (needs.build-frontend.result == 'success' || needs.build-frontend.result == 'skipped') &&
+      (needs.build-auth.result == 'success' || needs.build-auth.result == 'skipped')
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -479,63 +485,33 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Update Backend values
-        if: needs.build-backend.result == 'success'
+      - name: Update all values files
         run: |
           ENV="${{ needs.preflight.outputs.environment }}"
           COMMIT_SHA="${{ github.sha }}"
           SHORT_SHA="${COMMIT_SHA:0:7}"
 
-          VALUES_FILE="local/helm/nexo-be/values-${ENV}.yaml"
+          echo "🔄 Updating values for environment: $ENV"
+          echo "📝 Commit SHA: $SHORT_SHA"
 
-          if [ -f "$VALUES_FILE" ]; then
-            # Atualizar annotation com commit SHA
-            sed -i.bak "s/app.kubernetes.io\/commit: \".*\"/app.kubernetes.io\/commit: \"$SHORT_SHA\"/" "$VALUES_FILE"
-            rm -f "${VALUES_FILE}.bak"
+          # Atualizar todos os serviços que tiveram build ou foram forçados
+          for SERVICE in nexo-be nexo-fe nexo-auth; do
+            VALUES_FILE="local/helm/${SERVICE}/values-${ENV}.yaml"
             
-            git add "$VALUES_FILE"
-            echo "✅ Updated $VALUES_FILE with commit $SHORT_SHA"
-          else
-            echo "⚠️ Values file not found: $VALUES_FILE"
-          fi
-
-      - name: Update Frontend values
-        if: needs.build-frontend.result == 'success'
-        run: |
-          ENV="${{ needs.preflight.outputs.environment }}"
-          COMMIT_SHA="${{ github.sha }}"
-          SHORT_SHA="${COMMIT_SHA:0:7}"
-
-          VALUES_FILE="local/helm/nexo-fe/values-${ENV}.yaml"
-
-          if [ -f "$VALUES_FILE" ]; then
-            sed -i.bak "s/app.kubernetes.io\/commit: \".*\"/app.kubernetes.io\/commit: \"$SHORT_SHA\"/" "$VALUES_FILE"
-            rm -f "${VALUES_FILE}.bak"
-            
-            git add "$VALUES_FILE"
-            echo "✅ Updated $VALUES_FILE with commit $SHORT_SHA"
-          else
-            echo "⚠️ Values file not found: $VALUES_FILE"
-          fi
-
-      - name: Update Auth values
-        if: needs.build-auth.result == 'success'
-        run: |
-          ENV="${{ needs.preflight.outputs.environment }}"
-          COMMIT_SHA="${{ github.sha }}"
-          SHORT_SHA="${COMMIT_SHA:0:7}"
-
-          VALUES_FILE="local/helm/nexo-auth/values-${ENV}.yaml"
-
-          if [ -f "$VALUES_FILE" ]; then
-            sed -i.bak "s/app.kubernetes.io\/commit: \".*\"/app.kubernetes.io\/commit: \"$SHORT_SHA\"/" "$VALUES_FILE"
-            rm -f "${VALUES_FILE}.bak"
-            
-            git add "$VALUES_FILE"
-            echo "✅ Updated $VALUES_FILE with commit $SHORT_SHA"
-          else
-            echo "⚠️ Values file not found: $VALUES_FILE"
-          fi
+            if [ -f "$VALUES_FILE" ]; then
+              # macOS sed requer argumento vazio para -i
+              if [[ "$OSTYPE" == "darwin"* ]]; then
+                sed -i '' "s/app.kubernetes.io\/commit: \"[^\"]*\"/app.kubernetes.io\/commit: \"$SHORT_SHA\"/" "$VALUES_FILE"
+              else
+                sed -i "s/app.kubernetes.io\/commit: \"[^\"]*\"/app.kubernetes.io\/commit: \"$SHORT_SHA\"/" "$VALUES_FILE"
+              fi
+              
+              git add "$VALUES_FILE"
+              echo "✅ Updated $VALUES_FILE with commit $SHORT_SHA"
+            else
+              echo "⚠️ Values file not found: $VALUES_FILE"
+            fi
+          done
 
       - name: Commit and push
         run: |
@@ -550,7 +526,7 @@ jobs:
             exit 0
           fi
 
-          # Commit com [skip ci] para evitar loop
+          # Listar serviços que foram deployados baseado em quais builds rodaram
           SERVICES=""
           if [ "${{ needs.build-backend.result }}" == "success" ]; then
             SERVICES="${SERVICES} nexo-be"
@@ -560,6 +536,11 @@ jobs:
           fi
           if [ "${{ needs.build-auth.result }}" == "success" ]; then
             SERVICES="${SERVICES} nexo-auth"
+          fi
+
+          # Se nenhum build rodou (todos skipped), significa que forçamos build de tudo
+          if [ -z "$SERVICES" ]; then
+            SERVICES=" nexo-be nexo-fe nexo-auth"
           fi
 
           git commit -m "deploy($ENV):$SERVICES → $SHORT_SHA [skip ci]"

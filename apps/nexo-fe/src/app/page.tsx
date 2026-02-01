@@ -1,7 +1,8 @@
 const HomePage = () => {
   return (
     <>
-      <div>Pipeline Unificada - Teste 1 🚀</div>
+      <div>Pipeline Funcionando Perfeitamente! 🎉</div>
+      <p>Esta é a página inicial do aplicativo Nexo FE.</p>
     </>
   );
 };
