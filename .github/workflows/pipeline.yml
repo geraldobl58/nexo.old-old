@@ -359,6 +359,7 @@ jobs:
           context: .
           file: ./apps/nexo-be/Dockerfile
           push: true
+          platforms: linux/amd64,linux/arm64
           tags: |
             ${{ env.REGISTRY }}/${{ env.DOCKERHUB_USERNAME }}/nexo-be:${{ needs.preflight.outputs.branch }}
             ${{ env.REGISTRY }}/${{ env.DOCKERHUB_USERNAME }}/nexo-be:${{ needs.preflight.outputs.branch }}-${{ github.sha }}
@@ -399,6 +400,7 @@ jobs:
           context: .
           file: ./apps/nexo-fe/Dockerfile
           push: true
+          platforms: linux/amd64,linux/arm64
           tags: |
             ${{ env.REGISTRY }}/${{ env.DOCKERHUB_USERNAME }}/nexo-fe:${{ needs.preflight.outputs.branch }}
             ${{ env.REGISTRY }}/${{ env.DOCKERHUB_USERNAME }}/nexo-fe:${{ needs.preflight.outputs.branch }}-${{ github.sha }}
@@ -439,6 +441,7 @@ jobs:
           context: .
           file: ./apps/nexo-auth/Dockerfile
           push: true
+          platforms: linux/amd64,linux/arm64
           tags: |
             ${{ env.REGISTRY }}/${{ env.DOCKERHUB_USERNAME }}/nexo-auth:${{ needs.preflight.outputs.branch }}
             ${{ env.REGISTRY }}/${{ env.DOCKERHUB_USERNAME }}/nexo-auth:${{ needs.preflight.outputs.branch }}-${{ github.sha }}
