@@ -6,28 +6,48 @@ Documentação técnica completa do projeto Nexo Platform.
 
 ## 📖 Índice
 
+### 🚀 Enterprise CI/CD Pipeline ⭐ NOVO!
+
+**Documentação enterprise-grade completa de CI/CD com GitOps, seguindo práticas de Netflix, Spotify e Uber.**  
+**✨ Adaptada para K3D como ambiente local que espelha produção.**
+
+| Documento                                                                  | Descrição                                                    |
+| -------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| [📖 README & Índice](enterprise-pipeline/README.md)                        | **COMECE AQUI** - Índice completo da documentação enterprise |
+| [🏗️ Integração K3D](enterprise-pipeline/00-k3d-integration.md)             | **ESSENCIAL** - Como a pipeline se integra com K3D local     |
+| [00 - Arquitetura Geral](enterprise-pipeline/00-overview.md)               | Decisões técnicas, branches, fluxos                          |
+| [01 - GitHub Actions](enterprise-pipeline/01-github-actions-workflows.md)  | CI completo, workflows reutilizáveis                         |
+| [02 - ArgoCD Config](enterprise-pipeline/02-argocd-configuration.md)       | GitOps, sync policies, rollback                              |
+| [03 - Versioning](enterprise-pipeline/03-versioning-promotion.md)          | CalVer, promoção entre ambientes                             |
+| [04 - Security](enterprise-pipeline/04-security-secrets.md)                | OIDC, External Secrets, RBAC                                 |
+| [05 - Observability](enterprise-pipeline/05-observability.md)              | Métricas, logs, traces, DORA                                 |
+| [06 - Checklist](enterprise-pipeline/06-production-checklist.md)           | Validações antes de go-live                                  |
+| [📊 Diagrams](enterprise-pipeline/diagrams.md)                             | Diagramas visuais de fluxo                                   |
+| [🎮 Playbook](enterprise-pipeline/playbook.md)                             | Cenários práticos e comandos                                 |
+| [💼 Executive Summary](enterprise-pipeline/EXECUTIVE-SUMMARY.md)           | Visão executiva, ROI analysis                                |
+| [🗺️ Implementation Roadmap](enterprise-pipeline/IMPLEMENTATION-ROADMAP.md) | Plano 9 semanas, fases, marcos                               |
+
+**Tempo de leitura**: ~2-3 horas | **Nível**: Staff/Senior Platform Engineering
+
+---
+
 ### 🚀 Quick Start
 
-| Documento                             | Descrição                     |
-| ------------------------------------- | ----------------------------- |
-| [Quick Start](local/quick-start.md)   | Setup em 5 minutos            |
-| [README Local](local/README.md)       | Guia completo do ambiente K3D |
-| [Environments](local/environments.md) | Diferenças entre ambientes    |
+| Documento                              | Descrição                     |
+| -------------------------------------- | ----------------------------- |
+| [Quick Start](local/01-quick-start.md) | Setup em 5 minutos            |
+| [README Local](local/README.md)        | Guia completo do ambiente K3D |
 
 ### 🏗️ Infraestrutura (K3D)
 
-| Documento                                       | Descrição                    |
-| ----------------------------------------------- | ---------------------------- |
-| [Arquitetura](local/architecture.md)            | Visão técnica do sistema     |
-| [Kubernetes](local/kubernetes.md)               | Namespaces, Ingress, PVC     |
-| [Deploy](local/deploy.md)                       | CI/CD e deploy               |
-| [Observabilidade](local/observability-guide.md) | Prometheus, Grafana, Alertas |
+| Documento                               | Descrição                |
+| --------------------------------------- | ------------------------ |
+| [Arquitetura](local/02-architecture.md) | Visão técnica do sistema |
 
 ### 🔧 CI/CD & GitHub
 
 | Documento                                        | Descrição                        |
 | ------------------------------------------------ | -------------------------------- |
-| [GitHub Actions](local/github-actions.md)        | CI/CD pipelines                  |
 | [GitHub Secrets](local/github-secrets.md)        | Todos os secrets necessários     |
 | [GitHub Config](local/github-config.md)          | Secrets, Variables, Environments |
 | [Git Branching](local/git-branching-strategy.md) | GitFlow e proteção de branches   |
