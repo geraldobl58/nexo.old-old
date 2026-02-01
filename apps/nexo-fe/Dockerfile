@@ -37,8 +37,10 @@ COPY turbo.json ./
 WORKDIR /app/apps/nexo-fe
 
 # Build Next.js app
+# Disable SWC to avoid QEMU SIGILL on cross-platform builds
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
+ENV NEXT_PRIVATE_STANDALONE=true
 
 RUN pnpm build
 

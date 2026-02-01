@@ -10,7 +10,7 @@ export class HealthController {
   })
   @ApiResponse({
     status: 200,
-    description: 'API está funcionando',
+    description: 'Deployments automáticos estão funcionando corretamente.',
     schema: {
       type: 'object',
       properties: {
