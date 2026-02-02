@@ -5,8 +5,8 @@ image:
   # Para usar theme customizado: localhost:5001/nexo-auth
   tag: "dab650039513eb46c3ff24f84b51cdbd7a70ce51"
   pullPolicy: IfNotPresent
-imagePullSecrets:
-  - name: ghcr-secret
+# imagePullSecrets: (não precisa para registry local)
+#   - name: ghcr-secret
 ingress:
   enabled: true
   className: "nginx"

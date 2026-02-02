@@ -23,9 +23,9 @@ spec:
     helm:
       valueFiles:
         - values.yaml
-        - values-dev.yaml
+        - values-local.yaml
       parameters:
-        # Apenas sobrescreve host do ingress - demais vêm do values-dev.yaml
+        # Apenas sobrescreve host do ingress - demais vêm do values-local.yaml
         - name: ingress.hosts[0].host
           value: develop.api.nexo.local
         - name: ingress.className
@@ -68,9 +68,9 @@ spec:
     helm:
       valueFiles:
         - values.yaml
-        - values-dev.yaml
+        - values-local.yaml
       parameters:
-        # Apenas sobrescreve host do ingress - demais vêm do values-dev.yaml
+        # Apenas sobrescreve host do ingress - demais vêm do values-local.yaml
         - name: ingress.hosts[0].host
           value: develop.nexo.local
         - name: ingress.className
@@ -113,7 +113,7 @@ spec:
     helm:
       valueFiles:
         - values.yaml
-        - values-dev.yaml
+        - values-local.yaml
       parameters:
         # Ingress
         - name: ingress.hosts[0].host
