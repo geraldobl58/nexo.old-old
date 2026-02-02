@@ -2,15 +2,16 @@
 replicaCount: 1
 image:
   # Para desenvolvimento local com K3D
-  repository: docker.io/geraldobl58/nexo-fe
-  tag: "develop"
+  repository: ghcr.io/geraldobl58/nexo-fe
+  tag: "develop-034f608f9b1f25101f654c01bb974012c4b97a10"
   pullPolicy: Always
 # Para ambientes remotos, usar dockerhub-secret
 # Para K3D local, deixar vazio
-imagePullSecrets: []
+# imagePullSecrets: (não precisa para registry local)
+#   - name: ghcr-secret
 ingress:
   enabled: true
-  className: "traefik"
+  className: "nginx"
   annotations: {}
   hosts:
     - host: nexo-fe.local
@@ -36,4 +37,4 @@ env:
 podDisruptionBudget:
   enabled: false
 podAnnotations:
-  app.kubernetes.io/commit: "8fd0f82"
+  app.kubernetes.io/commit: "034f608"

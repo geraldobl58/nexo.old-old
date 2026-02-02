@@ -21,7 +21,10 @@ FROM base AS dependencies
 COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
 COPY apps/nexo-fe/package.json ./apps/nexo-fe/package.json
 
-# Install dependencies with node-linker=hoisted to avoid symlink issues
+# Create .npmrc to use hoisted node_modules (no symlinks)
+RUN echo "node-linker=hoisted" > .npmrc
+
+# Install dependencies with hoisted linker to avoid symlink issues in standalone
 RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
     pnpm install --frozen-lockfile
 
@@ -63,14 +66,14 @@ WORKDIR /app
 # Copy the standalone output
 COPY --from=builder --chown=nextjs:nodejs /app/apps/nexo-fe/.next/standalone ./
 
+# Copy node_modules from the builder stage (pnpm hoisted structure)
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
+
 # Copy static files to the correct location for standalone
 COPY --from=builder --chown=nextjs:nodejs /app/apps/nexo-fe/.next/static ./apps/nexo-fe/.next/static
 
 # Copy public directory to the correct location for standalone
 COPY --from=builder --chown=nextjs:nodejs /app/apps/nexo-fe/public ./apps/nexo-fe/public
-
-# Copy node_modules from builder (includes next and dependencies)
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
 
 # Switch to non-root user
 USER nextjs
@@ -86,5 +89,5 @@ ENV PORT=3000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
   CMD node -e "require('http').get('http://localhost:3000', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
-# Start application
-CMD ["node", "server.js"]
+# Start application (server.js is in /app from standalone output)
+CMD ["node", "/app/server.js"]

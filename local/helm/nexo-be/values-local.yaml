@@ -1,25 +1,28 @@
 # =============================================================================
 # Values for Local K3D environment
 # =============================================================================
-# Usa DockerHub como registry e Traefik como Ingress Controller
+# Usa Registry LOCAL (k3d) - sem dependência do DockerHub
+# Build local → Push para registry local → K3D usa automaticamente
 # =============================================================================
 
 replicaCount: 1
 
 image:
-  repository: docker.io/geraldobl58/nexo-be
+  # Registry local do k3d (acessível de dentro do cluster)
+  repository: nexo-registry:5000/nexo-be
+  # Tag dinâmica - atualizada automaticamente pelo Makefile/pipeline
   tag: "latest"
+  # Always = força pull do registry local a cada deploy
   pullPolicy: Always
 
-# DockerHub público - não precisa de secrets
+# Registry local não precisa de autenticação
 imagePullSecrets: []
 
 ingress:
   enabled: true
-  className: "traefik"
+  className: "nginx"
   annotations:
-    traefik.ingress.kubernetes.io/router.entrypoints: web
-    traefik.ingress.kubernetes.io/router.tls: "false"
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
     cert-manager.io/cluster-issuer: ""
   hosts:
     - host: develop.api.nexo.local

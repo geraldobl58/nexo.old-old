@@ -3,15 +3,16 @@
 replicaCount: 1
 
 image:
-  repository: docker.io/geraldobl58/nexo-be
+  repository: ghcr.io/geraldobl58/nexo-be
   tag: "main"
   pullPolicy: Always
 
-imagePullSecrets: []
+imagePullSecrets:
+  - name: ghcr-secret
 
 ingress:
   enabled: true
-  className: "traefik"
+  className: "nginx"
   annotations: {}
   hosts:
     - host: prod.api.nexo.local

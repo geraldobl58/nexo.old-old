@@ -1,14 +1,19 @@
 # ============================================================================
-# Nexo Platform - ArgoCD Applications - Ambiente Produção (LOCAL)
+# Nexo Platform - ArgoCD Applications - Ambiente Produção
 # ============================================================================
-# Usa REGISTRY LOCAL (nexo-registry:5000) - sem dependência do DockerHub
-# Namespace: nexo-prod
+# Branch: main
+# Domínios: prod.nexo.local, prod.api.nexo.local, prod.auth.nexo.local
 # ============================================================================
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   name: nexo-be-prod
   namespace: argocd
+  annotations:
+    argocd-image-updater.argoproj.io/image-list: nexo-be=docker.io/geraldobl58/nexo-be:latest
+    argocd-image-updater.argoproj.io/nexo-be.update-strategy: digest
+    argocd-image-updater.argoproj.io/nexo-be.pull-secret: secret:argocd/dockerhub-secret#creds
+    argocd-image-updater.argoproj.io/write-back-method: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
   labels:
@@ -25,12 +30,16 @@ spec:
         - values.yaml
         - values-prod.yaml
       parameters:
+        - name: image.repository
+          value: docker.io/geraldobl58/nexo-be
+        - name: image.tag
+          value: latest
+        - name: image.pullPolicy
+          value: Always
         - name: ingress.hosts[0].host
           value: prod.api.nexo.local
-        - name: ingress.className
-          value: nginx
-        - name: env.NODE_ENV
-          value: production
+        - name: imagePullSecrets[0].name
+          value: dockerhub-secret
   destination:
     server: https://kubernetes.default.svc
     namespace: nexo-prod
@@ -55,6 +64,11 @@ kind: Application
 metadata:
   name: nexo-fe-prod
   namespace: argocd
+  annotations:
+    argocd-image-updater.argoproj.io/image-list: nexo-fe=docker.io/geraldobl58/nexo-fe:latest
+    argocd-image-updater.argoproj.io/nexo-fe.update-strategy: digest
+    argocd-image-updater.argoproj.io/nexo-fe.pull-secret: secret:argocd/dockerhub-secret#creds
+    argocd-image-updater.argoproj.io/write-back-method: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
   labels:
@@ -71,12 +85,16 @@ spec:
         - values.yaml
         - values-prod.yaml
       parameters:
+        - name: image.repository
+          value: docker.io/geraldobl58/nexo-fe
+        - name: image.tag
+          value: latest
+        - name: image.pullPolicy
+          value: Always
         - name: ingress.hosts[0].host
           value: prod.nexo.local
-        - name: ingress.className
-          value: nginx
-        - name: env.NODE_ENV
-          value: production
+        - name: imagePullSecrets[0].name
+          value: dockerhub-secret
   destination:
     server: https://kubernetes.default.svc
     namespace: nexo-prod
@@ -101,6 +119,11 @@ kind: Application
 metadata:
   name: nexo-auth-prod
   namespace: argocd
+  annotations:
+    argocd-image-updater.argoproj.io/image-list: nexo-auth=docker.io/geraldobl58/nexo-auth:latest
+    argocd-image-updater.argoproj.io/nexo-auth.update-strategy: digest
+    argocd-image-updater.argoproj.io/nexo-auth.pull-secret: secret:argocd/dockerhub-secret#creds
+    argocd-image-updater.argoproj.io/write-back-method: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
   labels:
@@ -117,12 +140,22 @@ spec:
         - values.yaml
         - values-prod.yaml
       parameters:
+        # Imagem - usando oficial Keycloak
+        - name: image.repository
+          value: quay.io/keycloak/keycloak
+        - name: image.tag
+          value: "26.5"
+        - name: image.pullPolicy
+          value: IfNotPresent
+        # Ingress
         - name: ingress.hosts[0].host
           value: prod.auth.nexo.local
         - name: ingress.className
-          value: nginx
+          value: traefik
+        # Management port para Keycloak 26+
         - name: managementPort
           value: "9000"
+        # PostgreSQL - Controlado pelo ArgoCD
         - name: postgresql.enabled
           value: "true"
         - name: postgresql.database
@@ -131,6 +164,12 @@ spec:
           value: keycloak
         - name: postgresql.password
           value: keycloak_prod_123
+        - name: postgresql.persistence.enabled
+          value: "true"
+        - name: postgresql.persistence.size
+          value: "5Gi"
+        - name: postgresql.persistence.storageClass
+          value: "local-path"
   destination:
     server: https://kubernetes.default.svc
     namespace: nexo-prod

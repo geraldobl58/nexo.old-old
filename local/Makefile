@@ -118,66 +118,116 @@ pf-prometheus: ## Port-forward Prometheus (localhost:9090)
 # Diretório raiz do projeto
 ROOT_DIR := $(shell dirname $(LOCAL_DIR))
 
-# DockerHub username
-DOCKER_USER := geraldobl58
+# Registry Local K3D (dentro do cluster)
+REGISTRY_INTERNAL := nexo-registry:5000
 
-# Build flags para compatibilidade com K3D (linux/amd64)
-DOCKER_BUILD_FLAGS := --platform linux/amd64 --provenance=false --sbom=false
+# Registry Local K3D (acesso externo)
+REGISTRY_EXTERNAL := localhost:5050
+
+# Cluster name
+CLUSTER_NAME := nexo-local
+
+# Git SHA para tags
+GIT_SHA := $(shell git rev-parse --short HEAD 2>/dev/null || echo "latest")
 
 # ============================================================================
-# Build e Push para DockerHub
+# Build e Push para Registry Local K3D
+# ============================================================================
+# Workflow AUTOMÁTICO: git push → GitHub Actions → build → push registry → ArgoCD sync
+# Workflow LOCAL: make deploy-local-<app> → build → push registry → ArgoCD detect
 # ============================================================================
 
-docker-login: ## Login no DockerHub
-	@echo "$(C)🔐 Login no DockerHub...$(N)"
-	@docker login
-	@echo "$(G)✓ Login realizado$(N)"
+build-be: ## Build imagem do backend com SHA tag e push para registry local
+	@echo "$(Y)🔨 Building nexo-be:$(GIT_SHA)...$(N)"
+	@docker build --load -t $(REGISTRY_EXTERNAL)/nexo-be:$(GIT_SHA) -t $(REGISTRY_EXTERNAL)/nexo-be:latest -f $(ROOT_DIR)/apps/nexo-be/Dockerfile $(ROOT_DIR)
+	@echo "$(C)📤 Pushing to local registry...$(N)"
+	@docker push $(REGISTRY_EXTERNAL)/nexo-be:$(GIT_SHA)
+	@docker push $(REGISTRY_EXTERNAL)/nexo-be:latest
+	@echo "$(G)✓ nexo-be:$(GIT_SHA) built and pushed$(N)"
 
-build-be: ## Build imagem do backend e push para DockerHub
-	@echo "$(Y)🔨 Building nexo-be...$(N)"
-	@docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_USER)/nexo-be:latest -f $(ROOT_DIR)/apps/nexo-be/Dockerfile $(ROOT_DIR)
-	@docker push $(DOCKER_USER)/nexo-be:latest
-	@echo "$(G)✓ nexo-be built and pushed to DockerHub$(N)"
+build-fe: ## Build imagem do frontend com SHA tag e push para registry local
+	@echo "$(Y)🔨 Building nexo-fe:$(GIT_SHA)...$(N)"
+	@docker build --load -t $(REGISTRY_EXTERNAL)/nexo-fe:$(GIT_SHA) -t $(REGISTRY_EXTERNAL)/nexo-fe:latest -f $(ROOT_DIR)/apps/nexo-fe/Dockerfile $(ROOT_DIR)
+	@echo "$(C)📤 Pushing to local registry...$(N)"
+	@docker push $(REGISTRY_EXTERNAL)/nexo-fe:$(GIT_SHA)
+	@docker push $(REGISTRY_EXTERNAL)/nexo-fe:latest
+	@echo "$(G)✓ nexo-fe:$(GIT_SHA) built and pushed$(N)"
 
-build-fe: ## Build imagem do frontend e push para DockerHub
-	@echo "$(Y)🔨 Building nexo-fe...$(N)"
-	@docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_USER)/nexo-fe:latest -f $(ROOT_DIR)/apps/nexo-fe/Dockerfile $(ROOT_DIR)
-	@docker push $(DOCKER_USER)/nexo-fe:latest
-	@echo "$(G)✓ nexo-fe built and pushed to DockerHub$(N)"
+build-auth: ## Build imagem do auth com SHA tag e push para registry local
+	@echo "$(Y)🔨 Building nexo-auth:$(GIT_SHA)...$(N)"
+	@docker build --load -t $(REGISTRY_EXTERNAL)/nexo-auth:$(GIT_SHA) -t $(REGISTRY_EXTERNAL)/nexo-auth:latest -f $(ROOT_DIR)/apps/nexo-auth/Dockerfile $(ROOT_DIR)
+	@echo "$(C)📤 Pushing to local registry...$(N)"
+	@docker push $(REGISTRY_EXTERNAL)/nexo-auth:$(GIT_SHA)
+	@docker push $(REGISTRY_EXTERNAL)/nexo-auth:latest
+	@echo "$(G)✓ nexo-auth:$(GIT_SHA) built and pushed$(N)"
 
-build-auth: ## Build imagem do auth e push para DockerHub
-	@echo "$(Y)🔨 Building nexo-auth...$(N)"
-	@docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_USER)/nexo-auth:latest -f $(ROOT_DIR)/apps/nexo-auth/Dockerfile $(ROOT_DIR)/apps/nexo-auth
-	@docker push $(DOCKER_USER)/nexo-auth:latest
-	@echo "$(G)✓ nexo-auth built and pushed to DockerHub$(N)"
+build-images: build-auth build-be build-fe ## Build e push de todas as imagens para registry local
+	@echo "$(G)✓ All images built and pushed to registry$(N)"
+	@echo ""
+	@echo "$(C)📦 Imagens no registry local:$(N)"
+	@curl -s http://localhost:5050/v2/_catalog 2>/dev/null || echo "Registry not accessible"
 
-build-all: build-be build-fe build-auth ## Build e push de todas as imagens
+# ============================================================================
+# Deploy Automático Local (simula pipeline CI/CD)
+# ============================================================================
+# Fluxo: Build → Push registry → Atualiza tag no values → ArgoCD sincroniza
+# ============================================================================
 
-deploy-be: ## Deploy do backend (puxa imagem do DockerHub)
+deploy-local-be: build-be ## Build, push e trigger deploy do backend
+	@echo "$(Y)🚀 Triggering deploy nexo-be:$(GIT_SHA)...$(N)"
+	@kubectl rollout restart deployment/nexo-be-develop -n nexo-develop 2>/dev/null || true
+	@echo "$(G)✓ nexo-be deploy triggered$(N)"
+
+deploy-local-fe: build-fe ## Build, push e trigger deploy do frontend
+	@echo "$(Y)🚀 Triggering deploy nexo-fe:$(GIT_SHA)...$(N)"
+	@kubectl rollout restart deployment/nexo-fe-develop -n nexo-develop 2>/dev/null || true
+	@echo "$(G)✓ nexo-fe deploy triggered$(N)"
+
+deploy-local-auth: build-auth ## Build, push e trigger deploy do Keycloak
+	@echo "$(Y)🚀 Triggering deploy nexo-auth:$(GIT_SHA)...$(N)"
+	@kubectl rollout restart deployment/nexo-auth-develop -n nexo-develop 2>/dev/null || true
+	@echo "$(G)✓ nexo-auth deploy triggered$(N)"
+
+deploy-local-all: deploy-local-be deploy-local-fe deploy-local-auth ## Build, push e deploy de todos os serviços
+	@echo "$(G)✓ All services built and deployed with SHA $(GIT_SHA)$(N)"
+
+deploy-be: ## Deploy do backend (apenas trigger rollout)
 	@echo "$(Y)🚀 Deploying nexo-be...$(N)"
 	@kubectl rollout restart deployment/nexo-be-develop -n nexo-develop 2>/dev/null || \
-		helm upgrade --install nexo-be-develop $(LOCAL_DIR)/helm/nexo-be -n nexo-develop --create-namespace
+		helm upgrade --install nexo-be-develop $(LOCAL_DIR)/helm/nexo-be -n nexo-develop -f $(LOCAL_DIR)/helm/nexo-be/values-local.yaml --create-namespace
 	@echo "$(G)✓ nexo-be deployed$(N)"
 
-deploy-fe: ## Deploy do frontend (puxa imagem do DockerHub)
+deploy-fe: ## Deploy do frontend (apenas trigger rollout)
 	@echo "$(Y)🚀 Deploying nexo-fe...$(N)"
 	@kubectl rollout restart deployment/nexo-fe-develop -n nexo-develop 2>/dev/null || \
-		helm upgrade --install nexo-fe-develop $(LOCAL_DIR)/helm/nexo-fe -n nexo-develop --create-namespace
+		helm upgrade --install nexo-fe-develop $(LOCAL_DIR)/helm/nexo-fe -n nexo-develop -f $(LOCAL_DIR)/helm/nexo-fe/values-local.yaml --create-namespace
 	@echo "$(G)✓ nexo-fe deployed$(N)"
 
-deploy-auth: ## Deploy do Keycloak
+deploy-auth: ## Deploy do Keycloak (apenas trigger rollout)
 	@echo "$(Y)🚀 Deploying nexo-auth...$(N)"
 	@kubectl rollout restart deployment/nexo-auth-develop -n nexo-develop 2>/dev/null || \
-		helm upgrade --install nexo-auth-develop $(LOCAL_DIR)/helm/nexo-auth -n nexo-develop --create-namespace
+		helm upgrade --install nexo-auth-develop $(LOCAL_DIR)/helm/nexo-auth -n nexo-develop -f $(LOCAL_DIR)/helm/nexo-auth/values-local.yaml --create-namespace
 	@echo "$(G)✓ nexo-auth deployed$(N)"
 
 deploy-all: deploy-be deploy-fe deploy-auth ## Deploy de todos os serviços
 	@echo "$(G)✓ All services deployed$(N)"
 
-pull-latest: ## Força K3D a puxar as últimas imagens do DockerHub
-	@echo "$(Y)🔄 Forcing image pull from DockerHub...$(N)"
+redeploy: ## Força redeploy puxando imagens mais recentes do registry local
+	@echo "$(Y)🔄 Forcing redeploy from local registry...$(N)"
 	@kubectl rollout restart deployment -n nexo-develop
 	@echo "$(G)✓ Deployments restarted - pulling latest images$(N)"
+
+# ============================================================================
+# Pipeline Local Completa (Git + Deploy)
+# ============================================================================
+
+pipeline-local: deploy-local-all ## Executa pipeline completa local (build + push + deploy)
+	@echo "$(G)✅ Pipeline local completa!$(N)"
+	@echo "   SHA: $(GIT_SHA)"
+	@echo "   Registry: $(REGISTRY_EXTERNAL)"
+	@echo ""
+	@echo "$(C)📊 Status dos deployments:$(N)"
+	@kubectl get deployments -n nexo-develop
 
 # ============================================================================
 # ArgoCD
@@ -187,10 +237,6 @@ argocd-password: ## Mostra senha do ArgoCD
 	@echo "$(C)ArgoCD Admin Password:$(N)"
 	@kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
 	@echo ""
-
-argocd-sync: ## Sincroniza todas as applications
-	@kubectl -n argocd get applications -o name | xargs -I {} kubectl -n argocd patch {} --type merge -p '{"operation":{"sync":{}}}'
-	@echo "$(G)✓ Sync iniciado para todas as applications$(N)"
 
 sync-all: argocd-sync ## Alias para argocd-sync
 
