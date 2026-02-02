@@ -3,7 +3,7 @@ replicaCount: 1
 image:
   # Keycloak oficial - sem custom theme por enquanto
   # Para usar theme customizado: localhost:5001/nexo-auth
-  tag: "develop-034f608f9b1f25101f654c01bb974012c4b97a10"
+  tag: "develop-68d6eedc90ac14431831cad6e2dcc9846e11c461"
   pullPolicy: IfNotPresent
 # imagePullSecrets: (não precisa para registry local)
 #   - name: ghcr-secret
@@ -48,7 +48,7 @@ postgresql:
   enabled: true
   image:
     repository: postgres
-    tag: "develop-034f608f9b1f25101f654c01bb974012c4b97a10"
+    tag: "develop-68d6eedc90ac14431831cad6e2dcc9846e11c461"
     pullPolicy: IfNotPresent
   database: keycloak
   username: keycloak
@@ -66,4 +66,4 @@ postgresql:
       cpu: 100m
       memory: 256Mi
 podAnnotations:
-  app.kubernetes.io/commit: "034f608"
+  app.kubernetes.io/commit: "68d6eed"
