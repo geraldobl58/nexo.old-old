@@ -23,7 +23,7 @@ spec:
     helm:
       valueFiles:
         - values.yaml
-        - values-local.yaml
+        - values-dev.yaml
       parameters:
         # Apenas sobrescreve host do ingress - demais vêm do values-local.yaml
         - name: ingress.hosts[0].host
@@ -68,7 +68,7 @@ spec:
     helm:
       valueFiles:
         - values.yaml
-        - values-local.yaml
+        - values-dev.yaml
       parameters:
         # Apenas sobrescreve host do ingress - demais vêm do values-local.yaml
         - name: ingress.hosts[0].host
@@ -113,7 +113,7 @@ spec:
     helm:
       valueFiles:
         - values.yaml
-        - values-local.yaml
+        - values-dev.yaml
       parameters:
         # Ingress
         - name: ingress.hosts[0].host
