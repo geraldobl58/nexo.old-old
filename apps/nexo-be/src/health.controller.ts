@@ -10,7 +10,7 @@ export class HealthController {
   })
   @ApiResponse({
     status: 200,
-    description: 'Deployments automáticos estão funcionando corretamente.',
+    description: 'Pipeline Funcionando Perfeitamente! 🎉Test 2',
     schema: {
       type: 'object',
       properties: {

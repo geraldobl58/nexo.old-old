@@ -1,19 +1,14 @@
 # ============================================================================
-# Nexo Platform - ArgoCD Applications - Ambiente QA
+# Nexo Platform - ArgoCD Applications - Ambiente QA (LOCAL)
 # ============================================================================
-# Branch: qa
-# Domínios: qa.nexo.local, qa.api.nexo.local, qa.auth.nexo.local
+# Usa REGISTRY LOCAL (nexo-registry:5000) - sem dependência do DockerHub
+# Namespace: nexo-qa
 # ============================================================================
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   name: nexo-be-qa
   namespace: argocd
-  annotations:
-    argocd-image-updater.argoproj.io/image-list: nexo-be=docker.io/geraldobl58/nexo-be:qa
-    argocd-image-updater.argoproj.io/nexo-be.update-strategy: digest
-    argocd-image-updater.argoproj.io/nexo-be.pull-secret: secret:argocd/dockerhub-secret#creds
-    argocd-image-updater.argoproj.io/write-back-method: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
   labels:
@@ -30,16 +25,12 @@ spec:
         - values.yaml
         - values-qa.yaml
       parameters:
-        - name: image.repository
-          value: docker.io/geraldobl58/nexo-be
-        - name: image.tag
-          value: qa
-        - name: image.pullPolicy
-          value: Always
         - name: ingress.hosts[0].host
           value: qa.api.nexo.local
-        - name: imagePullSecrets[0].name
-          value: dockerhub-secret
+        - name: ingress.className
+          value: nginx
+        - name: env.NODE_ENV
+          value: qa
   destination:
     server: https://kubernetes.default.svc
     namespace: nexo-qa
@@ -64,11 +55,6 @@ kind: Application
 metadata:
   name: nexo-fe-qa
   namespace: argocd
-  annotations:
-    argocd-image-updater.argoproj.io/image-list: nexo-fe=docker.io/geraldobl58/nexo-fe:qa
-    argocd-image-updater.argoproj.io/nexo-fe.update-strategy: digest
-    argocd-image-updater.argoproj.io/nexo-fe.pull-secret: secret:argocd/dockerhub-secret#creds
-    argocd-image-updater.argoproj.io/write-back-method: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
   labels:
@@ -85,16 +71,12 @@ spec:
         - values.yaml
         - values-qa.yaml
       parameters:
-        - name: image.repository
-          value: docker.io/geraldobl58/nexo-fe
-        - name: image.tag
-          value: qa
-        - name: image.pullPolicy
-          value: Always
         - name: ingress.hosts[0].host
           value: qa.nexo.local
-        - name: imagePullSecrets[0].name
-          value: dockerhub-secret
+        - name: ingress.className
+          value: nginx
+        - name: env.NODE_ENV
+          value: qa
   destination:
     server: https://kubernetes.default.svc
     namespace: nexo-qa
@@ -119,11 +101,6 @@ kind: Application
 metadata:
   name: nexo-auth-qa
   namespace: argocd
-  annotations:
-    argocd-image-updater.argoproj.io/image-list: nexo-auth=docker.io/geraldobl58/nexo-auth:qa
-    argocd-image-updater.argoproj.io/nexo-auth.update-strategy: digest
-    argocd-image-updater.argoproj.io/nexo-auth.pull-secret: secret:argocd/dockerhub-secret#creds
-    argocd-image-updater.argoproj.io/write-back-method: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
   labels:
@@ -140,22 +117,12 @@ spec:
         - values.yaml
         - values-qa.yaml
       parameters:
-        # Imagem - usando oficial Keycloak
-        - name: image.repository
-          value: quay.io/keycloak/keycloak
-        - name: image.tag
-          value: "26.5"
-        - name: image.pullPolicy
-          value: IfNotPresent
-        # Ingress
         - name: ingress.hosts[0].host
           value: qa.auth.nexo.local
         - name: ingress.className
-          value: traefik
-        # Management port para Keycloak 26+
+          value: nginx
         - name: managementPort
           value: "9000"
-        # PostgreSQL - Controlado pelo ArgoCD
         - name: postgresql.enabled
           value: "true"
         - name: postgresql.database
@@ -164,12 +131,6 @@ spec:
           value: keycloak
         - name: postgresql.password
           value: keycloak_qa_123
-        - name: postgresql.persistence.enabled
-          value: "true"
-        - name: postgresql.persistence.size
-          value: "2Gi"
-        - name: postgresql.persistence.storageClass
-          value: "local-path"
   destination:
     server: https://kubernetes.default.svc
     namespace: nexo-qa

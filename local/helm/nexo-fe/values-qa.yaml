@@ -2,14 +2,14 @@
 # Deploy automático via branch 'qa'
 replicaCount: 1
 image:
-  repository: docker.io/geraldobl58/nexo-fe
+  repository: ghcr.io/geraldobl58/nexo-fe
   tag: "qa"
   pullPolicy: Always
 imagePullSecrets:
   - name: dockerhub-secret
 ingress:
   enabled: true
-  className: "traefik"
+  className: "nginx"
   annotations: {}
   hosts:
     - host: qa.nexo.local

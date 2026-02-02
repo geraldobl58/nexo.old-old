@@ -3,12 +3,13 @@
 # ============================================================================
 # Cluster Kubernetes local para desenvolvimento
 # 1 server + 2 agents = simulação de cluster produção
+# Registry local integrado (sem dependência do DockerHub)
 # ============================================================================
 
 apiVersion: k3d.io/v1alpha5
 kind: Simple
 metadata:
-  name: nexo-develop
+  name: nexo-local
 servers: 1
 agents: 2
 image: rancher/k3s:v1.29.0-k3s1
@@ -39,13 +40,20 @@ ports:
     nodeFilters:
       - loadbalancer
 
-# Registries - DockerHub como padrão
+# Registry local para desenvolvimento (evita dependência do DockerHub)
+# O registry nexo-registry é criado automaticamente e acessível em:
+# - localhost:5050 (de fora do cluster)
+# - nexo-registry:5000 (de dentro do cluster)
 registries:
+  create:
+    name: nexo-registry
+    host: "0.0.0.0"
+    hostPort: "5050"
   config: |
     mirrors:
-      "docker.io":
+      "nexo-registry:5000":
         endpoint:
-          - "https://registry-1.docker.io"
+          - "http://nexo-registry:5000"
 
 # Opções do K3s
 options:

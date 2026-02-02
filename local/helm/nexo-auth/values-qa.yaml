@@ -2,14 +2,14 @@
 # Deploy automático via branch 'qa'
 replicaCount: 1
 image:
-  repository: docker.io/geraldobl58/nexo-auth
+  repository: ghcr.io/geraldobl58/nexo-auth
   tag: "qa"
   pullPolicy: Always
 imagePullSecrets:
   - name: dockerhub-secret
 ingress:
   enabled: true
-  className: "traefik"
+  className: "nginx"
   annotations:
     nginx.ingress.kubernetes.io/proxy-buffer-size: "128k"
   hosts:

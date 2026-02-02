@@ -3,12 +3,13 @@ replicaCount: 1
 image:
   # Keycloak oficial - sem custom theme por enquanto
   # Para usar theme customizado: localhost:5001/nexo-auth
-  tag: "dab650039513eb46c3ff24f84b51cdbd7a70ce51"
+  tag: "develop-034f608f9b1f25101f654c01bb974012c4b97a10"
   pullPolicy: IfNotPresent
-imagePullSecrets: []
+# imagePullSecrets: (não precisa para registry local)
+#   - name: ghcr-secret
 ingress:
   enabled: true
-  className: "traefik"
+  className: "nginx"
   annotations: {}
   hosts:
     - host: nexo-auth.local
@@ -47,7 +48,7 @@ postgresql:
   enabled: true
   image:
     repository: postgres
-    tag: "16-alpine"
+    tag: "develop-034f608f9b1f25101f654c01bb974012c4b97a10"
     pullPolicy: IfNotPresent
   database: keycloak
   username: keycloak
@@ -65,4 +66,4 @@ postgresql:
       cpu: 100m
       memory: 256Mi
 podAnnotations:
-  app.kubernetes.io/commit: "8fd0f82"
+  app.kubernetes.io/commit: "034f608"
