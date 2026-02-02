@@ -5,7 +5,7 @@ image:
   pullPolicy: Always
   tag: "develop"
 imagePullSecrets:
-  - name: dockerhub-secret
+  - name: ghcr-secret
 nameOverride: ""
 fullnameOverride: ""
 serviceAccount:

@@ -1,7 +1,7 @@
 const HomePage = () => {
   return (
     <>
-      <div>Version 2</div>
+      <div>Deploy funcionando show de bola - Version 2 🚀</div>
     </>
   );
 };
