@@ -238,10 +238,6 @@ argocd-password: ## Mostra senha do ArgoCD
 	@kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
 	@echo ""
 
-argocd-sync: ## Sincroniza todas as applications
-	@kubectl -n argocd get applications -o name | xargs -I {} kubectl -n argocd patch {} --type merge -p '{"operation":{"sync":{}}}'
-	@echo "$(G)✓ Sync iniciado para todas as applications$(N)"
-
 sync-all: argocd-sync ## Alias para argocd-sync
 
 # ============================================================================
