@@ -2,12 +2,13 @@
 replicaCount: 1
 image:
   # Para desenvolvimento local com K3D
-  repository: docker.io/geraldobl58/nexo-fe
+  repository: ghcr.io/geraldobl58/nexo-fe
   tag: "develop"
   pullPolicy: Always
 # Para ambientes remotos, usar dockerhub-secret
 # Para K3D local, deixar vazio
-imagePullSecrets: []
+imagePullSecrets:
+  - name: ghcr-secret
 ingress:
   enabled: true
   className: "nginx"

@@ -3,11 +3,12 @@
 replicaCount: 2
 
 image:
-  repository: docker.io/geraldobl58/nexo-fe
+  repository: ghcr.io/geraldobl58/nexo-fe
   tag: "staging"
   pullPolicy: Always
 
-imagePullSecrets: []
+imagePullSecrets:
+  - name: ghcr-secret
 
 ingress:
   enabled: true

@@ -18,19 +18,13 @@ spec:
   project: nexo-prod
   source:
     repoURL: https://github.com/geraldobl58/nexo.git
-    targetRevision: develop
+    targetRevision: main
     path: local/helm/nexo-be
     helm:
       valueFiles:
         - values.yaml
-        - values-local.yaml
+        - values-prod.yaml
       parameters:
-        - name: image.repository
-          value: nexo-registry:5000/nexo-be
-        - name: image.tag
-          value: local
-        - name: image.pullPolicy
-          value: Never
         - name: ingress.hosts[0].host
           value: prod.api.nexo.local
         - name: ingress.className
@@ -70,19 +64,13 @@ spec:
   project: nexo-prod
   source:
     repoURL: https://github.com/geraldobl58/nexo.git
-    targetRevision: develop
+    targetRevision: main
     path: local/helm/nexo-fe
     helm:
       valueFiles:
         - values.yaml
-        - values-local.yaml
+        - values-prod.yaml
       parameters:
-        - name: image.repository
-          value: nexo-registry:5000/nexo-fe
-        - name: image.tag
-          value: local
-        - name: image.pullPolicy
-          value: Never
         - name: ingress.hosts[0].host
           value: prod.nexo.local
         - name: ingress.className
@@ -122,19 +110,13 @@ spec:
   project: nexo-prod
   source:
     repoURL: https://github.com/geraldobl58/nexo.git
-    targetRevision: develop
+    targetRevision: main
     path: local/helm/nexo-auth
     helm:
       valueFiles:
         - values.yaml
-        - values-local.yaml
+        - values-prod.yaml
       parameters:
-        - name: image.repository
-          value: nexo-registry:5000/nexo-auth
-        - name: image.tag
-          value: local
-        - name: image.pullPolicy
-          value: Never
         - name: ingress.hosts[0].host
           value: prod.auth.nexo.local
         - name: ingress.className
