@@ -3,7 +3,7 @@ replicaCount: 1
 image:
   # Para desenvolvimento local com K3D
   repository: ghcr.io/geraldobl58/nexo-be
-  tag: "develop-a73c004e3ffc6b7cea0b59de5fb15128ec8d1a63"
+  tag: "develop-6dfc569a856f696d95f2c2ccd58c43ddea002eb7"
   pullPolicy: Always
 # Para ambientes remotos, usar dockerhub-secret
 # Para K3D local, deixar vazio
@@ -39,4 +39,4 @@ envFrom: []
 podDisruptionBudget:
   enabled: false
 podAnnotations:
-  app.kubernetes.io/commit: "a73c004"
+  app.kubernetes.io/commit: "6dfc569"
