@@ -10,9 +10,10 @@ replicaCount: 1
 image:
   # Registry local do k3d (acessível de dentro do cluster)
   repository: nexo-registry:5000/nexo-be
-  tag: "local"
-  # Never = usa imagens importadas via k3d image import
-  pullPolicy: Never
+  # Tag dinâmica - atualizada automaticamente pelo Makefile/pipeline
+  tag: "latest"
+  # Always = força pull do registry local a cada deploy
+  pullPolicy: Always
 
 # Registry local não precisa de autenticação
 imagePullSecrets: []

@@ -1,15 +1,14 @@
 # ============================================================================
 # Nexo Platform - ArgoCD Applications - Ambiente Develop (LOCAL)
 # ============================================================================
-# Usa REGISTRY LOCAL (k3d-nexo-registry:5000) - sem dependência do DockerHub
-# Para cloud/produção: usar nexo-develop-dockerhub.yaml.bak como referência
+# Usa REGISTRY LOCAL (nexo-registry:5000) com deploy automático
+# Pipeline: git push → GitHub Actions → build → push registry local → ArgoCD sync
 # ============================================================================
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   name: nexo-be-develop
   namespace: argocd
-  # Sem Image Updater - usando registry local
   finalizers:
     - resources-finalizer.argocd.argoproj.io
   labels:
@@ -26,13 +25,7 @@ spec:
         - values.yaml
         - values-local.yaml
       parameters:
-        # Registry local do K3D
-        - name: image.repository
-          value: nexo-registry:5000/nexo-be
-        - name: image.tag
-          value: local
-        - name: image.pullPolicy
-          value: Never
+        # Apenas sobrescreve host do ingress - demais vêm do values-local.yaml
         - name: ingress.hosts[0].host
           value: develop.api.nexo.local
         - name: ingress.className
@@ -61,7 +54,6 @@ kind: Application
 metadata:
   name: nexo-fe-develop
   namespace: argocd
-  # Sem Image Updater - usando registry local
   finalizers:
     - resources-finalizer.argocd.argoproj.io
   labels:
@@ -78,13 +70,7 @@ spec:
         - values.yaml
         - values-local.yaml
       parameters:
-        # Registry local do K3D
-        - name: image.repository
-          value: nexo-registry:5000/nexo-fe
-        - name: image.tag
-          value: local
-        - name: image.pullPolicy
-          value: Never
+        # Apenas sobrescreve host do ingress - demais vêm do values-local.yaml
         - name: ingress.hosts[0].host
           value: develop.nexo.local
         - name: ingress.className
@@ -113,7 +99,6 @@ kind: Application
 metadata:
   name: nexo-auth-develop
   namespace: argocd
-  # Sem Image Updater - usando registry local
   finalizers:
     - resources-finalizer.argocd.argoproj.io
   labels:
@@ -130,13 +115,6 @@ spec:
         - values.yaml
         - values-local.yaml
       parameters:
-        # Registry local do K3D
-        - name: image.repository
-          value: nexo-registry:5000/nexo-auth
-        - name: image.tag
-          value: local
-        - name: image.pullPolicy
-          value: Never
         # Ingress
         - name: ingress.hosts[0].host
           value: develop.auth.nexo.local
