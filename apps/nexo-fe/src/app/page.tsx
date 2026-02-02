@@ -1,7 +1,7 @@
 const HomePage = () => {
   return (
     <>
-      <div>Agora vai</div>
+      <div>Pipeline Funcionando Perfeitamente! 🎉</div>
     </>
   );
 };
