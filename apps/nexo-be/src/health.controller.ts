@@ -10,7 +10,7 @@ export class HealthController {
   })
   @ApiResponse({
     status: 200,
-    description: 'Version 1 ',
+    description: 'Version 2',
     schema: {
       type: 'object',
       properties: {
