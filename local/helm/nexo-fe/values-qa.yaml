@@ -1,12 +1,15 @@
 # Values for QA environment
 # Deploy automático via branch 'qa'
 replicaCount: 1
+
 image:
   repository: ghcr.io/geraldobl58/nexo-fe
-  tag: "qa-04a0f66f000ab517c72a4152ab7a6c91f72a99aa"
+  tag: "qa"
   pullPolicy: Always
+
 imagePullSecrets:
-  - name: dockerhub-secret
+  - name: ghcr-secret
+
 ingress:
   enabled: true
   className: "nginx"
@@ -17,6 +20,7 @@ ingress:
         - path: /
           pathType: Prefix
   tls: []
+
 resources:
   limits:
     cpu: 500m
@@ -24,20 +28,25 @@ resources:
   requests:
     cpu: 100m
     memory: 256Mi
+
 autoscaling:
   enabled: true
   minReplicas: 1
   maxReplicas: 2
   targetCPUUtilizationPercentage: 80
+
 env:
   NODE_ENV: qa
   NEXT_PUBLIC_API_URL: https://api.qa.nexo.io
   NEXT_PUBLIC_KEYCLOAK_URL: https://auth.qa.nexo.io
   NEXT_PUBLIC_KEYCLOAK_REALM: nexo-qa
   NEXT_PUBLIC_KEYCLOAK_CLIENT_ID: nexo-fe
+
 # Para ambiente local, sem secrets externos
 envFrom: []
+
 podDisruptionBudget:
   enabled: false
+
 podAnnotations:
-  app.kubernetes.io/commit: "04a0f66"
+  app.kubernetes.io/commit: "initial"

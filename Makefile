@@ -52,6 +52,11 @@ help:
 	@echo "  make build-auth    Build imagem Auth"
 	@echo "  make build-all     Build todas as imagens"
 	@echo ""
+	@echo "$(B)GIT WORKFLOW$(N)"
+	@echo "  make promote-qa       Promover develop → qa"
+	@echo "  make promote-staging  Promover qa → staging"
+	@echo "  make promote-prod     Promover staging → main (prod)"
+	@echo ""
 	@echo "$(B)DATABASE$(N)"
 	@echo "  make db-migrate    Executa migrações Prisma"
 	@echo "  make db-generate   Gera client Prisma"
@@ -147,7 +152,23 @@ build-all: build-fe build-be build-auth
 	@echo "$(G)✅ Todas as imagens buildadas$(N)"
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# 🗄️ DATABASE (Prisma)
+# � GIT WORKFLOW (Promoção entre Ambientes)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+promote-qa:
+	@echo "$(B)🚀 Promovendo develop → qa$(N)"
+	@./scripts/promote.sh develop qa
+
+promote-staging:
+	@echo "$(B)🚀 Promovendo qa → staging$(N)"
+	@./scripts/promote.sh qa staging
+
+promote-prod:
+	@echo "$(B)🚀 Promovendo staging → main (prod)$(N)"
+	@./scripts/promote.sh staging main
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# �🗄️ DATABASE (Prisma)
 # ═══════════════════════════════════════════════════════════════════════════════
 
 db-migrate:
