@@ -3,12 +3,12 @@ replicaCount: 1
 image:
   # Para desenvolvimento local com K3D
   repository: ghcr.io/geraldobl58/nexo-be
-  tag: "develop-68d6eedc90ac14431831cad6e2dcc9846e11c461"
+  tag: "develop-b1ec70473dc501c5dc1be16bc452dcbca23e8e86"
   pullPolicy: Always
-# Para ambientes remotos, usar dockerhub-secret
-# Para K3D local, deixar vazio
-# imagePullSecrets: (não precisa para registry local)
-#   - name: ghcr-secret
+
+imagePullSecrets:
+  - name: ghcr-secret
+
 ingress:
   enabled: true
   className: "nginx"
@@ -39,4 +39,4 @@ envFrom: []
 podDisruptionBudget:
   enabled: false
 podAnnotations:
-  app.kubernetes.io/commit: "68d6eed"
+  app.kubernetes.io/commit: "b1ec704"

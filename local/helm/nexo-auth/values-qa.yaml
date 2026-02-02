@@ -4,7 +4,7 @@ replicaCount: 1
 
 image:
   repository: ghcr.io/geraldobl58/nexo-auth
-  tag: "qa"
+  tag: "qa-288e2c9ff8b9cbb03ddbac5009c51b84fec97299"
   pullPolicy: Always
 
 imagePullSecrets:
@@ -61,7 +61,7 @@ postgresql:
   enabled: true
   image:
     repository: postgres
-    tag: "16-alpine"
+    tag: "qa-288e2c9ff8b9cbb03ddbac5009c51b84fec97299"
     pullPolicy: IfNotPresent
   database: keycloak
   username: keycloak
@@ -80,4 +80,4 @@ postgresql:
       memory: 256Mi
 
 podAnnotations:
-  app.kubernetes.io/commit: "initial"
+  app.kubernetes.io/commit: "288e2c9"
