@@ -58,8 +58,9 @@ env:
   IMAGE_OWNER: ${{ github.repository_owner }}
 
 # Evita execuções concorrentes na mesma branch
+# Apenas novos pushes cancelam execuções anteriores (não re-runs)
 concurrency:
-  group: pipeline-${{ github.ref }}
+  group: pipeline-${{ github.ref }}-${{ github.sha }}
   cancel-in-progress: true
 
 permissions:
