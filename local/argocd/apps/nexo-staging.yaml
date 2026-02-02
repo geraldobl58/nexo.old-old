@@ -33,6 +33,8 @@ spec:
           value: Never
         - name: ingress.hosts[0].host
           value: staging.api.nexo.local
+        - name: ingress.className
+          value: nginx
         - name: env.NODE_ENV
           value: staging
   destination:
@@ -83,6 +85,8 @@ spec:
           value: Never
         - name: ingress.hosts[0].host
           value: staging.nexo.local
+        - name: ingress.className
+          value: nginx
         - name: env.NODE_ENV
           value: staging
   destination:
@@ -134,7 +138,7 @@ spec:
         - name: ingress.hosts[0].host
           value: staging.auth.nexo.local
         - name: ingress.className
-          value: traefik
+          value: nginx
         - name: managementPort
           value: "9000"
         - name: postgresql.enabled

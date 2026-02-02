@@ -12,7 +12,7 @@ imagePullSecrets:
 
 ingress:
   enabled: true
-  className: "traefik"
+  className: "nginx"
   annotations:
     nginx.ingress.kubernetes.io/proxy-buffer-size: "128k"
   hosts:

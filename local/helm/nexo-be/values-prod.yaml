@@ -11,7 +11,7 @@ imagePullSecrets: []
 
 ingress:
   enabled: true
-  className: "traefik"
+  className: "nginx"
   annotations: {}
   hosts:
     - host: prod.api.nexo.local

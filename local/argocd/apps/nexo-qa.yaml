@@ -33,6 +33,8 @@ spec:
           value: Never
         - name: ingress.hosts[0].host
           value: qa.api.nexo.local
+        - name: ingress.className
+          value: nginx
         - name: env.NODE_ENV
           value: qa
   destination:
@@ -83,6 +85,8 @@ spec:
           value: Never
         - name: ingress.hosts[0].host
           value: qa.nexo.local
+        - name: ingress.className
+          value: nginx
         - name: env.NODE_ENV
           value: qa
   destination:
@@ -134,7 +138,7 @@ spec:
         - name: ingress.hosts[0].host
           value: qa.auth.nexo.local
         - name: ingress.className
-          value: traefik
+          value: nginx
         - name: managementPort
           value: "9000"
         - name: postgresql.enabled

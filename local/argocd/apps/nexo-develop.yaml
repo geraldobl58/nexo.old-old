@@ -35,6 +35,8 @@ spec:
           value: Never
         - name: ingress.hosts[0].host
           value: develop.api.nexo.local
+        - name: ingress.className
+          value: nginx
   destination:
     server: https://kubernetes.default.svc
     namespace: nexo-develop
@@ -85,6 +87,8 @@ spec:
           value: Never
         - name: ingress.hosts[0].host
           value: develop.nexo.local
+        - name: ingress.className
+          value: nginx
   destination:
     server: https://kubernetes.default.svc
     namespace: nexo-develop
@@ -137,7 +141,7 @@ spec:
         - name: ingress.hosts[0].host
           value: develop.auth.nexo.local
         - name: ingress.className
-          value: traefik
+          value: nginx
         # Management port para Keycloak 26+
         - name: managementPort
           value: "9000"

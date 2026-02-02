@@ -8,7 +8,7 @@ imagePullSecrets:
   - name: dockerhub-secret
 ingress:
   enabled: true
-  className: "traefik"
+  className: "nginx"
   annotations: {}
   hosts:
     - host: qa.api.nexo.local

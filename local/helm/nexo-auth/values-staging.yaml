@@ -11,6 +11,8 @@ imagePullSecrets: []
 
 ingress:
   enabled: true
+  className: "nginx"
+  annotations: {}
   hosts:
     - host: auth.staging.nexo.local
       paths:

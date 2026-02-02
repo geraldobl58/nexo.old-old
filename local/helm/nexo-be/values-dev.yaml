@@ -10,7 +10,7 @@ image:
 imagePullSecrets: []
 ingress:
   enabled: true
-  className: "traefik"
+  className: "nginx"
   annotations: {}
   hosts:
     - host: nexo-be.local

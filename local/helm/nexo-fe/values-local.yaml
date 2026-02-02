@@ -19,10 +19,9 @@ imagePullSecrets: []
 
 ingress:
   enabled: true
-  className: "traefik"
+  className: "nginx"
   annotations:
-    traefik.ingress.kubernetes.io/router.entrypoints: web
-    traefik.ingress.kubernetes.io/router.tls: "false"
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
     cert-manager.io/cluster-issuer: ""
   hosts:
     - host: develop.nexo.local
