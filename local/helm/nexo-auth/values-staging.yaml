@@ -3,14 +3,17 @@
 replicaCount: 1
 
 image:
-  repository: docker.io/geraldobl58/nexo-auth
+  repository: ghcr.io/geraldobl58/nexo-auth
   tag: "staging"
   pullPolicy: Always
 
-imagePullSecrets: []
+imagePullSecrets:
+  - name: ghcr-secret
 
 ingress:
   enabled: true
+  className: "nginx"
+  annotations: {}
   hosts:
     - host: auth.staging.nexo.local
       paths:

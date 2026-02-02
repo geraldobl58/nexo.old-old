@@ -1,8 +1,9 @@
 #!/bin/bash
 # ============================================================================
-# Build e Import de Imagens Customizadas para K3D
+# Build e Push de Imagens para Registry Local K3D
 # ============================================================================
-# Este script faz build das imagens Docker customizadas e importa para o K3D
+# Este script faz build das imagens Docker e push para o registry local
+# Registry: localhost:5050 (fora do cluster) / k3d-nexo-registry:5000 (dentro)
 # ============================================================================
 
 set -e
@@ -21,12 +22,42 @@ PROJECT_ROOT="$(dirname "$LOCAL_DIR")"
 
 # Configurações
 CLUSTER_NAME="nexo-local"
-REGISTRY="nexo-local"
+# Registry local - acessível em localhost:5050 de fora do cluster
+REGISTRY="localhost:5050"
+# Nome do registry dentro do cluster K3D
+REGISTRY_INTERNAL="k3d-nexo-registry:5000"
 
 log_info() { echo -e "${BLUE}[INFO]${NC} $1"; }
 log_success() { echo -e "${GREEN}[OK]${NC} $1"; }
 log_warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
+
+# ============================================================================
+# Verificar Registry
+# ============================================================================
+check_registry() {
+    log_info "Verificando registry local..."
+    
+    if ! curl -s http://localhost:5050/v2/ > /dev/null 2>&1; then
+        log_error "Registry local não está acessível em localhost:5050"
+        log_info "Verifique se o cluster K3D está rodando com o registry"
+        log_info "Execute: make destroy && make setup"
+        exit 1
+    fi
+    
+    log_success "Registry local acessível"
+}
+
+# ============================================================================
+# Push para Registry Local
+# ============================================================================
+push_to_registry() {
+    local image=$1
+    log_info "Fazendo push de $image para registry local..."
+    
+    docker push "$image"
+    log_success "$image pushed para registry local"
+}
 
 # ============================================================================
 # Build nexo-auth (Keycloak com temas)
@@ -45,19 +76,35 @@ build_nexo_auth() {
 }
 
 # ============================================================================
-# Import para K3D
+# Build nexo-be (NestJS Backend)
 # ============================================================================
-import_to_k3d() {
-    local image=$1
-    log_info "Importando $image para cluster K3D..."
+build_nexo_be() {
+    log_info "Building nexo-be (NestJS Backend)..."
     
-    if k3d cluster list | grep -q "$CLUSTER_NAME"; then
-        k3d image import "$image" -c "$CLUSTER_NAME"
-        log_success "$image importada para K3D"
-    else
-        log_error "Cluster $CLUSTER_NAME não encontrado!"
-        exit 1
-    fi
+    cd "$PROJECT_ROOT"
+    
+    docker build \
+        -t ${REGISTRY}/nexo-be:local \
+        -f apps/nexo-be/Dockerfile \
+        .
+    
+    log_success "nexo-be built: ${REGISTRY}/nexo-be:local"
+}
+
+# ============================================================================
+# Build nexo-fe (Next.js Frontend)
+# ============================================================================
+build_nexo_fe() {
+    log_info "Building nexo-fe (Next.js Frontend)..."
+    
+    cd "$PROJECT_ROOT"
+    
+    docker build \
+        -t ${REGISTRY}/nexo-fe:local \
+        -f apps/nexo-fe/Dockerfile \
+        .
+    
+    log_success "nexo-fe built: ${REGISTRY}/nexo-fe:local"
 }
 
 # ============================================================================
@@ -67,29 +114,42 @@ show_usage() {
     echo "Uso: $0 [opção]"
     echo ""
     echo "Opções:"
-    echo "  auth      Build e import nexo-auth (Keycloak)"
-    echo "  be        Build e import nexo-be (NestJS)"
-    echo "  fe        Build e import nexo-fe (Next.js)"
-    echo "  all       Build e import todas as imagens"
+    echo "  auth      Build e push nexo-auth (Keycloak)"
+    echo "  be        Build e push nexo-be (NestJS)"
+    echo "  fe        Build e push nexo-fe (Next.js)"
+    echo "  all       Build e push todas as imagens"
     echo "  help      Mostra esta ajuda"
+    echo ""
+    echo "Registry local: localhost:5050"
+    echo "Dentro do cluster: k3d-nexo-registry:5000"
     echo ""
 }
 
 case "${1:-all}" in
     auth)
+        check_registry
         build_nexo_auth
-        import_to_k3d "${REGISTRY}/nexo-auth:local"
+        push_to_registry "${REGISTRY}/nexo-auth:local"
         ;;
     be)
-        log_warn "nexo-be build ainda não implementado"
+        check_registry
+        build_nexo_be
+        push_to_registry "${REGISTRY}/nexo-be:local"
         ;;
     fe)
-        log_warn "nexo-fe build ainda não implementado"
+        check_registry
+        build_nexo_fe
+        push_to_registry "${REGISTRY}/nexo-fe:local"
         ;;
     all)
+        check_registry
         build_nexo_auth
-        import_to_k3d "${REGISTRY}/nexo-auth:local"
-        log_success "Todas as imagens foram buildadas e importadas!"
+        push_to_registry "${REGISTRY}/nexo-auth:local"
+        build_nexo_be
+        push_to_registry "${REGISTRY}/nexo-be:local"
+        build_nexo_fe
+        push_to_registry "${REGISTRY}/nexo-fe:local"
+        log_success "Todas as imagens foram buildadas e pushed para o registry local!"
         ;;
     help|--help|-h)
         show_usage
@@ -103,4 +163,7 @@ esac
 
 echo ""
 log_info "Para aplicar as mudanças no cluster, execute:"
-echo "  kubectl rollout restart deployment/nexo-auth-develop -n nexo-develop"
+echo "  kubectl rollout restart deployment -n nexo-develop"
+echo ""
+log_info "Para listar imagens no registry local:"
+echo "  curl http://localhost:5050/v2/_catalog"

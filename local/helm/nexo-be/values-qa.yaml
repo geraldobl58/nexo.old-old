@@ -1,14 +1,14 @@
 # Values for QA environment
 replicaCount: 1
 image:
-  repository: docker.io/geraldobl58/nexo-be
+  repository: ghcr.io/geraldobl58/nexo-be
   tag: "qa"
   pullPolicy: Always
 imagePullSecrets:
   - name: dockerhub-secret
 ingress:
   enabled: true
-  className: "traefik"
+  className: "nginx"
   annotations: {}
   hosts:
     - host: qa.api.nexo.local
