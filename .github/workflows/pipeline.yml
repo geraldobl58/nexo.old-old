@@ -704,5 +704,5 @@ jobs:
               }]
             }" \
             "$DISCORD_WEBHOOK"
-          
+
           echo "✅ Discord notification sent!"
