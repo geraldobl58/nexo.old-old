@@ -4,7 +4,7 @@ replicaCount: 1
 
 image:
   repository: ghcr.io/geraldobl58/nexo-auth
-  tag: "staging-2be95379dfee86b568ce3631d7df9d5c7eb5b6de"
+  tag: "staging-27d65f0c8a492abdcc48e4f2900e2d9d534607a4"
   pullPolicy: Always
 
 imagePullSecrets:
@@ -55,7 +55,7 @@ postgresql:
   enabled: true
   image:
     repository: postgres
-    tag: "staging-2be95379dfee86b568ce3631d7df9d5c7eb5b6de"
+    tag: "staging-27d65f0c8a492abdcc48e4f2900e2d9d534607a4"
     pullPolicy: IfNotPresent
   database: keycloak
   username: keycloak
@@ -74,4 +74,4 @@ postgresql:
       memory: 256Mi
 
 podAnnotations:
-  app.kubernetes.io/commit: "2be9537"
+  app.kubernetes.io/commit: "27d65f0"
