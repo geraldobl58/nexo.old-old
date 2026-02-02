@@ -10,7 +10,7 @@ export class HealthController {
   })
   @ApiResponse({
     status: 200,
-    description: 'Deployments automáticos estão funcionando corretamente.',
+    description: 'Deploy feito por Nexo Sistemas.',
     schema: {
       type: 'object',
       properties: {

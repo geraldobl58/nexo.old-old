@@ -118,64 +118,69 @@ pf-prometheus: ## Port-forward Prometheus (localhost:9090)
 # Diretório raiz do projeto
 ROOT_DIR := $(shell dirname $(LOCAL_DIR))
 
-# DockerHub username
-DOCKER_USER := geraldobl58
+# Registry Local K3D (dentro do cluster)
+REGISTRY_INTERNAL := nexo-registry:5000
 
-# Build flags para compatibilidade com K3D (linux/amd64)
-DOCKER_BUILD_FLAGS := --platform linux/amd64 --provenance=false --sbom=false
+# Cluster name
+CLUSTER_NAME := nexo-local
 
 # ============================================================================
-# Build e Push para DockerHub
+# Build e Import de Imagens para K3D
+# ============================================================================
+# Workflow: docker build -> docker tag -> k3d image import
+# Imagens ficam disponíveis diretamente nos nodes do cluster
 # ============================================================================
 
-docker-login: ## Login no DockerHub
-	@echo "$(C)🔐 Login no DockerHub...$(N)"
-	@docker login
-	@echo "$(G)✓ Login realizado$(N)"
-
-build-be: ## Build imagem do backend e push para DockerHub
+build-be: ## Build imagem do backend e import para K3D
 	@echo "$(Y)🔨 Building nexo-be...$(N)"
-	@docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_USER)/nexo-be:latest -f $(ROOT_DIR)/apps/nexo-be/Dockerfile $(ROOT_DIR)
-	@docker push $(DOCKER_USER)/nexo-be:latest
-	@echo "$(G)✓ nexo-be built and pushed to DockerHub$(N)"
+	@docker build --load -t $(REGISTRY_INTERNAL)/nexo-be:local -f $(ROOT_DIR)/apps/nexo-be/Dockerfile $(ROOT_DIR)
+	@docker tag $(REGISTRY_INTERNAL)/nexo-be:local nexo-be:local
+	@k3d image import $(REGISTRY_INTERNAL)/nexo-be:local nexo-be:local -c $(CLUSTER_NAME)
+	@echo "$(G)✓ nexo-be built and imported to K3D$(N)"
 
-build-fe: ## Build imagem do frontend e push para DockerHub
+build-fe: ## Build imagem do frontend e import para K3D
 	@echo "$(Y)🔨 Building nexo-fe...$(N)"
-	@docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_USER)/nexo-fe:latest -f $(ROOT_DIR)/apps/nexo-fe/Dockerfile $(ROOT_DIR)
-	@docker push $(DOCKER_USER)/nexo-fe:latest
-	@echo "$(G)✓ nexo-fe built and pushed to DockerHub$(N)"
+	@docker build --load -t $(REGISTRY_INTERNAL)/nexo-fe:local -f $(ROOT_DIR)/apps/nexo-fe/Dockerfile $(ROOT_DIR)
+	@docker tag $(REGISTRY_INTERNAL)/nexo-fe:local nexo-fe:local
+	@k3d image import $(REGISTRY_INTERNAL)/nexo-fe:local nexo-fe:local -c $(CLUSTER_NAME)
+	@echo "$(G)✓ nexo-fe built and imported to K3D$(N)"
 
-build-auth: ## Build imagem do auth e push para DockerHub
+build-auth: ## Build imagem do auth e import para K3D
 	@echo "$(Y)🔨 Building nexo-auth...$(N)"
-	@docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_USER)/nexo-auth:latest -f $(ROOT_DIR)/apps/nexo-auth/Dockerfile $(ROOT_DIR)/apps/nexo-auth
-	@docker push $(DOCKER_USER)/nexo-auth:latest
-	@echo "$(G)✓ nexo-auth built and pushed to DockerHub$(N)"
+	@docker build --load -t $(REGISTRY_INTERNAL)/nexo-auth:local -f $(ROOT_DIR)/apps/nexo-auth/Dockerfile $(ROOT_DIR)
+	@docker tag $(REGISTRY_INTERNAL)/nexo-auth:local nexo-auth:local
+	@k3d image import $(REGISTRY_INTERNAL)/nexo-auth:local nexo-auth:local -c $(CLUSTER_NAME)
+	@echo "$(G)✓ nexo-auth built and imported to K3D$(N)"
 
-build-all: build-be build-fe build-auth ## Build e push de todas as imagens
+build-images: build-auth build-be build-fe ## Build e import de todas as imagens para K3D
+	@echo "$(G)✓ All images built and imported to K3D$(N)"
+	@echo ""
+	@echo "$(C)📦 Imagens no cluster:$(N)"
+	@docker exec k3d-$(CLUSTER_NAME)-agent-0 crictl images | grep -E "nexo-|REPOSITORY"
 
-deploy-be: ## Deploy do backend (puxa imagem do DockerHub)
+deploy-be: ## Deploy do backend
 	@echo "$(Y)🚀 Deploying nexo-be...$(N)"
 	@kubectl rollout restart deployment/nexo-be-develop -n nexo-develop 2>/dev/null || \
-		helm upgrade --install nexo-be-develop $(LOCAL_DIR)/helm/nexo-be -n nexo-develop --create-namespace
+		helm upgrade --install nexo-be-develop $(LOCAL_DIR)/helm/nexo-be -n nexo-develop -f $(LOCAL_DIR)/helm/nexo-be/values-local.yaml --create-namespace
 	@echo "$(G)✓ nexo-be deployed$(N)"
 
-deploy-fe: ## Deploy do frontend (puxa imagem do DockerHub)
+deploy-fe: ## Deploy do frontend
 	@echo "$(Y)🚀 Deploying nexo-fe...$(N)"
 	@kubectl rollout restart deployment/nexo-fe-develop -n nexo-develop 2>/dev/null || \
-		helm upgrade --install nexo-fe-develop $(LOCAL_DIR)/helm/nexo-fe -n nexo-develop --create-namespace
+		helm upgrade --install nexo-fe-develop $(LOCAL_DIR)/helm/nexo-fe -n nexo-develop -f $(LOCAL_DIR)/helm/nexo-fe/values-local.yaml --create-namespace
 	@echo "$(G)✓ nexo-fe deployed$(N)"
 
 deploy-auth: ## Deploy do Keycloak
 	@echo "$(Y)🚀 Deploying nexo-auth...$(N)"
 	@kubectl rollout restart deployment/nexo-auth-develop -n nexo-develop 2>/dev/null || \
-		helm upgrade --install nexo-auth-develop $(LOCAL_DIR)/helm/nexo-auth -n nexo-develop --create-namespace
+		helm upgrade --install nexo-auth-develop $(LOCAL_DIR)/helm/nexo-auth -n nexo-develop -f $(LOCAL_DIR)/helm/nexo-auth/values-local.yaml --create-namespace
 	@echo "$(G)✓ nexo-auth deployed$(N)"
 
 deploy-all: deploy-be deploy-fe deploy-auth ## Deploy de todos os serviços
 	@echo "$(G)✓ All services deployed$(N)"
 
-pull-latest: ## Força K3D a puxar as últimas imagens do DockerHub
-	@echo "$(Y)🔄 Forcing image pull from DockerHub...$(N)"
+redeploy: ## Força redeploy puxando imagens mais recentes do registry local
+	@echo "$(Y)🔄 Forcing redeploy from local registry...$(N)"
 	@kubectl rollout restart deployment -n nexo-develop
 	@echo "$(G)✓ Deployments restarted - pulling latest images$(N)"
 

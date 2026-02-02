@@ -20,7 +20,7 @@ LOCAL_DIR="$(dirname "$SCRIPT_DIR")"
 PROJECT_ROOT="$(dirname "$LOCAL_DIR")"
 
 # Configurações
-CLUSTER_NAME="nexo-develop"
+CLUSTER_NAME="nexo-local"
 K3D_CONFIG="$LOCAL_DIR/k3d/config.yaml"
 
 # ============================================================================
@@ -162,23 +162,14 @@ install_argocd() {
     # Criar NodePort service para acesso local
     kubectl apply -f "$LOCAL_DIR/argocd/nodeport.yaml"
     
-    # Instalar ArgoCD Image Updater
-    log_info "Instalando ArgoCD Image Updater..."
-    kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj-labs/argocd-image-updater/stable/manifests/install.yaml
-    
-    # Aguardar Image Updater ficar pronto
-    log_info "Aguardando Image Updater ficar pronto..."
-    kubectl wait --for=condition=Available deployment/argocd-image-updater -n argocd --timeout=120s
-    
     # Obter senha inicial
     local argocd_password=$(kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d)
     
-    log_success "ArgoCD + Image Updater instalados!"
+    log_success "ArgoCD instalado!"
     echo ""
     echo "  📍 URL: http://localhost:30080"
     echo "  👤 User: admin"
     echo "  🔑 Password: $argocd_password"
-    echo "  🔄 Image Updater: Monitorando DockerHub a cada 2min"
     echo ""
 }
 
@@ -212,23 +203,36 @@ install_observability() {
 }
 
 # ============================================================================
-# Configurar Secret do Registry
+# Verificar Registry Local
+# ============================================================================
+
+verify_local_registry() {
+    log_info "Verificando registry local do K3D..."
+    
+    # Aguardar registry ficar disponível
+    local max_attempts=30
+    local attempt=0
+    
+    while [ $attempt -lt $max_attempts ]; do
+        if curl -s http://localhost:5050/v2/ > /dev/null 2>&1; then
+            log_success "Registry local acessível em localhost:5050"
+            return 0
+        fi
+        attempt=$((attempt + 1))
+        sleep 2
+    done
+    
+    log_error "Registry local não está acessível. Verifique o cluster K3D."
+    return 1
+}
+
+# ============================================================================
+# Configurar Secret do Registry (não necessário para registry local)
 # ============================================================================
 
 setup_registry_secret() {
-    log_info "Configurando secret do registry..."
-    
-    # Para ambiente local, usamos o registry local do K3D
-    # Em produção, seria o GHCR
-    
-    kubectl create secret docker-registry ghcr-registry \
-        --docker-server=ghcr.io \
-        --docker-username=geraldobl58 \
-        --docker-password="${GITHUB_TOKEN:-dummy}" \
-        --namespace=nexo-develop \
-        --dry-run=client -o yaml | kubectl apply -f -
-    
-    log_success "Secret do registry configurado"
+    log_info "Registry local não requer secrets de autenticação"
+    log_success "Configuração do registry completa"
 }
 
 # ============================================================================
@@ -257,11 +261,17 @@ show_summary() {
     echo -e "${GREEN}✅ Ambiente local K3D configurado com sucesso!${NC}"
     echo "============================================================================"
     echo ""
-    echo "� Fluxo GitOps Automatizado:"
+    echo "🐳 Registry Local:"
     echo ""
-    echo "   Código → Commit → Push → GitHub Actions → DockerHub → Image Updater → K3D"
+    echo "   • Fora do cluster: localhost:5050"
+    echo "   • Dentro do cluster: k3d-nexo-registry:5000"
     echo ""
-    echo "   O Image Updater verifica novas imagens a cada 2 minutos!"
+    echo "🔄 Fluxo de Desenvolvimento Local:"
+    echo ""
+    echo "   Código → Build Local → Push Registry → ArgoCD Sync → K3D"
+    echo ""
+    echo "   cd local && make build-images    # Build e push todas as imagens"
+    echo "   kubectl rollout restart -n nexo-develop deployment  # Aplicar"
     echo ""
     echo "📋 Serviços disponíveis:"
     echo ""
@@ -274,17 +284,16 @@ show_summary() {
     echo ""
     echo "📋 Comandos úteis:"
     echo ""
-    echo "  make status                            # Ver status geral"
-    echo "  make image-updater                     # Ver logs do Image Updater"
-    echo "  make pods                              # Ver pods"
-    echo "  make logs-be                           # Logs do backend"
-    echo "  make destroy                           # Destruir ambiente"
+    echo "  make status          # Ver status geral"
+    echo "  make pods            # Ver pods"
+    echo "  make build-images    # Build e push imagens locais"
+    echo "  make logs-be         # Logs do backend"
+    echo "  make destroy         # Destruir ambiente"
     echo ""
-    echo "📋 Desenvolvimento:"
+    echo "📋 Para Cloud/Produção:"
     echo ""
-    echo "  git add . && git commit -m 'feat: X' && git push"
-    echo ""
-    echo "  Só isso! O CI/CD faz build e deploy automático 🎉"
+    echo "  Edite os values-*.yaml trocando 'k3d-nexo-registry:5000'"
+    echo "  por 'docker.io/geraldobl58' para usar DockerHub"
     echo ""
 }
 
@@ -301,6 +310,7 @@ main() {
     
     check_dependencies
     create_cluster
+    verify_local_registry
     create_namespaces
     install_ingress
     install_argocd

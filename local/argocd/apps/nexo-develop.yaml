@@ -1,19 +1,15 @@
 # ============================================================================
-# Nexo Platform - ArgoCD Applications - Ambiente Develop
+# Nexo Platform - ArgoCD Applications - Ambiente Develop (LOCAL)
 # ============================================================================
-# Branch: develop
-# Domínios: develop.nexo.local, develop.api.nexo.local, develop.auth.nexo.local
+# Usa REGISTRY LOCAL (k3d-nexo-registry:5000) - sem dependência do DockerHub
+# Para cloud/produção: usar nexo-develop-dockerhub.yaml.bak como referência
 # ============================================================================
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   name: nexo-be-develop
   namespace: argocd
-  annotations:
-    argocd-image-updater.argoproj.io/image-list: nexo-be=docker.io/geraldobl58/nexo-be:develop
-    argocd-image-updater.argoproj.io/nexo-be.update-strategy: digest
-    argocd-image-updater.argoproj.io/nexo-be.pull-secret: secret:argocd/dockerhub-secret#creds
-    argocd-image-updater.argoproj.io/write-back-method: argocd
+  # Sem Image Updater - usando registry local
   finalizers:
     - resources-finalizer.argocd.argoproj.io
   labels:
@@ -28,18 +24,17 @@ spec:
     helm:
       valueFiles:
         - values.yaml
-        - values-dev.yaml
+        - values-local.yaml
       parameters:
+        # Registry local do K3D
         - name: image.repository
-          value: docker.io/geraldobl58/nexo-be
+          value: nexo-registry:5000/nexo-be
         - name: image.tag
-          value: develop
+          value: local
         - name: image.pullPolicy
-          value: Always
+          value: Never
         - name: ingress.hosts[0].host
           value: develop.api.nexo.local
-        - name: imagePullSecrets[0].name
-          value: dockerhub-secret
   destination:
     server: https://kubernetes.default.svc
     namespace: nexo-develop
@@ -64,11 +59,7 @@ kind: Application
 metadata:
   name: nexo-fe-develop
   namespace: argocd
-  annotations:
-    argocd-image-updater.argoproj.io/image-list: nexo-fe=docker.io/geraldobl58/nexo-fe:develop
-    argocd-image-updater.argoproj.io/nexo-fe.update-strategy: digest
-    argocd-image-updater.argoproj.io/nexo-fe.pull-secret: secret:argocd/dockerhub-secret#creds
-    argocd-image-updater.argoproj.io/write-back-method: argocd
+  # Sem Image Updater - usando registry local
   finalizers:
     - resources-finalizer.argocd.argoproj.io
   labels:
@@ -83,18 +74,17 @@ spec:
     helm:
       valueFiles:
         - values.yaml
-        - values-dev.yaml
+        - values-local.yaml
       parameters:
+        # Registry local do K3D
         - name: image.repository
-          value: docker.io/geraldobl58/nexo-fe
+          value: nexo-registry:5000/nexo-fe
         - name: image.tag
-          value: develop
+          value: local
         - name: image.pullPolicy
-          value: Always
+          value: Never
         - name: ingress.hosts[0].host
           value: develop.nexo.local
-        - name: imagePullSecrets[0].name
-          value: dockerhub-secret
   destination:
     server: https://kubernetes.default.svc
     namespace: nexo-develop
@@ -119,11 +109,7 @@ kind: Application
 metadata:
   name: nexo-auth-develop
   namespace: argocd
-  annotations:
-    argocd-image-updater.argoproj.io/image-list: nexo-auth=docker.io/geraldobl58/nexo-auth:develop
-    argocd-image-updater.argoproj.io/nexo-auth.update-strategy: digest
-    argocd-image-updater.argoproj.io/nexo-auth.pull-secret: secret:argocd/dockerhub-secret#creds
-    argocd-image-updater.argoproj.io/write-back-method: argocd
+  # Sem Image Updater - usando registry local
   finalizers:
     - resources-finalizer.argocd.argoproj.io
   labels:
@@ -138,17 +124,15 @@ spec:
     helm:
       valueFiles:
         - values.yaml
-        - values-dev.yaml
+        - values-local.yaml
       parameters:
-        # Imagem do DockerHub - atualizada automaticamente pelo ArgoCD Image Updater
+        # Registry local do K3D
         - name: image.repository
-          value: docker.io/geraldobl58/nexo-auth
+          value: nexo-registry:5000/nexo-auth
         - name: image.tag
-          value: develop
+          value: local
         - name: image.pullPolicy
-          value: Always
-        - name: imagePullSecrets[0].name
-          value: dockerhub-secret
+          value: Never
         # Ingress
         - name: ingress.hosts[0].host
           value: develop.auth.nexo.local
@@ -157,7 +141,7 @@ spec:
         # Management port para Keycloak 26+
         - name: managementPort
           value: "9000"
-        # PostgreSQL - Controlado pelo ArgoCD
+        # PostgreSQL
         - name: postgresql.enabled
           value: "true"
         - name: postgresql.database

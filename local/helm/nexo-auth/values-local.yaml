@@ -1,23 +1,26 @@
 # =============================================================================
 # Values for Local K3D environment
 # =============================================================================
-# Usa imagem do DockerHub - atualizada automaticamente pelo ArgoCD Image Updater
-# Pipeline: push develop → CI builda → DockerHub → ArgoCD detecta → K3D atualiza
+# Usa Registry LOCAL (k3d) - sem dependência do DockerHub
+# Build local → Push para registry local → K3D usa automaticamente
+# Para produção/cloud: trocar para docker.io/geraldobl58/nexo-auth
 # =============================================================================
 
 replicaCount: 1
 
 image:
-  repository: docker.io/geraldobl58/nexo-auth
-  tag: "develop"
-  pullPolicy: Always
+  # Registry local do k3d (acessível de dentro do cluster)
+  repository: nexo-registry:5000/nexo-auth
+  tag: "local"
+  # Never = usa imagens importadas via k3d image import
+  pullPolicy: Never
 
-imagePullSecrets:
-  - name: dockerhub-creds
+# Registry local não precisa de autenticação
+imagePullSecrets: []
 
 ingress:
   enabled: true
-  className: "traefik"
+  className: "nginx"
   annotations:
     traefik.ingress.kubernetes.io/router.entrypoints: web
     traefik.ingress.kubernetes.io/router.tls: "false"

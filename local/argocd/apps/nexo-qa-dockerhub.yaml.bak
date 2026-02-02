@@ -1,43 +1,48 @@
 # ============================================================================
-# Nexo Platform - ArgoCD Applications - Ambiente Produção (LOCAL)
+# Nexo Platform - ArgoCD Applications - Ambiente QA
 # ============================================================================
-# Usa REGISTRY LOCAL (nexo-registry:5000) - sem dependência do DockerHub
-# Namespace: nexo-prod
+# Branch: qa
+# Domínios: qa.nexo.local, qa.api.nexo.local, qa.auth.nexo.local
 # ============================================================================
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: nexo-be-prod
+  name: nexo-be-qa
   namespace: argocd
+  annotations:
+    argocd-image-updater.argoproj.io/image-list: nexo-be=docker.io/geraldobl58/nexo-be:qa
+    argocd-image-updater.argoproj.io/nexo-be.update-strategy: digest
+    argocd-image-updater.argoproj.io/nexo-be.pull-secret: secret:argocd/dockerhub-secret#creds
+    argocd-image-updater.argoproj.io/write-back-method: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
   labels:
     app.kubernetes.io/name: nexo-be
-    environment: prod
+    environment: qa
 spec:
-  project: nexo-prod
+  project: nexo-qa
   source:
     repoURL: https://github.com/geraldobl58/nexo.git
-    targetRevision: develop
+    targetRevision: qa
     path: local/helm/nexo-be
     helm:
       valueFiles:
         - values.yaml
-        - values-local.yaml
+        - values-qa.yaml
       parameters:
         - name: image.repository
-          value: nexo-registry:5000/nexo-be
+          value: docker.io/geraldobl58/nexo-be
         - name: image.tag
-          value: local
+          value: qa
         - name: image.pullPolicy
-          value: Never
+          value: Always
         - name: ingress.hosts[0].host
-          value: prod.api.nexo.local
-        - name: env.NODE_ENV
-          value: production
+          value: qa.api.nexo.local
+        - name: imagePullSecrets[0].name
+          value: dockerhub-secret
   destination:
     server: https://kubernetes.default.svc
-    namespace: nexo-prod
+    namespace: nexo-qa
   syncPolicy:
     automated:
       prune: true
@@ -57,37 +62,42 @@ spec:
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: nexo-fe-prod
+  name: nexo-fe-qa
   namespace: argocd
+  annotations:
+    argocd-image-updater.argoproj.io/image-list: nexo-fe=docker.io/geraldobl58/nexo-fe:qa
+    argocd-image-updater.argoproj.io/nexo-fe.update-strategy: digest
+    argocd-image-updater.argoproj.io/nexo-fe.pull-secret: secret:argocd/dockerhub-secret#creds
+    argocd-image-updater.argoproj.io/write-back-method: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
   labels:
     app.kubernetes.io/name: nexo-fe
-    environment: prod
+    environment: qa
 spec:
-  project: nexo-prod
+  project: nexo-qa
   source:
     repoURL: https://github.com/geraldobl58/nexo.git
-    targetRevision: develop
+    targetRevision: qa
     path: local/helm/nexo-fe
     helm:
       valueFiles:
         - values.yaml
-        - values-local.yaml
+        - values-qa.yaml
       parameters:
         - name: image.repository
-          value: nexo-registry:5000/nexo-fe
+          value: docker.io/geraldobl58/nexo-fe
         - name: image.tag
-          value: local
+          value: qa
         - name: image.pullPolicy
-          value: Never
+          value: Always
         - name: ingress.hosts[0].host
-          value: prod.nexo.local
-        - name: env.NODE_ENV
-          value: production
+          value: qa.nexo.local
+        - name: imagePullSecrets[0].name
+          value: dockerhub-secret
   destination:
     server: https://kubernetes.default.svc
-    namespace: nexo-prod
+    namespace: nexo-qa
   syncPolicy:
     automated:
       prune: true
@@ -107,36 +117,45 @@ spec:
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: nexo-auth-prod
+  name: nexo-auth-qa
   namespace: argocd
+  annotations:
+    argocd-image-updater.argoproj.io/image-list: nexo-auth=docker.io/geraldobl58/nexo-auth:qa
+    argocd-image-updater.argoproj.io/nexo-auth.update-strategy: digest
+    argocd-image-updater.argoproj.io/nexo-auth.pull-secret: secret:argocd/dockerhub-secret#creds
+    argocd-image-updater.argoproj.io/write-back-method: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
   labels:
     app.kubernetes.io/name: nexo-auth
-    environment: prod
+    environment: qa
 spec:
-  project: nexo-prod
+  project: nexo-qa
   source:
     repoURL: https://github.com/geraldobl58/nexo.git
-    targetRevision: develop
+    targetRevision: qa
     path: local/helm/nexo-auth
     helm:
       valueFiles:
         - values.yaml
-        - values-local.yaml
+        - values-qa.yaml
       parameters:
+        # Imagem - usando oficial Keycloak
         - name: image.repository
-          value: nexo-registry:5000/nexo-auth
+          value: quay.io/keycloak/keycloak
         - name: image.tag
-          value: local
+          value: "26.5"
         - name: image.pullPolicy
-          value: Never
+          value: IfNotPresent
+        # Ingress
         - name: ingress.hosts[0].host
-          value: prod.auth.nexo.local
+          value: qa.auth.nexo.local
         - name: ingress.className
           value: traefik
+        # Management port para Keycloak 26+
         - name: managementPort
           value: "9000"
+        # PostgreSQL - Controlado pelo ArgoCD
         - name: postgresql.enabled
           value: "true"
         - name: postgresql.database
@@ -144,10 +163,16 @@ spec:
         - name: postgresql.username
           value: keycloak
         - name: postgresql.password
-          value: keycloak_prod_123
+          value: keycloak_qa_123
+        - name: postgresql.persistence.enabled
+          value: "true"
+        - name: postgresql.persistence.size
+          value: "2Gi"
+        - name: postgresql.persistence.storageClass
+          value: "local-path"
   destination:
     server: https://kubernetes.default.svc
-    namespace: nexo-prod
+    namespace: nexo-qa
   syncPolicy:
     automated:
       prune: true
