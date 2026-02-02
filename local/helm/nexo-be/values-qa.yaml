@@ -2,7 +2,7 @@
 replicaCount: 1
 image:
   repository: ghcr.io/geraldobl58/nexo-be
-  tag: "qa"
+  tag: "qa-04a0f66f000ab517c72a4152ab7a6c91f72a99aa"
   pullPolicy: Always
 imagePullSecrets:
   - name: dockerhub-secret
@@ -35,4 +35,4 @@ envFrom: []
 podDisruptionBudget:
   enabled: false
 podAnnotations:
-  app.kubernetes.io/commit: "972b963"
+  app.kubernetes.io/commit: "04a0f66"
