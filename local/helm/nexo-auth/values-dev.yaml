@@ -48,7 +48,7 @@ postgresql:
   enabled: true
   image:
     repository: postgres
-    tag: "develop-a73c004e3ffc6b7cea0b59de5fb15128ec8d1a63"
+    tag: "16-alpine"
     pullPolicy: IfNotPresent
   database: keycloak
   username: keycloak

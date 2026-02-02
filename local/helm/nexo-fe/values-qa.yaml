@@ -8,7 +8,7 @@ image:
   pullPolicy: Always
 
 imagePullSecrets:
-  - name: dockerhub-secret
+  - name: ghcr-secret
 
 ingress:
   enabled: true
@@ -47,3 +47,6 @@ envFrom: []
 
 podDisruptionBudget:
   enabled: false
+
+podAnnotations:
+  app.kubernetes.io/commit: "initial"

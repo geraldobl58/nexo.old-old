@@ -8,7 +8,7 @@ image:
   pullPolicy: Always
 
 imagePullSecrets:
-  - name: dockerhub-secret
+  - name: ghcr-secret
 
 ingress:
   enabled: true
@@ -78,3 +78,6 @@ postgresql:
     requests:
       cpu: 100m
       memory: 256Mi
+
+podAnnotations:
+  app.kubernetes.io/commit: "initial"
