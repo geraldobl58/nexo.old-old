@@ -37,7 +37,7 @@ env:
   KC_HTTP_ENABLED: "true"
   KC_HEALTH_ENABLED: "true"
   KC_METRICS_ENABLED: "true"
-  # Nota: KC_DB, KC_DB_URL, KC_DB_USERNAME, KC_DB_PASSWORD são 
+  # Nota: KC_DB, KC_DB_URL, KC_DB_USERNAME, KC_DB_PASSWORD são
   # configurados automaticamente pelo template quando postgresql.enabled=true
 podDisruptionBudget:
   enabled: false
