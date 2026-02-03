@@ -513,7 +513,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Update all values files
+      - name: Update values files for changed services only
         run: |
           ENV="${{ needs.preflight.outputs.environment }}"
           COMMIT_SHA="${{ github.sha }}"
@@ -527,9 +527,10 @@ jobs:
           echo "🏷️ Image Tag: $BRANCH-$COMMIT_SHA"
           echo "📦 Registry: $REGISTRY/$IMAGE_OWNER"
 
-          # Atualizar todos os serviços que tiveram build ou foram forçados
-          for SERVICE in nexo-be nexo-fe nexo-auth; do
-            VALUES_FILE="local/helm/${SERVICE}/values-${ENV}.yaml"
+          # Função para atualizar um serviço específico
+          update_service() {
+            local SERVICE=$1
+            local VALUES_FILE="local/helm/${SERVICE}/values-${ENV}.yaml"
             
             if [ -f "$VALUES_FILE" ]; then
               # Para nexo-auth, apenas atualizar a tag da imagem principal (não do PostgreSQL)
@@ -559,11 +560,36 @@ jobs:
               git add "$VALUES_FILE"
               echo "✅ Updated $VALUES_FILE"
               echo "   - tag: ${BRANCH}-${COMMIT_SHA}"
-              echo "   - repository: ${REGISTRY}/${IMAGE_OWNER}/${SERVICE}"
             else
               echo "⚠️ Values file not found: $VALUES_FILE"
             fi
-          done
+          }
+
+          # Atualizar APENAS os serviços que foram buildados com sucesso
+          if [ "${{ needs.build-backend.result }}" == "success" ]; then
+            echo "📦 Updating nexo-be (build was successful)"
+            update_service "nexo-be"
+          else
+            echo "⏭️ Skipping nexo-be (build was ${{ needs.build-backend.result }})"
+          fi
+
+          if [ "${{ needs.build-frontend.result }}" == "success" ]; then
+            echo "📦 Updating nexo-fe (build was successful)"
+            update_service "nexo-fe"
+          else
+            echo "⏭️ Skipping nexo-fe (build was ${{ needs.build-frontend.result }})"
+          fi
+
+          if [ "${{ needs.build-auth.result }}" == "success" ]; then
+            echo "📦 Updating nexo-auth (build was successful)"
+            update_service "nexo-auth"
+          else
+            echo "⏭️ Skipping nexo-auth (build was ${{ needs.build-auth.result }})"
+          fi
+
+          echo ""
+          echo "📋 Summary of updates:"
+          git diff --cached --name-only || echo "No changes"
 
       - name: Commit and push
         run: |
