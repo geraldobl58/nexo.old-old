@@ -534,8 +534,17 @@ jobs:
             if [ -f "$VALUES_FILE" ]; then
               # Para nexo-auth, apenas atualizar a tag da imagem principal (não do PostgreSQL)
               if [ "$SERVICE" == "nexo-auth" ]; then
-                # Atualizar apenas a primeira ocorrência de tag (imagem principal)
-                sed -i "0,/tag: \"[^\"]*\"/s|tag: \"[^\"]*\"|tag: \"${BRANCH}-${COMMIT_SHA}\"|" "$VALUES_FILE"
+                # Usar awk para atualizar apenas a tag da seção image (antes de postgresql)
+                awk -v new_tag="${BRANCH}-${COMMIT_SHA}" '
+                  BEGIN { found=0 }
+                  /^image:/ { in_image=1 }
+                  /^postgresql:/ { in_image=0 }
+                  in_image && /tag:/ && !found { 
+                    sub(/tag: "[^"]*"/, "tag: \"" new_tag "\"")
+                    found=1
+                  }
+                  { print }
+                ' "$VALUES_FILE" > "$VALUES_FILE.tmp" && mv "$VALUES_FILE.tmp" "$VALUES_FILE"
               else
                 # Para outros serviços, atualizar tag normalmente
                 sed -i "s|tag: \"[^\"]*\"|tag: \"${BRANCH}-${COMMIT_SHA}\"|" "$VALUES_FILE"
