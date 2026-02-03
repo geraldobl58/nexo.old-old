@@ -4,7 +4,7 @@ replicaCount: 2
 
 image:
   repository: ghcr.io/geraldobl58/nexo-fe
-  tag: "staging-c2edc73a8a7615851a88f9ce8d8bfda742c2631e"
+  tag: "staging-b308baeed858d9fa462754b8be6143a9f19cf62a"
   pullPolicy: Always
 
 imagePullSecrets:
@@ -53,4 +53,4 @@ podDisruptionBudget:
   minAvailable: 1
 
 podAnnotations:
-  app.kubernetes.io/commit: "c2edc73"
+  app.kubernetes.io/commit: "b308bae"
