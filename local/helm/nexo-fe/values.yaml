@@ -70,13 +70,13 @@ livenessProbe:
   httpGet:
     path: /
     port: http
-  initialDelaySeconds: 20
+  initialDelaySeconds: 10
   periodSeconds: 10
 readinessProbe:
   httpGet:
     path: /
     port: http
-  initialDelaySeconds: 10
+  initialDelaySeconds: 5
   periodSeconds: 5
 env:
   NODE_ENV: production

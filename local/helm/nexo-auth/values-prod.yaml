@@ -1,10 +1,9 @@
 # Values for Production environment
-# Deploy automático via branch 'main'
-replicaCount: 2
+replicaCount: 1
 
 image:
   repository: ghcr.io/geraldobl58/nexo-auth
-  tag: "main-0e50efc80b51556435dd4c6c7128878b31274186"
+  tag: "prod-initial"
   pullPolicy: Always
 
 imagePullSecrets:
@@ -26,29 +25,25 @@ resources:
     cpu: 1000m
     memory: 1Gi
   requests:
-    cpu: 200m
+    cpu: 250m
     memory: 512Mi
-
 autoscaling:
-  enabled: true
-  minReplicas: 2
-  maxReplicas: 5
-  targetCPUUtilizationPercentage: 70
-
+  enabled: false
 env:
-  NODE_ENV: production
-  LOG_LEVEL: info
-  KC_PROXY: edge
+  KEYCLOAK_ADMIN: admin
+  KEYCLOAK_ADMIN_PASSWORD: admin
+  KC_HOSTNAME_STRICT: "false"
+  KC_PROXY: "edge"
   KC_HTTP_ENABLED: "true"
   KC_HEALTH_ENABLED: "true"
   KC_METRICS_ENABLED: "true"
-  KC_HOSTNAME: prod.auth.nexo.local
-  KC_HOSTNAME_STRICT: "false"
-  KEYCLOAK_ADMIN: admin
-  KEYCLOAK_ADMIN_PASSWORD: admin_prod_secure
-
-envFrom: []
-
+  # Nota: KC_DB, KC_DB_URL, KC_DB_USERNAME, KC_DB_PASSWORD são
+  # configurados automaticamente pelo template quando postgresql.enabled=true
+podDisruptionBudget:
+  enabled: false
+# =============================================================================
+# PostgreSQL - Habilitado para persistência de dados do Keycloak
+# =============================================================================
 postgresql:
   enabled: true
   image:
@@ -57,19 +52,18 @@ postgresql:
     pullPolicy: IfNotPresent
   database: keycloak
   username: keycloak
-  password: "keycloak-local"
+  password: keycloak_prod_123
   persistence:
     enabled: true
-    size: 20Gi
+    size: 2Gi
     accessMode: ReadWriteOnce
-    storageClass: "local-path"
+    storageClass: ""
   resources:
     limits:
-      cpu: 1000m
-      memory: 1Gi
-    requests:
-      cpu: 250m
+      cpu: 500m
       memory: 512Mi
-
+    requests:
+      cpu: 100m
+      memory: 256Mi
 podAnnotations:
-  app.kubernetes.io/commit: "0e50efc"
+  app.kubernetes.io/commit: "initial"
