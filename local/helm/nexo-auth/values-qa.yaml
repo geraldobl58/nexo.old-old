@@ -1,5 +1,4 @@
 # Values for QA environment
-# Deploy automático via branch 'qa'
 replicaCount: 1
 
 image:
@@ -13,47 +12,38 @@ imagePullSecrets:
 ingress:
   enabled: true
   className: "nginx"
-  annotations:
-    nginx.ingress.kubernetes.io/proxy-buffer-size: "128k"
+  annotations: {}
   hosts:
-    - host: auth.qa.nexo.local
+    - host: qa.auth.nexo.local
       paths:
         - path: /
           pathType: Prefix
-  tls:
-    - secretName: nexo-auth-qa-tls
-      hosts:
-        - auth.qa.nexo.local
+  tls: []
 
 resources:
   limits:
     cpu: 1000m
     memory: 1Gi
   requests:
-    cpu: 200m
+    cpu: 250m
     memory: 512Mi
-
 autoscaling:
   enabled: false
-
 env:
-  KC_DB: postgres
-  KC_DB_URL: jdbc:postgresql://nexo-auth-qa-postgres:5432/keycloak
-  KC_DB_USERNAME: keycloak
-  KC_DB_PASSWORD: keycloak_qa_secure
-  KC_HOSTNAME: auth.qa.nexo.local
-  KC_PROXY: edge
+  KEYCLOAK_ADMIN: admin
+  KEYCLOAK_ADMIN_PASSWORD: admin
+  KC_HOSTNAME_STRICT: "false"
+  KC_PROXY: "edge"
   KC_HTTP_ENABLED: "true"
   KC_HEALTH_ENABLED: "true"
   KC_METRICS_ENABLED: "true"
-
-envFrom:
-  - secretRef:
-      name: keycloak-secrets
-
+  # PostgreSQL config
+  KC_DB: postgres
+  KC_DB_URL: jdbc:postgresql://nexo-auth-qa-postgres:5432/keycloak
+  KC_DB_USERNAME: keycloak
+  KC_DB_PASSWORD: keycloak_qa_123
 podDisruptionBudget:
   enabled: false
-
 # =============================================================================
 # PostgreSQL - Habilitado para persistência de dados do Keycloak
 # =============================================================================
@@ -61,14 +51,14 @@ postgresql:
   enabled: true
   image:
     repository: postgres
-    tag: "qa-288e2c9ff8b9cbb03ddbac5009c51b84fec97299"
+    tag: "16-alpine"
     pullPolicy: IfNotPresent
   database: keycloak
   username: keycloak
-  password: keycloak_qa_secure
+  password: keycloak_qa_123
   persistence:
     enabled: true
-    size: 5Gi
+    size: 2Gi
     accessMode: ReadWriteOnce
     storageClass: ""
   resources:
@@ -78,6 +68,8 @@ postgresql:
     requests:
       cpu: 100m
       memory: 256Mi
+podAnnotations:
+  app.kubernetes.io/commit: "2209d67"
 
 podAnnotations:
   app.kubernetes.io/commit: "2209d67"

@@ -1,5 +1,4 @@
 # Values for Staging environment
-# Deploy automático via branch 'staging'
 replicaCount: 1
 
 image:
@@ -19,36 +18,32 @@ ingress:
       paths:
         - path: /
           pathType: Prefix
-  tls:
-    - secretName: nexo-auth-staging-tls
-      hosts:
-        - staging.auth.nexo.local
+  tls: []
 
 resources:
   limits:
-    cpu: 500m
-    memory: 512Mi
+    cpu: 1000m
+    memory: 1Gi
   requests:
-    cpu: 100m
-    memory: 256Mi
-
+    cpu: 250m
+    memory: 512Mi
 autoscaling:
   enabled: false
-
 env:
-  NODE_ENV: staging
-  LOG_LEVEL: debug
-  KC_PROXY: edge
+  KEYCLOAK_ADMIN: admin
+  KEYCLOAK_ADMIN_PASSWORD: admin
+  KC_HOSTNAME_STRICT: "false"
+  KC_PROXY: "edge"
   KC_HTTP_ENABLED: "true"
   KC_HEALTH_ENABLED: "true"
   KC_METRICS_ENABLED: "true"
-  KC_HOSTNAME: staging.auth.nexo.local
-  KC_HOSTNAME_STRICT: "false"
-  KEYCLOAK_ADMIN: admin
-  KEYCLOAK_ADMIN_PASSWORD: admin_staging_secure
-
-envFrom: []
-
+  # PostgreSQL config
+  KC_DB: postgres
+  KC_DB_URL: jdbc:postgresql://nexo-auth-staging-postgres:5432/keycloak
+  KC_DB_USERNAME: keycloak
+  KC_DB_PASSWORD: keycloak_staging_123
+podDisruptionBudget:
+  enabled: false
 # =============================================================================
 # PostgreSQL - Habilitado para persistência de dados do Keycloak
 # =============================================================================
@@ -60,10 +55,10 @@ postgresql:
     pullPolicy: IfNotPresent
   database: keycloak
   username: keycloak
-  password: keycloak_staging_secure
+  password: keycloak_staging_123
   persistence:
     enabled: true
-    size: 5Gi
+    size: 2Gi
     accessMode: ReadWriteOnce
     storageClass: ""
   resources:
@@ -73,6 +68,5 @@ postgresql:
     requests:
       cpu: 100m
       memory: 256Mi
-
 podAnnotations:
   app.kubernetes.io/commit: "da271db"
