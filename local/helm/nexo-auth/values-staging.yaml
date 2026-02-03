@@ -55,7 +55,7 @@ postgresql:
   enabled: true
   image:
     repository: postgres
-    tag: "staging-27d65f0c8a492abdcc48e4f2900e2d9d534607a4"
+    tag: "16-alpine"
     pullPolicy: IfNotPresent
   database: keycloak
   username: keycloak
