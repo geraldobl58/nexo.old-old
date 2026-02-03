@@ -130,7 +130,7 @@ spec:
         - name: postgresql.username
           value: keycloak
         - name: postgresql.password
-          value: keycloak_prod_123
+          value: keycloak_prod_secure
   destination:
     server: https://kubernetes.default.svc
     namespace: nexo-prod

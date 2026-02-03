@@ -563,6 +563,10 @@ jobs:
           BUILD_NUM="${{ needs.preflight.outputs.build_number }}"
           SHORT_SHA="${{ github.sha }}"
           SHORT_SHA="${SHORT_SHA:0:7}"
+          COMMIT_MSG="${{ github.event.head_commit.message }}"
+
+          # Extrair título do commit (primeira linha)
+          COMMIT_TITLE=$(echo "$COMMIT_MSG" | head -1 | cut -c1-80)
 
           # Verificar se há mudanças
           if git diff --cached --quiet; then
@@ -587,8 +591,8 @@ jobs:
             SERVICES=" nexo-be nexo-fe nexo-auth"
           fi
 
-          # Formato: #001 : deploy(prod): nexo-be nexo-fe → abc1234
-          git commit -m "${BUILD_NUM} : deploy(${ENV}):${SERVICES} → ${SHORT_SHA} [skip ci]"
+          # Formato: #001: Merge pull request #20 | deploy(prod):services → sha
+          git commit -m "${BUILD_NUM}: ${COMMIT_TITLE} | deploy(${ENV}):${SERVICES} → ${SHORT_SHA} [skip ci]"
           git push origin ${{ github.ref_name }}
 
           echo "✅ Deployed to $NAMESPACE"
