@@ -4,7 +4,7 @@ replicaCount: 1
 
 image:
   repository: ghcr.io/geraldobl58/nexo-be
-  tag: "main-0e50efc80b51556435dd4c6c7128878b31274186"
+  tag: "main-34c8fd5fdf914465699216b3fd6c3da614238b2d"
   pullPolicy: Always
 
 imagePullSecrets:
@@ -46,4 +46,4 @@ podDisruptionBudget:
   minAvailable: 2
 
 podAnnotations:
-  app.kubernetes.io/commit: "0e50efc"
+  app.kubernetes.io/commit: "34c8fd5"
