@@ -65,9 +65,9 @@ postgresql:
   password: keycloak_qa_secure
   persistence:
     enabled: true
-    size: 5Gi
+    size: 2Gi
     accessMode: ReadWriteOnce
-    storageClass: ""
+    storageClass: "local-path"
   resources:
     limits:
       cpu: 500m
