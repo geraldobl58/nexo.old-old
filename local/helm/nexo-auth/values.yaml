@@ -7,8 +7,9 @@ image:
 # Keycloak specific config
 command: []
 args:
-  - start
-  - --optimized
+  - start-dev
+  - --http-enabled=true
+  - --hostname-strict=false
 containerPort: 8080
 
 # Management port para health checks (Keycloak 26+)
