@@ -1,10 +1,9 @@
 # Values for QA environment
-# Deploy automático via branch 'qa'
 replicaCount: 1
 
 image:
   repository: ghcr.io/geraldobl58/nexo-auth
-  tag: "qa"
+  tag: "develop-37f28511eba892036ae25e45b92e483dc5dfa553"
   pullPolicy: Always
 
 imagePullSecrets:
@@ -13,8 +12,7 @@ imagePullSecrets:
 ingress:
   enabled: true
   className: "nginx"
-  annotations:
-    nginx.ingress.kubernetes.io/proxy-buffer-size: "128k"
+  annotations: {}
   hosts:
     - host: qa.auth.nexo.local
       paths:
@@ -27,27 +25,22 @@ resources:
     cpu: 1000m
     memory: 1Gi
   requests:
-    cpu: 200m
+    cpu: 250m
     memory: 512Mi
-
 autoscaling:
   enabled: false
-
 env:
-  KC_PROXY: edge
+  KEYCLOAK_ADMIN: admin
+  KEYCLOAK_ADMIN_PASSWORD: admin
+  KC_HOSTNAME_STRICT: "false"
+  KC_PROXY: "edge"
   KC_HTTP_ENABLED: "true"
   KC_HEALTH_ENABLED: "true"
   KC_METRICS_ENABLED: "true"
-  KC_HOSTNAME: qa.auth.nexo.local
-  KC_HOSTNAME_STRICT: "false"
-  KEYCLOAK_ADMIN: admin
-  KEYCLOAK_ADMIN_PASSWORD: admin_qa_secure
-
-envFrom: []
-
+  # Nota: KC_DB, KC_DB_URL, KC_DB_USERNAME, KC_DB_PASSWORD são 
+  # configurados automaticamente pelo template quando postgresql.enabled=true
 podDisruptionBudget:
   enabled: false
-
 # =============================================================================
 # PostgreSQL - Habilitado para persistência de dados do Keycloak
 # =============================================================================
@@ -59,12 +52,12 @@ postgresql:
     pullPolicy: IfNotPresent
   database: keycloak
   username: keycloak
-  password: keycloak_qa_secure
+  password: keycloak_qa_123
   persistence:
     enabled: true
     size: 2Gi
     accessMode: ReadWriteOnce
-    storageClass: "local-path"
+    storageClass: ""
   resources:
     limits:
       cpu: 500m
@@ -72,6 +65,5 @@ postgresql:
     requests:
       cpu: 100m
       memory: 256Mi
-
 podAnnotations:
-  app.kubernetes.io/commit: "initial"
+  app.kubernetes.io/commit: "37f2851"
