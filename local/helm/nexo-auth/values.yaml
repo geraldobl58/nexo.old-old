@@ -1,15 +1,21 @@
 # Default values for nexo-auth
 replicaCount: 1
 image:
-  repository: quay.io/keycloak/keycloak
-  pullPolicy: IfNotPresent
-  tag: "23.0"
+  repository: ghcr.io/geraldobl58/nexo-auth
+  pullPolicy: Always
+  tag: "latest"
 # Keycloak specific config
 command: []
 args:
-  - start-dev
+  - start
+  - --optimized
 containerPort: 8080
-imagePullSecrets: []
+
+# Management port para health checks (Keycloak 26+)
+managementPort: 9000
+
+imagePullSecrets:
+  - name: ghcr-secret
 nameOverride: ""
 fullnameOverride: ""
 serviceAccount:
