@@ -3,7 +3,7 @@ replicaCount: 1
 image:
   # Para desenvolvimento local com K3D
   repository: ghcr.io/geraldobl58/nexo-fe
-  tag: "develop-37f28511eba892036ae25e45b92e483dc5dfa553"
+  tag: "develop-d790789a7075e4ad18926502da958cc964a25a25"
   pullPolicy: Always
 
 imagePullSecrets:
