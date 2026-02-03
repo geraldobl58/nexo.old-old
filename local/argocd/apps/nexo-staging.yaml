@@ -130,7 +130,7 @@ spec:
         - name: postgresql.username
           value: keycloak
         - name: postgresql.password
-          value: keycloak_staging_123
+          value: keycloak_staging_secure
   destination:
     server: https://kubernetes.default.svc
     namespace: nexo-staging

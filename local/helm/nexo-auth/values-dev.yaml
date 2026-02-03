@@ -3,7 +3,7 @@ replicaCount: 1
 
 image:
   repository: ghcr.io/geraldobl58/nexo-auth
-  tag: "develop-85803439bca6a7cef85ee0451bb0716f2821f7a0"
+  tag: "develop-aeb4d381a91521c8d7517a40e307a7211d6d90da"
   pullPolicy: Always
 
 imagePullSecrets:
@@ -37,11 +37,8 @@ env:
   KC_HTTP_ENABLED: "true"
   KC_HEALTH_ENABLED: "true"
   KC_METRICS_ENABLED: "true"
-  # PostgreSQL config
-  KC_DB: postgres
-  KC_DB_URL: jdbc:postgresql://nexo-auth-dev-postgres:5432/keycloak
-  KC_DB_USERNAME: keycloak
-  KC_DB_PASSWORD: keycloak_dev_123
+  # Nota: KC_DB, KC_DB_URL, KC_DB_USERNAME, KC_DB_PASSWORD são 
+  # configurados automaticamente pelo template quando postgresql.enabled=true
 podDisruptionBudget:
   enabled: false
 # =============================================================================
@@ -69,4 +66,4 @@ postgresql:
       cpu: 100m
       memory: 256Mi
 podAnnotations:
-  app.kubernetes.io/commit: "8580343"
+  app.kubernetes.io/commit: "aeb4d38"
