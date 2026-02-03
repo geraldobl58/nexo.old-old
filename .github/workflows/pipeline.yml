@@ -58,8 +58,9 @@ env:
   IMAGE_OWNER: ${{ github.repository_owner }}
 
 # Evita execuções concorrentes na mesma branch
+# Apenas novos pushes cancelam execuções anteriores (não re-runs)
 concurrency:
-  group: pipeline-${{ github.ref }}
+  group: pipeline-${{ github.ref }}-${{ github.sha }}
   cancel-in-progress: true
 
 permissions:
@@ -531,8 +532,14 @@ jobs:
             VALUES_FILE="local/helm/${SERVICE}/values-${ENV}.yaml"
             
             if [ -f "$VALUES_FILE" ]; then
-              # Atualizar tag da imagem para SHA específico
-              sed -i "s|tag: \"[^\"]*\"|tag: \"${BRANCH}-${COMMIT_SHA}\"|" "$VALUES_FILE"
+              # Para nexo-auth, apenas atualizar a tag da imagem principal (não do PostgreSQL)
+              if [ "$SERVICE" == "nexo-auth" ]; then
+                # Atualizar apenas a primeira ocorrência de tag (imagem principal)
+                sed -i "0,/tag: \"[^\"]*\"/s|tag: \"[^\"]*\"|tag: \"${BRANCH}-${COMMIT_SHA}\"|" "$VALUES_FILE"
+              else
+                # Para outros serviços, atualizar tag normalmente
+                sed -i "s|tag: \"[^\"]*\"|tag: \"${BRANCH}-${COMMIT_SHA}\"|" "$VALUES_FILE"
+              fi
               
               # Atualizar annotation de commit (se existir)
               sed -i "s/app.kubernetes.io\/commit: \"[^\"]*\"/app.kubernetes.io\/commit: \"$SHORT_SHA\"/" "$VALUES_FILE"
@@ -602,3 +609,101 @@ jobs:
           echo "| nexo-auth | ${{ needs.build-auth.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "ArgoCD detectará as mudanças e fará sync automaticamente." >> $GITHUB_STEP_SUMMARY
+
+  # ==========================================================================
+  # STAGE 10: Discord Notification
+  # ==========================================================================
+  notify-discord:
+    name: 📢 Discord Notify
+    runs-on: ubuntu-latest
+    needs:
+      - preflight
+      - detect-changes
+      - build-backend
+      - build-frontend
+      - build-auth
+      - deploy
+    if: always() && needs.deploy.result == 'success'
+    steps:
+      - name: Send Discord Notification
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        run: |
+          ENV="${{ needs.preflight.outputs.environment }}"
+          NAMESPACE="${{ needs.preflight.outputs.namespace }}"
+          BUILD_NUM="${{ needs.preflight.outputs.build_number }}"
+          BRANCH="${{ needs.preflight.outputs.branch }}"
+          SHORT_SHA="${{ github.sha }}"
+          SHORT_SHA="${SHORT_SHA:0:7}"
+          COMMIT_MSG="${{ github.event.head_commit.message }}"
+          ACTOR="${{ github.actor }}"
+          REPO="${{ github.repository }}"
+          RUN_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+          # Determinar cor baseado no ambiente
+          case "$ENV" in
+            dev) COLOR=3066993 ;; # Verde
+            qa) COLOR=15844367 ;; # Amarelo
+            staging) COLOR=15105570 ;; # Laranja
+            prod) COLOR=15158332 ;; # Vermelho
+            *) COLOR=3447003 ;; # Azul
+          esac
+
+          # Determinar serviços deployados
+          SERVICES=""
+          if [ "${{ needs.build-backend.result }}" == "success" ]; then
+            SERVICES="${SERVICES}✅ nexo-be\n"
+          fi
+          if [ "${{ needs.build-frontend.result }}" == "success" ]; then
+            SERVICES="${SERVICES}✅ nexo-fe\n"
+          fi
+          if [ "${{ needs.build-auth.result }}" == "success" ]; then
+            SERVICES="${SERVICES}✅ nexo-auth\n"
+          fi
+
+          # Limpar mensagem de commit (remover [skip ci] e caracteres especiais)
+          COMMIT_MSG=$(echo "$COMMIT_MSG" | head -1 | sed 's/\[skip ci\]//g' | tr -d '"' | cut -c1-100)
+
+          # Enviar notificação
+          curl -H "Content-Type: application/json" \
+            -d "{
+              \"embeds\": [{
+                \"title\": \"🚀 Deploy ${BUILD_NUM} - ${ENV^^}\",
+                \"description\": \"Deploy realizado com sucesso no ambiente **${ENV}**\",
+                \"color\": ${COLOR},
+                \"fields\": [
+                  {
+                    \"name\": \"📦 Ambiente\",
+                    \"value\": \"${ENV} (${NAMESPACE})\",
+                    \"inline\": true
+                  },
+                  {
+                    \"name\": \"🔀 Branch\",
+                    \"value\": \"${BRANCH}\",
+                    \"inline\": true
+                  },
+                  {
+                    \"name\": \"📝 Commit\",
+                    \"value\": \"[\`${SHORT_SHA}\`](https://github.com/${REPO}/commit/${{ github.sha }})\",
+                    \"inline\": true
+                  },
+                  {
+                    \"name\": \"💬 Mensagem\",
+                    \"value\": \"${COMMIT_MSG}\",
+                    \"inline\": false
+                  },
+                  {
+                    \"name\": \"📋 Serviços\",
+                    \"value\": \"${SERVICES}\",
+                    \"inline\": false
+                  }
+                ],
+                \"footer\": {
+                  \"text\": \"Nexo Platform • Pipeline ${BUILD_NUM}\"
+                },
+                \"timestamp\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"
+              }]
+            }" \
+            "$DISCORD_WEBHOOK"
+
+          echo "✅ Discord notification sent!"
