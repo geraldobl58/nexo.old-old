@@ -20,10 +20,7 @@ ingress:
       paths:
         - path: /
           pathType: Prefix
-  tls:
-    - secretName: nexo-auth-qa-tls
-      hosts:
-        - qa.auth.nexo.local
+  tls: []
 
 resources:
   limits:

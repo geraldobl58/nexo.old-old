@@ -19,10 +19,7 @@ ingress:
       paths:
         - path: /
           pathType: Prefix
-  tls:
-    - secretName: nexo-auth-staging-tls
-      hosts:
-        - staging.auth.nexo.local
+  tls: []
 
 resources:
   limits:
