@@ -16,14 +16,14 @@ ingress:
   annotations:
     nginx.ingress.kubernetes.io/proxy-buffer-size: "128k"
   hosts:
-    - host: auth.qa.nexo.local
+    - host: qa.auth.nexo.local
       paths:
         - path: /
           pathType: Prefix
   tls:
     - secretName: nexo-auth-qa-tls
       hosts:
-        - auth.qa.nexo.local
+        - qa.auth.nexo.local
 
 resources:
   limits:
@@ -37,19 +37,16 @@ autoscaling:
   enabled: false
 
 env:
-  KC_DB: postgres
-  KC_DB_URL: jdbc:postgresql://nexo-auth-qa-postgres:5432/keycloak
-  KC_DB_USERNAME: keycloak
-  KC_DB_PASSWORD: keycloak_qa_secure
-  KC_HOSTNAME: auth.qa.nexo.local
   KC_PROXY: edge
   KC_HTTP_ENABLED: "true"
   KC_HEALTH_ENABLED: "true"
   KC_METRICS_ENABLED: "true"
+  KC_HOSTNAME: qa.auth.nexo.local
+  KC_HOSTNAME_STRICT: "false"
+  KEYCLOAK_ADMIN: admin
+  KEYCLOAK_ADMIN_PASSWORD: admin_qa_secure
 
-envFrom:
-  - secretRef:
-      name: keycloak-secrets
+envFrom: []
 
 podDisruptionBudget:
   enabled: false
