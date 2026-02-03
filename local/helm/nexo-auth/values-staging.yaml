@@ -3,7 +3,7 @@ replicaCount: 1
 
 image:
   repository: ghcr.io/geraldobl58/nexo-auth
-  tag: "develop-37f28511eba892036ae25e45b92e483dc5dfa553"
+  tag: "staging-da271db64ee9bfe216ff83b90cfb990d7636d993"
   pullPolicy: Always
 
 imagePullSecrets:
@@ -37,8 +37,11 @@ env:
   KC_HTTP_ENABLED: "true"
   KC_HEALTH_ENABLED: "true"
   KC_METRICS_ENABLED: "true"
-  # Nota: KC_DB, KC_DB_URL, KC_DB_USERNAME, KC_DB_PASSWORD são
-  # configurados automaticamente pelo template quando postgresql.enabled=true
+  # PostgreSQL config
+  KC_DB: postgres
+  KC_DB_URL: jdbc:postgresql://nexo-auth-staging-postgres:5432/keycloak
+  KC_DB_USERNAME: keycloak
+  KC_DB_PASSWORD: keycloak_staging_123
 podDisruptionBudget:
   enabled: false
 # =============================================================================
@@ -66,4 +69,4 @@ postgresql:
       cpu: 100m
       memory: 256Mi
 podAnnotations:
-  app.kubernetes.io/commit: "37f2851"
+  app.kubernetes.io/commit: "da271db"
