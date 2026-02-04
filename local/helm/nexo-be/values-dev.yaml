@@ -51,4 +51,3 @@ metrics:
     scrapeTimeout: 10s
     labels:
       release: monitoring
-
