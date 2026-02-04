@@ -101,3 +101,14 @@ postgresql:
     requests:
       cpu: 100m
       memory: 256Mi
+
+# Metrics configuration
+metrics:
+  enabled: true
+  path: /metrics
+  serviceMonitor:
+    enabled: true
+    interval: 30s
+    scrapeTimeout: 10s
+    labels:
+      release: monitoring

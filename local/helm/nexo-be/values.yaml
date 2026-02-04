@@ -116,3 +116,14 @@ networkPolicy:
       ports:
         - port: 3000
           protocol: TCP
+
+# Metrics configuration
+metrics:
+  enabled: true
+  path: /metrics
+  serviceMonitor:
+    enabled: true
+    interval: 30s
+    scrapeTimeout: 10s
+    labels:
+      release: monitoring
