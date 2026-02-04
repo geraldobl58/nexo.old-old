@@ -3,7 +3,7 @@ replicaCount: 1
 
 image:
   repository: ghcr.io/geraldobl58/nexo-auth
-  tag: "main-a6630c1596fce24ebaf648e27d589d47cf652081"
+  tag: "main-a1b302d58030f5ee792be1d1cdc39b846bfc3d4c"
   pullPolicy: Always
 
 imagePullSecrets:
@@ -66,4 +66,4 @@ postgresql:
       cpu: 100m
       memory: 256Mi
 podAnnotations:
-  app.kubernetes.io/commit: "a6630c1"
+  app.kubernetes.io/commit: "a1b302d"
