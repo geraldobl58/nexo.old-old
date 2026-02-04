@@ -3,7 +3,7 @@ replicaCount: 1
 image:
   # Para desenvolvimento local com K3D
   repository: ghcr.io/geraldobl58/nexo-fe
-  tag: "develop-2bf352526d9594ff84778d090cb89c0848ac2822"
+  tag: "develop-9ae0aa8237e23555d52a4e4029fd07f0f1a7f2d3"
   pullPolicy: Always
 
 imagePullSecrets:
@@ -37,4 +37,4 @@ env:
 podDisruptionBudget:
   enabled: false
 podAnnotations:
-  app.kubernetes.io/commit: "2bf3525"
+  app.kubernetes.io/commit: "9ae0aa8"
