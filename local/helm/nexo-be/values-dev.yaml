@@ -40,3 +40,15 @@ podDisruptionBudget:
   enabled: false
 podAnnotations:
   app.kubernetes.io/commit: "f39030f"
+
+# Metrics configuration for dev
+metrics:
+  enabled: true
+  path: /metrics
+  serviceMonitor:
+    enabled: true
+    interval: 15s
+    scrapeTimeout: 10s
+    labels:
+      release: monitoring
+
