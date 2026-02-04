@@ -172,6 +172,8 @@ jobs:
         uses: dorny/paths-filter@v3
         id: filter
         with:
+          # Usar comparação com a branch base para detectar mudanças corretas
+          base: ${{ github.event.before || github.event.pull_request.base.sha }}
           filters: |
             nexo-be:
               - 'apps/nexo-be/**'
@@ -181,6 +183,54 @@ jobs:
               - 'packages/**'
             nexo-auth:
               - 'apps/nexo-auth/**'
+
+      - name: Detect changes from merge (fallback)
+        id: merge-files
+        run: |
+          # Detectar arquivos alterados no último commit (incluindo merges)
+          echo "📂 Checking changed files..."
+
+          # Para merge commits, comparar com o primeiro parent
+          if git rev-parse --verify HEAD^2 >/dev/null 2>&1; then
+            # É um merge commit - comparar HEAD^1 (branch destino) com HEAD
+            CHANGED_FILES=$(git diff --name-only HEAD^1 HEAD)
+          else
+            # Commit normal - comparar com parent
+            CHANGED_FILES=$(git diff --name-only HEAD^ HEAD 2>/dev/null || echo "")
+          fi
+
+          echo "Changed files:"
+          echo "$CHANGED_FILES"
+
+          # Verificar cada serviço
+          if echo "$CHANGED_FILES" | grep -q "^apps/nexo-be/"; then
+            echo "nexo-be=true" >> $GITHUB_OUTPUT
+            echo "✅ nexo-be has changes"
+          else
+            echo "nexo-be=false" >> $GITHUB_OUTPUT
+          fi
+
+          if echo "$CHANGED_FILES" | grep -q "^apps/nexo-fe/"; then
+            echo "nexo-fe=true" >> $GITHUB_OUTPUT
+            echo "✅ nexo-fe has changes"
+          else
+            echo "nexo-fe=false" >> $GITHUB_OUTPUT
+          fi
+
+          if echo "$CHANGED_FILES" | grep -q "^apps/nexo-auth/"; then
+            echo "nexo-auth=true" >> $GITHUB_OUTPUT
+            echo "✅ nexo-auth has changes"
+          else
+            echo "nexo-auth=false" >> $GITHUB_OUTPUT
+          fi
+
+          # Verificar packages (afeta todos os serviços que usam packages)
+          if echo "$CHANGED_FILES" | grep -q "^packages/"; then
+            echo "packages=true" >> $GITHUB_OUTPUT
+            echo "✅ packages has changes (may affect be/fe)"
+          else
+            echo "packages=false" >> $GITHUB_OUTPUT
+          fi
 
       - name: Check for merge commits
         id: merge-check
@@ -196,63 +246,98 @@ jobs:
             echo "📝 Regular commit"
           fi
 
-          # Para qa, staging e main, sempre buildar tudo em caso de merge
-          if [[ "$BRANCH" =~ ^(qa|staging|main)$ ]]; then
-            echo "force_build=true" >> $GITHUB_OUTPUT
-            echo "🚀 Force build enabled for $BRANCH"
-          else
-            echo "force_build=false" >> $GITHUB_OUTPUT
-          fi
+          # Não forçar build de todos - usar detecção de paths mesmo em qa/staging/main
+          # Isso permite que apenas os serviços modificados sejam buildados
+          echo "force_build=false" >> $GITHUB_OUTPUT
+          echo "📊 Using path detection for selective builds"
 
       - name: Summary
         id: summary
         run: |
-          BE="${{ steps.filter.outputs.nexo-be }}"
-          FE="${{ steps.filter.outputs.nexo-fe }}"
-          AUTH="${{ steps.filter.outputs.nexo-auth }}"
+          # Combinar resultados do paths-filter e merge-files detection
+          FILTER_BE="${{ steps.filter.outputs.nexo-be }}"
+          FILTER_FE="${{ steps.filter.outputs.nexo-fe }}"
+          FILTER_AUTH="${{ steps.filter.outputs.nexo-auth }}"
+
+          MERGE_BE="${{ steps.merge-files.outputs.nexo-be }}"
+          MERGE_FE="${{ steps.merge-files.outputs.nexo-fe }}"
+          MERGE_AUTH="${{ steps.merge-files.outputs.nexo-auth }}"
+          PACKAGES="${{ steps.merge-files.outputs.packages }}"
+
           FORCE="${{ inputs.force_all }}"
-          FORCE_BUILD="${{ steps.merge-check.outputs.force_build }}"
           IS_MERGE="${{ steps.merge-check.outputs.is_merge }}"
           BRANCH="${{ needs.preflight.outputs.branch }}"
 
           echo "📊 Detection Results:"
           echo "  - Branch: $BRANCH"
           echo "  - Is Merge: $IS_MERGE"
-          echo "  - Force Build: $FORCE_BUILD"
-          echo "  - Filter BE: $BE"
-          echo "  - Filter FE: $FE"
-          echo "  - Filter AUTH: $AUTH"
+          echo "  - Force All: $FORCE"
+          echo ""
+          echo "  paths-filter results:"
+          echo "    - BE: $FILTER_BE"
+          echo "    - FE: $FILTER_FE"
+          echo "    - AUTH: $FILTER_AUTH"
+          echo ""
+          echo "  merge-files results:"
+          echo "    - BE: $MERGE_BE"
+          echo "    - FE: $MERGE_FE"
+          echo "    - AUTH: $MERGE_AUTH"
+          echo "    - Packages: $PACKAGES"
 
-          # Lógica de decisão:
-          # 1. Se force_all=true (manual), buildar tudo
-          # 2. Se é qa/staging/main, buildar tudo (promoção)
-          # 3. Senão, usar detecção de paths
+          # Decisão final: usar OR entre paths-filter e merge-files
+          # Se qualquer um detectar mudança, considerar como true
 
-          if [[ "$FORCE" == "true" || "$FORCE_BUILD" == "true" ]]; then
+          if [[ "$FORCE" == "true" ]]; then
             echo "🚀 Building all services (force mode)"
-            echo "nexo-be=true" >> $GITHUB_OUTPUT
-            echo "nexo-fe=true" >> $GITHUB_OUTPUT
-            echo "nexo-auth=true" >> $GITHUB_OUTPUT
+            BE_FINAL="true"
+            FE_FINAL="true"
+            AUTH_FINAL="true"
+          else
+            # BE: detectado por filter OU merge-files OU packages mudou
+            if [[ "$FILTER_BE" == "true" || "$MERGE_BE" == "true" || "$PACKAGES" == "true" ]]; then
+              BE_FINAL="true"
+            else
+              BE_FINAL="false"
+            fi
+            
+            # FE: detectado por filter OU merge-files OU packages mudou
+            if [[ "$FILTER_FE" == "true" || "$MERGE_FE" == "true" || "$PACKAGES" == "true" ]]; then
+              FE_FINAL="true"
+            else
+              FE_FINAL="false"
+            fi
+            
+            # AUTH: detectado por filter OU merge-files (não usa packages)
+            if [[ "$FILTER_AUTH" == "true" || "$MERGE_AUTH" == "true" ]]; then
+              AUTH_FINAL="true"
+            else
+              AUTH_FINAL="false"
+            fi
+          fi
+
+          echo ""
+          echo "🎯 Final decision:"
+          echo "  - nexo-be: $BE_FINAL"
+          echo "  - nexo-fe: $FE_FINAL"
+          echo "  - nexo-auth: $AUTH_FINAL"
+
+          echo "nexo-be=$BE_FINAL" >> $GITHUB_OUTPUT
+          echo "nexo-fe=$FE_FINAL" >> $GITHUB_OUTPUT
+          echo "nexo-auth=$AUTH_FINAL" >> $GITHUB_OUTPUT
+
+          if [[ "$BE_FINAL" == "true" || "$FE_FINAL" == "true" || "$AUTH_FINAL" == "true" ]]; then
             echo "any-change=true" >> $GITHUB_OUTPUT
           else
-            echo "nexo-be=$BE" >> $GITHUB_OUTPUT
-            echo "nexo-fe=$FE" >> $GITHUB_OUTPUT
-            echo "nexo-auth=$AUTH" >> $GITHUB_OUTPUT
-            
-            if [[ "$BE" == "true" || "$FE" == "true" || "$AUTH" == "true" ]]; then
-              echo "any-change=true" >> $GITHUB_OUTPUT
-            else
-              echo "any-change=false" >> $GITHUB_OUTPUT
-            fi
+            echo "any-change=false" >> $GITHUB_OUTPUT
           fi
 
           echo "### 📦 Services Changed" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Service | Changed |" >> $GITHUB_STEP_SUMMARY
           echo "|---------|---------|" >> $GITHUB_STEP_SUMMARY
-          echo "| nexo-be | $(grep 'nexo-be=' $GITHUB_OUTPUT | cut -d= -f2) |" >> $GITHUB_STEP_SUMMARY
-          echo "| nexo-fe | $(grep 'nexo-fe=' $GITHUB_OUTPUT | cut -d= -f2) |" >> $GITHUB_STEP_SUMMARY
-          echo "| nexo-auth | $(grep 'nexo-auth=' $GITHUB_OUTPUT | cut -d= -f2) |" >> $GITHUB_STEP_SUMMARY
+          echo "| nexo-be | $BE_FINAL |" >> $GITHUB_STEP_SUMMARY
+          echo "| nexo-fe | $FE_FINAL |" >> $GITHUB_STEP_SUMMARY
+          echo "| nexo-auth | $AUTH_FINAL |" >> $GITHUB_STEP_SUMMARY
 
   # ==========================================================================
   # STAGE 3: CI - Backend
