@@ -650,19 +650,19 @@ jobs:
           echo "ArgoCD detectará as mudanças e fará sync automaticamente." >> $GITHUB_STEP_SUMMARY
 
   # ==========================================================================
-  # STAGE 10: Discord Notification
+  # STAGE 10: Discord Notification (executa APÓS deploy concluir)
   # ==========================================================================
   notify-discord:
     name: 📢 Discord Notify
     runs-on: ubuntu-latest
     needs:
       - preflight
-      - detect-changes
       - build-backend
       - build-frontend
       - build-auth
       - deploy
-    if: always() && needs.deploy.result == 'success'
+    # Executa APÓS o deploy finalizar (sucesso ou falha)
+    if: always() && (needs.deploy.result == 'success' || needs.deploy.result == 'failure')
     steps:
       - name: Send Discord Notification
         env:
@@ -678,37 +678,80 @@ jobs:
           ACTOR="${{ github.actor }}"
           REPO="${{ github.repository }}"
           RUN_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          DEPLOY_RESULT="${{ needs.deploy.result }}"
 
-          # Determinar cor baseado no ambiente
-          case "$ENV" in
-            dev) COLOR=3066993 ;; # Verde
-            qa) COLOR=15844367 ;; # Amarelo
-            staging) COLOR=15105570 ;; # Laranja
-            prod) COLOR=15158332 ;; # Vermelho
-            *) COLOR=3447003 ;; # Azul
-          esac
+          # Determinar status e cor baseado no resultado do deploy
+          if [ "$DEPLOY_RESULT" == "success" ]; then
+            STATUS_EMOJI="✅"
+            STATUS_TEXT="sucesso"
+            TITLE_EMOJI="🚀"
+            # Cor baseada no ambiente para sucesso
+            case "$ENV" in
+              dev) COLOR=3066993 ;; # Verde
+              qa) COLOR=15844367 ;; # Amarelo
+              staging) COLOR=15105570 ;; # Laranja
+              prod) COLOR=15158332 ;; # Vermelho
+              *) COLOR=3447003 ;; # Azul
+            esac
+          else
+            STATUS_EMOJI="❌"
+            STATUS_TEXT="falhou"
+            TITLE_EMOJI="🔴"
+            COLOR=15158332 # Vermelho para falha
+          fi
 
-          # Determinar serviços deployados
+          # Determinar serviços e seus status
           SERVICES=""
           if [ "${{ needs.build-backend.result }}" == "success" ]; then
             SERVICES="${SERVICES}✅ nexo-be\n"
+          elif [ "${{ needs.build-backend.result }}" == "failure" ]; then
+            SERVICES="${SERVICES}❌ nexo-be\n"
+          elif [ "${{ needs.build-backend.result }}" == "skipped" ]; then
+            SERVICES="${SERVICES}⏭️ nexo-be (skipped)\n"
           fi
+
           if [ "${{ needs.build-frontend.result }}" == "success" ]; then
             SERVICES="${SERVICES}✅ nexo-fe\n"
+          elif [ "${{ needs.build-frontend.result }}" == "failure" ]; then
+            SERVICES="${SERVICES}❌ nexo-fe\n"
+          elif [ "${{ needs.build-frontend.result }}" == "skipped" ]; then
+            SERVICES="${SERVICES}⏭️ nexo-fe (skipped)\n"
           fi
+
           if [ "${{ needs.build-auth.result }}" == "success" ]; then
             SERVICES="${SERVICES}✅ nexo-auth\n"
+          elif [ "${{ needs.build-auth.result }}" == "failure" ]; then
+            SERVICES="${SERVICES}❌ nexo-auth\n"
+          elif [ "${{ needs.build-auth.result }}" == "skipped" ]; then
+            SERVICES="${SERVICES}⏭️ nexo-auth (skipped)\n"
           fi
 
-          # Limpar mensagem de commit (remover [skip ci] e caracteres especiais)
-          COMMIT_MSG=$(echo "$COMMIT_MSG" | head -1 | sed 's/\[skip ci\]//g' | tr -d '"' | cut -c1-100)
+          # Limpar mensagem de commit (remover [skip ci] e caracteres especiais que quebram JSON)
+          COMMIT_MSG=$(echo "$COMMIT_MSG" | head -1 | sed 's/\[skip ci\]//g' | tr -d '"\\' | sed "s/'/\"/g" | cut -c1-100)
 
-          # Enviar notificação
-          curl -H "Content-Type: application/json" \
+          # Se SERVICES estiver vazio, colocar mensagem padrão
+          if [ -z "$SERVICES" ]; then
+            SERVICES="Nenhum serviço alterado"
+          fi
+
+          # Verificar se o webhook está configurado
+          if [ -z "$DISCORD_WEBHOOK" ]; then
+            echo "❌ DISCORD_WEBHOOK não está configurado!"
+            exit 1
+          fi
+
+          echo "📤 Enviando notificação para Discord..."
+          echo "   Webhook configurado: ✅"
+          echo "   Ambiente: $ENV"
+          echo "   Status: $STATUS_TEXT"
+
+          # Enviar notificação com tratamento de erro
+          HTTP_RESPONSE=$(curl -s -o /tmp/discord_response.txt -w "%{http_code}" \
+            -H "Content-Type: application/json" \
             -d "{
               \"embeds\": [{
-                \"title\": \"🚀 Deploy ${BUILD_NUM} - ${ENV^^}\",
-                \"description\": \"Deploy realizado com sucesso no ambiente **${ENV}**\",
+                \"title\": \"${TITLE_EMOJI} Deploy ${BUILD_NUM} - ${ENV^^} ${STATUS_EMOJI}\",
+                \"description\": \"Deploy ${STATUS_TEXT} no ambiente **${ENV}**\",
                 \"color\": ${COLOR},
                 \"fields\": [
                   {
@@ -735,6 +778,11 @@ jobs:
                     \"name\": \"📋 Serviços\",
                     \"value\": \"${SERVICES}\",
                     \"inline\": false
+                  },
+                  {
+                    \"name\": \"🔗 Pipeline\",
+                    \"value\": \"[Ver detalhes](${RUN_URL})\",
+                    \"inline\": false
                   }
                 ],
                 \"footer\": {
@@ -743,6 +791,12 @@ jobs:
                 \"timestamp\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"
               }]
             }" \
-            "$DISCORD_WEBHOOK"
+            "$DISCORD_WEBHOOK")
 
-          echo "✅ Discord notification sent!"
+          if [ "$HTTP_RESPONSE" -ge 200 ] && [ "$HTTP_RESPONSE" -lt 300 ]; then
+            echo "✅ Discord notification sent! (HTTP $HTTP_RESPONSE)"
+          else
+            echo "❌ Failed to send Discord notification (HTTP $HTTP_RESPONSE)"
+            echo "Response: $(cat /tmp/discord_response.txt)"
+            exit 1
+          fi
