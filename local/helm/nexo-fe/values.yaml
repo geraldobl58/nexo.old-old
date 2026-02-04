@@ -87,3 +87,14 @@ env:
 podDisruptionBudget:
   enabled: true
   minAvailable: 1
+
+# Metrics configuration
+metrics:
+  enabled: true
+  path: /api/metrics
+  serviceMonitor:
+    enabled: true
+    interval: 30s
+    scrapeTimeout: 10s
+    labels:
+      release: monitoring
