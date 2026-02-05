@@ -5,13 +5,15 @@ Configuração completa de review automático com IA usando CodeRabbit e Danger.
 ## 🎯 O que temos
 
 ### ✅ CodeRabbit
+
 - Review automático de PRs em PT-BR
-- Análise de Clean Architecture no frontend
-- Verificação de padrões React/Next.js
+- Análise de Clean Architecture no **backend (nexo-be)**
+- Verificação de padrões React/Next.js no **frontend**
 - Segurança e performance
 - Sugestões de melhorias
 
 ### ✅ Danger.js
+
 - Validações automáticas de PR
 - Checagem de tamanho de PR
 - Verificação de testes
@@ -34,14 +36,14 @@ Acesse: https://github.com/apps/coderabbitai
 O arquivo `.coderabbit.yaml` já está configurado com:
 
 ```yaml
-language: pt-br  # Reviews em Português
+language: pt-br # Reviews em Português
 reviews:
-  auto_review: true  # Review automático
-  
+  auto_review: true # Review automático
+
 path_instructions:
   # Regras específicas para cada tipo de arquivo
-  - apps/nexo-fe/src/**/*.tsx  # Componentes React
-  - apps/nexo-be/src/**/*.ts   # Backend NestJS
+  - apps/nexo-fe/src/**/*.tsx # Componentes React
+  - apps/nexo-be/src/**/*.ts # Backend NestJS
 ```
 
 ### 3. Testar
@@ -56,7 +58,7 @@ Crie um PR de teste e veja o CodeRabbit em ação! 🎉
 # .github/workflows/pipeline.yml
 
 jobs:
-  ai-review:  # Roda APENAS em PRs
+  ai-review: # Roda APENAS em PRs
     - Checkout código
     - Install Danger.js
     - Run Danger.js review
@@ -128,13 +130,13 @@ jobs:
 ### Danger.js
 
 ```
-⚠️ apps/nexo-fe/src/components/UserCard.tsx: 
+⚠️ apps/nexo-fe/src/components/UserCard.tsx:
 Props não tipadas. Defina interface ou type para as props.
 
-❌ apps/nexo-be/src/services/auth.service.ts: 
+❌ apps/nexo-be/src/services/auth.service.ts:
 Não use @ts-ignore (2 ocorrências). Resolva os erros de tipo.
 
-✅ Bom uso de Server Components (8 arquivos). 
+✅ Bom uso de Server Components (8 arquivos).
 Continue usando quando possível!
 ```
 
@@ -152,7 +154,7 @@ export class UserService {
   constructor(
     private readonly userRepository: UserRepository
   ) {}
-  
+
   async findById(id: string): Promise<UserDto> {
     return this.userRepository.findById(id);
   }
@@ -169,7 +171,7 @@ Edite: `apps/nexo-fe/dangerfile.ts`
 
 ```typescript
 // Adicionar nova regra
-if (allFiles.some(f => f.includes('/pages/'))) {
+if (allFiles.some((f) => f.includes("/pages/"))) {
   warn("📁 Usando /pages? Migre para /app (App Router)");
 }
 ```
@@ -203,6 +205,7 @@ git commit -m "fix: corrige bug [skip ci]"
 ```
 
 Para reativar:
+
 ```
 @coderabbitai resume
 ```
@@ -214,6 +217,7 @@ Para reativar:
 Acesse: https://app.coderabbit.ai/dashboard
 
 Veja:
+
 - PRs revisados
 - Sugestões aceitas
 - Tempo médio de review
@@ -226,6 +230,7 @@ Insights → Code → Pull requests
 ```
 
 Métricas de qualidade:
+
 - Tempo de review
 - Comentários por PR
 - Taxa de aprovação
@@ -233,6 +238,7 @@ Métricas de qualidade:
 ## 💡 Boas Práticas
 
 ### 1. PRs Pequenos
+
 ```
 ✅ Bom: 100-300 linhas
 ⚠️ Médio: 300-600 linhas
@@ -240,24 +246,30 @@ Métricas de qualidade:
 ```
 
 ### 2. Descrição Clara
+
 ```markdown
 ## 🎯 Objetivo
+
 Adiciona sistema de notificações em tempo real
 
 ## 🔨 Mudanças
+
 - Implementa WebSocket connection
 - Adiciona NotificationContext
 - Cria componente NotificationBell
 
 ## 📸 Screenshots
+
 ![Notificação](url)
 
 ## ✅ Checklist
+
 - [x] Testes adicionados
 - [x] Documentação atualizada
 ```
 
 ### 3. Responder Reviews
+
 ```
 # Aceitar sugestão
 @coderabbitai apply
@@ -270,6 +282,7 @@ Mantive this approach porque...
 ```
 
 ### 4. Iterar Rápido
+
 ```
 1. Criar PR
 2. Aguardar reviews (1-2 min)
@@ -298,11 +311,13 @@ Mantive this approach porque...
 ### Danger.js falha
 
 1. Ver logs no GitHub Actions:
+
    ```
    Actions → Pipeline → ai-review
    ```
 
 2. Testar localmente:
+
    ```bash
    cd apps/nexo-fe
    npm install danger
@@ -316,9 +331,10 @@ Mantive this approach porque...
 ### Muitos comentários
 
 1. Ajustar sensibilidade no `.coderabbit.yaml`:
+
    ```yaml
    reviews:
-     request_changes_workflow: false  # Apenas sugestões
+     request_changes_workflow: false # Apenas sugestões
    ```
 
 2. Ou pausar temporariamente:
@@ -330,7 +346,8 @@ Mantive this approach porque...
 
 - [CodeRabbit Docs](https://docs.coderabbit.ai/)
 - [Danger.js Guide](https://danger.systems/js/)
-- [Clean Architecture Frontend](https://blog.cleancoder.com/)
+- [Clean Architecture Backend](https://blog.cleancoder.com/)
+- [NestJS Best Practices](https://docs.nestjs.com/fundamentals)
 - [Next.js Best Practices](https://nextjs.org/docs/app/building-your-application)
 
 ## 🎉 Pronto!
@@ -338,6 +355,7 @@ Mantive this approach porque...
 Agora seus PRs terão review automático com IA! 🚀
 
 **Próximos passos:**
+
 1. Criar PR de teste
 2. Ver CodeRabbit e Danger.js em ação
 3. Iterar e melhorar baseado nos feedbacks

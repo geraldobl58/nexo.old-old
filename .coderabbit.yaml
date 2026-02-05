@@ -8,14 +8,14 @@ language: pt-br
 reviews:
   # Review pull requests automatically
   auto_review: true
-  
+
   # Review settings
   request_changes_workflow: true
   high_level_summary: true
   poem: false
   review_status: true
   collapse_walkthrough: false
-  
+
   # Files to ignore
   path_filters:
     - "!**/*.lock"
@@ -26,7 +26,7 @@ reviews:
     - "!**/dist/**"
     - "!**/build/**"
     - "!**/.next/**"
-  
+
   # Code patterns to check
   path_instructions:
     - path: "apps/nexo-fe/src/**/*.tsx"
@@ -37,7 +37,7 @@ reviews:
         - Evite inline styles
         - Acessibilidade: sempre use aria-labels em elementos interativos
         - Performance: use React.memo quando apropriado
-    
+
     - path: "apps/nexo-fe/src/app/**/*.tsx"
       instructions: |
         Review de páginas Next.js:
@@ -47,7 +47,7 @@ reviews:
         - Loading states: use Suspense boundaries
         - Error boundaries para tratamento de erros
         - Streaming quando aplicável
-    
+
     - path: "apps/nexo-fe/src/lib/**/*.ts"
       instructions: |
         Review de utilitários:
@@ -55,7 +55,7 @@ reviews:
         - Tipagem forte com TypeScript
         - Evite any types
         - Tratamento de erros adequado
-    
+
     - path: "apps/nexo-be/src/**/*.ts"
       instructions: |
         Review seguindo Clean Architecture:
@@ -68,7 +68,7 @@ reviews:
         - Logging estruturado
         - Documentação Swagger
         - Princípios SOLID
-    
+
     - path: "apps/nexo-be/src/**/*.controller.ts"
       instructions: |
         Review de Controllers:
@@ -78,7 +78,7 @@ reviews:
         - DTOs para request/response
         - Status codes HTTP corretos
         - Versionamento de API
-    
+
     - path: "apps/nexo-be/src/**/*.service.ts"
       instructions: |
         Review de Services:
@@ -101,7 +101,7 @@ tools:
   # AST-level checks
   ast_level_checker:
     enabled: true
-  
+
   # Security checks
   github_checks:
     enabled: true
@@ -111,6 +111,6 @@ tools:
 knowledge_base:
   # Learnings from reviews (enabled by default)
   learnings: true
-  
+
   # Custom instructions
   opt_out_instructions: false
