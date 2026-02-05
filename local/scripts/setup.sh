@@ -218,28 +218,38 @@ create_namespaces() {
 install_argocd() {
     log_info "Instalando ArgoCD..."
     
+    # Verificar se já está instalado
+    if kubectl get deployment argocd-server -n argocd &>/dev/null; then
+        log_success "ArgoCD já instalado, pulando..."
+        
+        # Garantir que NodePort existe
+        if ! kubectl get svc argocd-server-nodeport -n argocd &>/dev/null; then
+            log_info "Aplicando NodePort do ArgoCD..."
+            kubectl apply -f "$LOCAL_DIR/argocd/nodeport.yaml"
+        fi
+        
+        return 0
+    fi
+    
     # Instalar ArgoCD
     kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
     
     # Aguardar pods ficarem prontos
     log_info "Aguardando ArgoCD ficar pronto..."
-    sleep 10
+    sleep 15
     
     # Aguardar deployments principais
     kubectl wait --for=condition=Available deployment/argocd-server -n argocd --timeout=300s 2>/dev/null || true
     kubectl wait --for=condition=Available deployment/argocd-repo-server -n argocd --timeout=300s 2>/dev/null || true
     kubectl wait --for=condition=Available deployment/argocd-dex-server -n argocd --timeout=300s 2>/dev/null || true
     
-    # Reiniciar applicationset controller se estiver com problema
-    log_info "Verificando ArgoCD ApplicationSet controller..."
-    kubectl rollout restart deployment argocd-applicationset-controller -n argocd 2>/dev/null || true
-    sleep 5
-    
-    # Criar NodePort service para acesso local
+    # Aplicar NodePort service para acesso local
+    log_info "Aplicando NodePort do ArgoCD..."
     kubectl apply -f "$LOCAL_DIR/argocd/nodeport.yaml"
     
     # Obter senha inicial
-    local argocd_password=$(kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d 2>/dev/null || echo "admin")
+    sleep 5
+    local argocd_password=$(kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d 2>/dev/null || echo "aguarde...")
     
     log_success "ArgoCD instalado!"
     echo ""
@@ -256,26 +266,54 @@ install_argocd() {
 install_observability() {
     log_info "Instalando stack de observabilidade..."
     
+    # Verificar se já está instalado
+    if helm list -n monitoring | grep -q "kube-prometheus-stack"; then
+        log_success "kube-prometheus-stack já instalado, pulando..."
+        return 0
+    fi
+    
     # Adicionar repositório Prometheus
     helm repo add prometheus-community https://prometheus-community.github.io/helm-charts 2>/dev/null || true
     helm repo update
     
+    log_info "Instalando kube-prometheus-stack (pode levar alguns minutos)..."
+    
     # Instalar kube-prometheus-stack (Prometheus + Grafana + Alertmanager)
-    helm upgrade --install monitoring prometheus-community/kube-prometheus-stack \
+    helm install kube-prometheus-stack prometheus-community/kube-prometheus-stack \
         --namespace monitoring \
-        --values "$LOCAL_DIR/observability/values.yaml" \
+        --set prometheus.prometheusSpec.serviceMonitorSelectorNilUsesHelmValues=false \
+        --set grafana.service.type=NodePort \
+        --set grafana.service.nodePort=30030 \
+        --set grafana.adminPassword=admin \
+        --set prometheus.service.type=NodePort \
+        --set prometheus.service.nodePort=30090 \
+        --set alertmanager.service.type=NodePort \
+        --set alertmanager.service.nodePort=30093 \
         --wait \
         --timeout 10m
     
-    # Obter senha do Grafana
-    local grafana_password=$(kubectl get secret --namespace monitoring monitoring-grafana -o jsonpath="{.data.admin-password}" | base64 --decode)
-    
     log_success "Stack de observabilidade instalada!"
     echo ""
-    echo "  📊 Grafana:      http://localhost:30030  (admin / $grafana_password)"
+    echo "  📊 Grafana:      http://localhost:30030  (admin / admin)"
     echo "  📈 Prometheus:   http://localhost:30090"
     echo "  🔔 Alertmanager: http://localhost:30093"
     echo ""
+    
+    # Aplicar dashboards customizados se existirem
+    if [ -d "$LOCAL_DIR/observability/dashboards" ] && [ -n "$(ls -A $LOCAL_DIR/observability/dashboards 2>/dev/null)" ]; then
+        log_info "Aplicando dashboards customizados..."
+        kubectl create configmap nexo-dashboards \
+            --from-file="$LOCAL_DIR/observability/dashboards" \
+            --namespace monitoring \
+            --dry-run=client -o yaml | kubectl apply -f - 2>/dev/null || true
+        
+        kubectl label configmap nexo-dashboards \
+            grafana_dashboard=1 \
+            --namespace monitoring \
+            --overwrite 2>/dev/null || true
+        
+        log_success "Dashboards aplicados"
+    fi
 }
 
 # ============================================================================
@@ -473,7 +511,7 @@ show_summary() {
     
     # Obter senhas
     local argocd_password=$(kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d 2>/dev/null || echo "admin")
-    local grafana_password=$(kubectl get secret --namespace monitoring monitoring-grafana -o jsonpath="{.data.admin-password}" | base64 --decode 2>/dev/null || echo "admin123")
+    local grafana_password="admin"
     
     echo "📋 Serviços Disponíveis:"
     echo ""
