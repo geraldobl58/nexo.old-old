@@ -119,11 +119,8 @@ jobs:
   preflight:
     name: 🔍 Pre-flight
     runs-on: ubuntu-latest
-    needs: [ai-review]
-    # Sempre roda mesmo se ai-review for pulado (push events) ou falhado
+    # Não depende de ai-review porque ele só roda em PRs
     if: |
-      always() &&
-      (needs.ai-review.result == 'success' || needs.ai-review.result == 'skipped') &&
       !contains(github.event.head_commit.message, '[skip ci]') &&
       github.actor != 'github-actions[bot]'
     outputs:
