@@ -7,10 +7,14 @@ node_modules
 
 # Local env files
 .env
+.env.*
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
+*.env
+**/.env
+**/.env.*
 
 # Testing
 coverage
@@ -46,6 +50,31 @@ kubeconfig*
 infra/environments/local/secrets/*.yaml
 infra/environments/*/secrets/*.yaml
 !infra/environments/*/secrets/*.yaml.template
+
+# Secrets and sensitive files
+**/secrets/
+**/secret.yaml
+**/secret.yml
+**/*secret*.yaml
+**/*secret*.yml
+*.key
+*.pem
+*.crt
+*.csr
+*.p12
+*.pfx
+
+# GitHub tokens and credentials
+ghp_*
+github_token
+github_pat
+**/token.txt
+**/credentials.txt
+
+# Setup logs (podem conter tokens)
+setup.log
+setup-*.log
+local/setup*.log
 
 # KIND data
 /tmp/nexo-local/
