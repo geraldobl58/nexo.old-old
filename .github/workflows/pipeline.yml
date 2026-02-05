@@ -95,7 +95,7 @@ jobs:
         working-directory: apps/nexo-fe
         run: npx danger ci
         env:
-          GITHUB_TOKEN: ${{ secrets.GHCR_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: CodeRabbit Summary
         run: |
@@ -105,9 +105,9 @@ jobs:
           echo "Os comentários aparecerão em breve na aba 'Files changed'." >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Verificações realizadas:" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ Clean Architecture (Frontend)" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Clean Architecture (Backend nexo-be)" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ TypeScript Best Practices" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ React/Next.js Patterns" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ React/Next.js Patterns (Frontend nexo-fe)" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ Segurança e Performance" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ Testes" >> $GITHUB_STEP_SUMMARY
 
@@ -118,9 +118,10 @@ jobs:
     name: 🔍 Pre-flight
     runs-on: ubuntu-latest
     needs: [ai-review]
-    # Sempre roda mesmo se ai-review for pulado (push events)
+    # Sempre roda mesmo se ai-review for pulado (push events) ou falhado
     if: |
       always() &&
+      (needs.ai-review.result == 'success' || needs.ai-review.result == 'skipped') &&
       !contains(github.event.head_commit.message, '[skip ci]') &&
       github.actor != 'github-actions[bot]'
     outputs:
