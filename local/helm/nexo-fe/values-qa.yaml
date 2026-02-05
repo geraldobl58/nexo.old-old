@@ -4,7 +4,7 @@ replicaCount: 1
 
 image:
   repository: ghcr.io/geraldobl58/nexo-fe
-  tag: "qa-2209d67b593d88384692cf5b4e4b8a16c8195c1b"
+  tag: "qa-5eeabf610da26481d56c88a36ae729dcf7cce525"
   pullPolicy: Always
 
 imagePullSecrets:
@@ -49,7 +49,7 @@ podDisruptionBudget:
   enabled: false
 
 podAnnotations:
-  app.kubernetes.io/commit: "2209d67"
+  app.kubernetes.io/commit: "5eeabf6"
 
 # Metrics configuration for QA
 metrics:
@@ -61,3 +61,4 @@ metrics:
     scrapeTimeout: 10s
     labels:
       release: monitoring
+
