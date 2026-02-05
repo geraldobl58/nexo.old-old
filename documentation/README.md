@@ -51,7 +51,7 @@ Documentação completa do Nexo Platform - Sistema GitOps com K3D, ArgoCD e Mult
 # GitHub → Settings → Secrets and variables → Actions → New repository secret
 # Nome: DISCORD_WEBHOOK
 # Valor: https://discord.com/api/webhooks/...
-# 
+#
 # Nota: GITHUB_TOKEN já é fornecido automaticamente!
 
 # 2. Setup do ambiente local (5 minutos)

@@ -70,18 +70,21 @@ async function runChecks() {
       }
     }
 
-    // 3.2 - Server Components
-    const serverComponentsUsed = frontendFiles.filter((f) => {
-      const diff = danger.git.diffForFile(f);
-      return diff && !diff.diff.includes("'use client'");
-    });
+    // 3.2 - Server Components (processar de forma assíncrona)
+    let serverComponentsCount = 0;
+    for (const file of frontendFiles) {
+      const diff = await danger.git.diffForFile(file);
+      if (diff && !diff.diff.includes("'use client'")) {
+        serverComponentsCount++;
+      }
+    }
 
     if (
-      serverComponentsUsed.length > 0 &&
+      serverComponentsCount > 0 &&
       frontendFiles.some((f) => f.includes("/app/"))
     ) {
       message(
-        `✅ Bom uso de Server Components (${serverComponentsUsed.length} arquivos). Continue usando quando possível!`,
+        `✅ Bom uso de Server Components (${serverComponentsCount} arquivos). Continue usando quando possível!`,
       );
     }
   }
