@@ -23,13 +23,7 @@ PROJECT_ROOT="$(dirname "$LOCAL_DIR")"
 CLUSTER_NAME="nexo-local"
 K3D_CONFIG="$LOCAL_DIR/k3d/config.yaml"
 
-# Carregar variáveis do .env se existir
-if [ -f "$PROJECT_ROOT/.env" ]; then
-    log_info "Carregando variáveis de ambiente do .env..."
-    export $(grep -v '^#' "$PROJECT_ROOT/.env" | grep -v '^$' | xargs)
-fi
-
-# GitHub Container Registry
+# GitHub Container Registry (será sobrescrito se .env existir)
 GITHUB_USERNAME="${GITHUB_USERNAME:-geraldobl58}"
 GITHUB_TOKEN="${GITHUB_TOKEN:-}"
 
@@ -52,6 +46,14 @@ log_warn() {
 log_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
+
+# Carregar variáveis do .env se existir (após definir funções de log)
+if [ -f "$PROJECT_ROOT/.env" ]; then
+    log_info "Carregando variáveis de ambiente do .env..."
+    export $(grep -v '^#' "$PROJECT_ROOT/.env" | grep -v '^$' | xargs)
+    GITHUB_USERNAME="${GITHUB_USERNAME:-geraldobl58}"
+    GITHUB_TOKEN="${GITHUB_TOKEN:-}"
+fi
 
 check_dependencies() {
     log_info "Verificando e instalando dependências..."
