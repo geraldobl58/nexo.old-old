@@ -65,6 +65,7 @@ make setup
 ```
 
 **O setup irá:**
+
 - 🔍 Detectar e carregar token do `.env` automaticamente
 - ✅ OU pedir o token manualmente se não encontrar
 

@@ -70,14 +70,15 @@ O Nexo Platform é um sistema GitOps multi-ambiente baseado em Kubernetes, que u
 
 ```yaml
 Configuração:
-- 1 Server Node (Control Plane)
-- 2 Agent Nodes (Workers)
-- Registry Local (localhost:5050)
-- LoadBalancer integrado
-- Portas expostas: 80, 443, 30080, 30030, 30090, 30093
+  - 1 Server Node (Control Plane)
+  - 2 Agent Nodes (Workers)
+  - Registry Local (localhost:5050)
+  - LoadBalancer integrado
+  - Portas expostas: 80, 443, 30080, 30030, 30090, 30093
 ```
 
 **Por que K3D?**
+
 - ✅ Leve e rápido (consome ~2GB RAM)
 - ✅ Espelha ambiente de produção
 - ✅ Suporta todos os recursos do Kubernetes
@@ -90,20 +91,21 @@ Configuração:
 
 ```yaml
 Responsabilidades:
-- Monitorar repositório Git (polling a cada 3min)
-- Detectar mudanças em manifests/charts
-- Aplicar mudanças automaticamente (auto-sync)
-- Gerenciar 12 aplicações (3 apps × 4 ambientes)
-- Rollback automático em caso de falha
-- Self-healing (reconstitui recursos deletados)
+  - Monitorar repositório Git (polling a cada 3min)
+  - Detectar mudanças em manifests/charts
+  - Aplicar mudanças automaticamente (auto-sync)
+  - Gerenciar 12 aplicações (3 apps × 4 ambientes)
+  - Rollback automático em caso de falha
+  - Self-healing (reconstitui recursos deletados)
 
 Acesso:
-- UI: http://localhost:30080
-- CLI: argocd (instalável via brew)
-- API: REST API para integração CI/CD
+  - UI: http://localhost:30080
+  - CLI: argocd (instalável via brew)
+  - API: REST API para integração CI/CD
 ```
 
 **Fluxo GitOps:**
+
 ```
 1. Developer faz push → GitHub
 2. GitHub Actions builda imagem → GHCR
@@ -118,85 +120,91 @@ Acesso:
 Stack completo de monitoramento e observabilidade.
 
 #### Prometheus
+
 ```yaml
 Função: Coleta de métricas
 Fontes:
-- Node Exporter (métricas de nodes)
-- kube-state-metrics (métricas K8s)
-- Aplicações (custom metrics)
+  - Node Exporter (métricas de nodes)
+  - kube-state-metrics (métricas K8s)
+  - Aplicações (custom metrics)
 Retenção: 15 dias
 Scrape interval: 30s
 ```
 
 #### Grafana
+
 ```yaml
 Função: Visualização e dashboards
 Dashboards pré-configurados:
-- Cluster Overview
-- Pod Metrics
-- Application Performance
-- ArgoCD Status
+  - Cluster Overview
+  - Pod Metrics
+  - Application Performance
+  - ArgoCD Status
 Alerting: Integrado com Alertmanager
 ```
 
 #### Alertmanager
+
 ```yaml
 Função: Gerenciamento de alertas
 Canais:
-- Discord (webhook configurado)
-- Email (opcional)
-- Slack (opcional)
+  - Discord (webhook configurado)
+  - Email (opcional)
+  - Slack (opcional)
 Alertas configurados:
-- Pod CrashLooping
-- High Memory/CPU
-- Deployment failed
-- ArgoCD out of sync
+  - Pod CrashLooping
+  - High Memory/CPU
+  - Deployment failed
+  - ArgoCD out of sync
 ```
 
 ### 4. Aplicações
 
 #### nexo-auth (Keycloak)
+
 ```yaml
 Função: Autenticação e autorização
 Stack:
-- Keycloak 26.x
-- PostgreSQL 16 (banco de dados)
+  - Keycloak 26.x
+  - PostgreSQL 16 (banco de dados)
 Recursos:
-- OIDC/OAuth2
-- SAML
-- User Federation
-- Themes customizados
+  - OIDC/OAuth2
+  - SAML
+  - User Federation
+  - Themes customizados
 ```
 
 #### nexo-be (Backend)
+
 ```yaml
 Função: API REST
 Stack:
-- NestJS 10.x
-- PostgreSQL 16
-- Redis 7 (cache)
-- TypeORM
+  - NestJS 10.x
+  - PostgreSQL 16
+  - Redis 7 (cache)
+  - TypeORM
 APIs:
-- /api/v1/users
-- /api/v1/auth
-- /api/v1/products
-- /health (healthcheck)
-- /metrics (prometheus)
+  - /api/v1/users
+  - /api/v1/auth
+  - /api/v1/products
+  - /health (healthcheck)
+  - /metrics (prometheus)
 ```
 
 #### nexo-fe (Frontend)
+
 ```yaml
 Função: Interface do usuário
 Stack:
-- Next.js 15.x
-- React 19
-- TailwindCSS
-- shadcn/ui
+  - Next.js 15.x
+  - React 19
+  - TailwindCSS
+  - shadcn/ui
 Features:
-- SSR (Server-Side Rendering)
-- API Routes
-- Optimized Images
-- PWA ready
+  - SSR (Server-Side Rendering)
+  - API Routes
+  - Optimized Images
+  - PWA ready
 ```
 
 ## 🌍 Multi-Ambiente
@@ -215,26 +223,26 @@ develop   → Branch: develop   → Deploy automático
 
 ### Configuração por Ambiente
 
-| Ambiente | Branch | Replicas | Resources | Auto-Sync | Database |
-|----------|--------|----------|-----------|-----------|----------|
-| develop | develop | 1 | 256Mi/0.5CPU | ✅ | Shared |
-| qa | qa | 1 | 512Mi/0.5CPU | ✅ | Shared |
-| staging | staging | 2 | 1Gi/1CPU | ✅ | Dedicated |
-| prod | main | 3 | 2Gi/2CPU | ⚠️ Manual | Dedicated |
+| Ambiente | Branch  | Replicas | Resources    | Auto-Sync | Database  |
+| -------- | ------- | -------- | ------------ | --------- | --------- |
+| develop  | develop | 1        | 256Mi/0.5CPU | ✅        | Shared    |
+| qa       | qa      | 1        | 512Mi/0.5CPU | ✅        | Shared    |
+| staging  | staging | 2        | 1Gi/1CPU     | ✅        | Dedicated |
+| prod     | main    | 3        | 2Gi/2CPU     | ⚠️ Manual | Dedicated |
 
 ### Isolamento
 
 ```yaml
 Namespaces:
-- nexo-develop   (develop)
-- nexo-qa        (qa)
-- nexo-staging   (staging)
-- nexo-prod      (prod)
+  - nexo-develop   (develop)
+  - nexo-qa        (qa)
+  - nexo-staging   (staging)
+  - nexo-prod      (prod)
 
 Network Policies:
-- Isolamento entre namespaces
-- Apenas Ingress exposto
-- Inter-service communication permitida
+  - Isolamento entre namespaces
+  - Apenas Ingress exposto
+  - Inter-service communication permitida
 ```
 
 ## 🔄 Fluxo de Deploy
@@ -259,21 +267,21 @@ Trigger: Push para develop/qa/staging/main
 
 Jobs:
 1. build:
-   - Checkout código
-   - Build aplicação
-   - Run tests
-   - Build imagem Docker
-   - Tag: sha-123abc, develop, latest
-   - Push para GHCR
+  - Checkout código
+  - Build aplicação
+  - Run tests
+  - Build imagem Docker
+  - Tag: sha-123abc, develop, latest
+  - Push para GHCR
 
 2. update-manifest:
-   - Update Helm values
-   - Commit: "chore: update image tag to sha-123abc"
-   - Push para branch correspondente
+  - Update Helm values
+  - Commit: "chore: update image tag to sha-123abc"
+  - Push para branch correspondente
 
 3. notify:
-   - Discord webhook
-   - Status: success/failure
+  - Discord webhook
+  - Status: success/failure
 ```
 
 ### 3. ArgoCD Sync
@@ -298,15 +306,15 @@ Sincronização:
 
 ```yaml
 Kubernetes probes:
-- liveness: /health (a cada 10s)
-- readiness: /health/ready (a cada 5s)
-- startup: /health (max 60s)
+  - liveness: /health (a cada 10s)
+  - readiness: /health/ready (a cada 5s)
+  - startup: /health (max 60s)
 
 ArgoCD health:
-- Pods: Running
-- Services: Endpoints ready
-- Ingress: Rules configured
-- Status: Healthy/Degraded/Progressing
+  - Pods: Running
+  - Services: Endpoints ready
+  - Ingress: Rules configured
+  - Status: Healthy/Degraded/Progressing
 ```
 
 ## 🔐 Segurança
@@ -315,48 +323,48 @@ ArgoCD health:
 
 ```yaml
 Desenvolvimento Local:
-- Secrets via kubectl
-- Armazenados no K8s etcd
-- Nunca em Git
+  - Secrets via kubectl
+  - Armazenados no K8s etcd
+  - Nunca em Git
 
 CI/CD:
-- GitHub Secrets
-- Encriptados pelo GitHub
-- Acessíveis apenas em workflows
+  - GitHub Secrets
+  - Encriptados pelo GitHub
+  - Acessíveis apenas em workflows
 
 Produção (Futuro):
-- External Secrets Operator
-- Vault/AWS Secrets Manager
-- Rotação automática
+  - External Secrets Operator
+  - Vault/AWS Secrets Manager
+  - Rotação automática
 ```
 
 ### Network Security
 
 ```yaml
 Ingress:
-- NGINX Ingress Controller
-- TLS termination
-- Rate limiting
-- IP whitelisting (opcional)
+  - NGINX Ingress Controller
+  - TLS termination
+  - Rate limiting
+  - IP whitelisting (opcional)
 
 Network Policies:
-- Default deny all
-- Allow apenas tráfego necessário
-- Isolamento entre namespaces
+  - Default deny all
+  - Allow apenas tráfego necessário
+  - Isolamento entre namespaces
 ```
 
 ### RBAC
 
 ```yaml
 ArgoCD:
-- Admin: Full access
-- Developer: Read-only + sync
-- CI/CD: Sync via API token
+  - Admin: Full access
+  - Developer: Read-only + sync
+  - CI/CD: Sync via API token
 
 Kubernetes:
-- ArgoCD ServiceAccount
-- Least privilege principle
-- Namespace-scoped
+  - ArgoCD ServiceAccount
+  - Least privilege principle
+  - Namespace-scoped
 ```
 
 ## 📊 Métricas e SLOs
@@ -365,23 +373,23 @@ Kubernetes:
 
 ```yaml
 Availability:
-- Target: 99.9% uptime
-- Measure: Prometheus uptime checks
+  - Target: 99.9% uptime
+  - Measure: Prometheus uptime checks
 
 Latency:
-- P50: < 100ms
-- P95: < 500ms
-- P99: < 1s
+  - P50: < 100ms
+  - P95: < 500ms
+  - P99: < 1s
 
 Error Rate:
-- Target: < 0.1%
-- Measure: HTTP 5xx responses
+  - Target: < 0.1%
+  - Measure: HTTP 5xx responses
 
 Deployment:
-- Frequency: Multiple per day
-- Lead time: < 1h
-- MTTR: < 30min
-- Change failure rate: < 5%
+  - Frequency: Multiple per day
+  - Lead time: < 1h
+  - MTTR: < 30min
+  - Change failure rate: < 5%
 ```
 
 ## 🚀 Escalabilidade
@@ -390,45 +398,45 @@ Deployment:
 
 ```yaml
 Triggers:
-- CPU > 70%
-- Memory > 80%
-- Custom metrics (RPS)
+  - CPU > 70%
+  - Memory > 80%
+  - Custom metrics (RPS)
 
 Limits:
-- develop: 1-2 pods
-- qa: 1-3 pods
-- staging: 2-5 pods
-- prod: 3-10 pods
+  - develop: 1-2 pods
+  - qa: 1-3 pods
+  - staging: 2-5 pods
+  - prod: 3-10 pods
 ```
 
 ### Vertical Scaling
 
 ```yaml
 Resource requests/limits ajustáveis:
-- Per namespace
-- Per deployment
-- Via Helm values
+  - Per namespace
+  - Per deployment
+  - Via Helm values
 ```
 
 ## 📚 Tecnologias Utilizadas
 
-| Categoria | Tecnologia | Versão | Uso |
-|-----------|-----------|---------|-----|
-| **Container** | Docker | 29.2.1 | Build e runtime |
-| **Orquestração** | K3D/K3s | v5.8.3 | Kubernetes local |
-| **GitOps** | ArgoCD | 2.13+ | Deploy declarativo |
-| **Monitoring** | Prometheus | latest | Métricas |
-| **Visualization** | Grafana | latest | Dashboards |
-| **Alerts** | Alertmanager | latest | Notificações |
-| **Ingress** | NGINX | latest | Roteamento |
-| **Registry** | GHCR | - | Imagens Docker |
-| **CI/CD** | GitHub Actions | - | Automação |
-| **Backend** | NestJS | 10.x | API REST |
-| **Frontend** | Next.js | 15.x | UI |
-| **Auth** | Keycloak | 26.x | SSO |
-| **Database** | PostgreSQL | 16 | Persistência |
-| **Cache** | Redis | 7 | Cache |
-| **Package Manager** | pnpm | 9.x | Monorepo |
+| Categoria           | Tecnologia     | Versão | Uso                |
+| ------------------- | -------------- | ------ | ------------------ |
+| **Container**       | Docker         | 29.2.1 | Build e runtime    |
+| **Orquestração**    | K3D/K3s        | v5.8.3 | Kubernetes local   |
+| **GitOps**          | ArgoCD         | 2.13+  | Deploy declarativo |
+| **Monitoring**      | Prometheus     | latest | Métricas           |
+| **Visualization**   | Grafana        | latest | Dashboards         |
+| **Alerts**          | Alertmanager   | latest | Notificações       |
+| **Ingress**         | NGINX          | latest | Roteamento         |
+| **Registry**        | GHCR           | -      | Imagens Docker     |
+| **CI/CD**           | GitHub Actions | -      | Automação          |
+| **Backend**         | NestJS         | 10.x   | API REST           |
+| **Frontend**        | Next.js        | 15.x   | UI                 |
+| **Auth**            | Keycloak       | 26.x   | SSO                |
+| **Database**        | PostgreSQL     | 16     | Persistência       |
+| **Cache**           | Redis          | 7      | Cache              |
+| **Package Manager** | pnpm           | 9.x    | Monorepo           |
 
 ---
 

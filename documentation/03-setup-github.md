@@ -57,20 +57,20 @@ git add .env
 
 ### 📊 Tabela de Configuração Completa
 
-| Tipo | Nome | Valor | Descrição | Uso |
-|------|------|-------|-----------|-----|
-| **Secret** | `GHCR_TOKEN` | `ghp_...` | Token para GHCR | Build, Push, Pull de imagens |
-| **Secret** | `GH_TOKEN` | `ghp_...` | Token GitHub Actions | Automação CI/CD |
-| **Secret** | `DISCORD_WEBHOOK` | `https://discord.com/...` | Webhook notificações | Alertas de deploy |
-| **Variable** | `ARGOCD_AUTH_TOKEN` | `eyJhbG...` | Token ArgoCD | Sync apps via API |
-| **Variable** | `ARGOCD_SERVER` | `argocd.nexo.io` | URL do ArgoCD | Integração CI/CD |
-| **Variable** | `DOMAIN_DEV` | `develop.nexo.io` | Domínio develop | Ingress |
-| **Variable** | `DOMAIN_PROD` | `prod.nexo.io` | Domínio produção | Ingress |
-| **Variable** | `DOMAIN_STAGING` | `staging.nexo.io` | Domínio staging | Ingress |
-| **Variable** | `K8S_NAMESPACE_DEV` | `nexo-develop` | Namespace develop | Deploy |
-| **Variable** | `K8S_NAMESPACE_PROD` | `nexo-prod` | Namespace prod | Deploy |
-| **Variable** | `K8S_NAMESPACE_QA` | `nexo-qa` | Namespace QA | Deploy |
-| **Variable** | `K8S_NAMESPACE_STAGING` | `nexo-staging` | Namespace staging | Deploy |
+| Tipo         | Nome                    | Valor                     | Descrição            | Uso                          |
+| ------------ | ----------------------- | ------------------------- | -------------------- | ---------------------------- |
+| **Secret**   | `GHCR_TOKEN`            | `ghp_...`                 | Token para GHCR      | Build, Push, Pull de imagens |
+| **Secret**   | `GH_TOKEN`              | `ghp_...`                 | Token GitHub Actions | Automação CI/CD              |
+| **Secret**   | `DISCORD_WEBHOOK`       | `https://discord.com/...` | Webhook notificações | Alertas de deploy            |
+| **Variable** | `ARGOCD_AUTH_TOKEN`     | `eyJhbG...`               | Token ArgoCD         | Sync apps via API            |
+| **Variable** | `ARGOCD_SERVER`         | `argocd.nexo.io`          | URL do ArgoCD        | Integração CI/CD             |
+| **Variable** | `DOMAIN_DEV`            | `develop.nexo.io`         | Domínio develop      | Ingress                      |
+| **Variable** | `DOMAIN_PROD`           | `prod.nexo.io`            | Domínio produção     | Ingress                      |
+| **Variable** | `DOMAIN_STAGING`        | `staging.nexo.io`         | Domínio staging      | Ingress                      |
+| **Variable** | `K8S_NAMESPACE_DEV`     | `nexo-develop`            | Namespace develop    | Deploy                       |
+| **Variable** | `K8S_NAMESPACE_PROD`    | `nexo-prod`               | Namespace prod       | Deploy                       |
+| **Variable** | `K8S_NAMESPACE_QA`      | `nexo-qa`                 | Namespace QA         | Deploy                       |
+| **Variable** | `K8S_NAMESPACE_STAGING` | `nexo-staging`            | Namespace staging    | Deploy                       |
 
 ### Secrets do Repositório
 

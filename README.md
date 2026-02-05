@@ -29,6 +29,7 @@ make setup
 ```
 
 **Pronto!** Em ~5 minutos você terá:
+
 - ✅ Cluster K3D com 3 nodes
 - ✅ ArgoCD rodando (http://localhost:30080)
 - ✅ Prometheus + Grafana + Alertmanager
@@ -50,11 +51,11 @@ open http://grafana.local.nexo.app
 
 📖 **[Acesse a Documentação](./documentation/README.md)**
 
-| Documento | Descrição |
-|-----------|-----------|
-| [Início Rápido](./documentation/01-quick-start.md) | Setup detalhado passo a passo |
-| [Configuração GitHub](./documentation/03-setup-github.md) | **Secrets e segurança** |
-| [Comandos Úteis](./documentation/12-commands.md) | Referência rápida |
+| Documento                                                 | Descrição                     |
+| --------------------------------------------------------- | ----------------------------- |
+| [Início Rápido](./documentation/01-quick-start.md)        | Setup detalhado passo a passo |
+| [Configuração GitHub](./documentation/03-setup-github.md) | **Secrets e segurança**       |
+| [Comandos Úteis](./documentation/12-commands.md)          | Referência rápida             |
 
 ## 🔐 Segurança em Primeiro Lugar
 
@@ -97,15 +98,15 @@ cd local && make setup
 
 ## 📋 Stack Tecnológica
 
-| Componente | Tecnologia |
-|------------|-----------|
-| **Orquestração** | Kubernetes (K3D) |
-| **GitOps** | ArgoCD |
-| **Monitoring** | Prometheus + Grafana |
-| **Backend** | NestJS + PostgreSQL |
-| **Frontend** | Next.js |
-| **Auth** | Keycloak |
-| **CI/CD** | GitHub Actions |
+| Componente       | Tecnologia           |
+| ---------------- | -------------------- |
+| **Orquestração** | Kubernetes (K3D)     |
+| **GitOps**       | ArgoCD               |
+| **Monitoring**   | Prometheus + Grafana |
+| **Backend**      | NestJS + PostgreSQL  |
+| **Frontend**     | Next.js              |
+| **Auth**         | Keycloak             |
+| **CI/CD**        | GitHub Actions       |
 
 ## 🎯 Arquitetura
 
@@ -148,7 +149,7 @@ make status
 
 # Ver logs
 make logs-be      # Backend
-make logs-fe      # Frontend  
+make logs-fe      # Frontend
 make logs-auth    # Keycloak
 
 # Sync ArgoCD
