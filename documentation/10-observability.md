@@ -110,8 +110,8 @@ kubectl port-forward -n monitoring \
 
 ```typescript
 // apps/nexo-be/src/metrics.service.ts
-import { Injectable } from '@nestjs/common';
-import { register, Counter, Histogram, Gauge } from 'prom-client';
+import { Injectable } from "@nestjs/common";
+import { register, Counter, Histogram, Gauge } from "prom-client";
 
 @Injectable()
 export class MetricsService {
@@ -122,27 +122,32 @@ export class MetricsService {
   constructor() {
     // Total de requisições
     this.httpRequestsTotal = new Counter({
-      name: 'http_requests_total',
-      help: 'Total de requisições HTTP',
-      labelNames: ['method', 'route', 'status'],
+      name: "http_requests_total",
+      help: "Total de requisições HTTP",
+      labelNames: ["method", "route", "status"],
     });
 
     // Duração de requisições
     this.httpRequestDuration = new Histogram({
-      name: 'http_request_duration_seconds',
-      help: 'Duração das requisições HTTP',
-      labelNames: ['method', 'route', 'status'],
+      name: "http_request_duration_seconds",
+      help: "Duração das requisições HTTP",
+      labelNames: ["method", "route", "status"],
       buckets: [0.1, 0.5, 1, 2, 5],
     });
 
     // Conexões ativas
     this.activeConnections = new Gauge({
-      name: 'http_active_connections',
-      help: 'Número de conexões ativas',
+      name: "http_active_connections",
+      help: "Número de conexões ativas",
     });
   }
 
-  recordRequest(method: string, route: string, status: number, duration: number) {
+  recordRequest(
+    method: string,
+    route: string,
+    status: number,
+    duration: number,
+  ) {
     this.httpRequestsTotal.inc({ method, route, status });
     this.httpRequestDuration.observe({ method, route, status }, duration);
   }
@@ -161,15 +166,15 @@ export class MetricsService {
 }
 
 // apps/nexo-be/src/metrics.controller.ts
-import { Controller, Get, Header } from '@nestjs/common';
-import { MetricsService } from './metrics.service';
+import { Controller, Get, Header } from "@nestjs/common";
+import { MetricsService } from "./metrics.service";
 
-@Controller('metrics')
+@Controller("metrics")
 export class MetricsController {
   constructor(private metricsService: MetricsService) {}
 
   @Get()
-  @Header('Content-Type', 'text/plain')
+  @Header("Content-Type", "text/plain")
   async getMetrics() {
     return this.metricsService.getMetrics();
   }
@@ -183,13 +188,11 @@ export class MetricsController {
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: {{ include "nexo-be.fullname" . }}
-  labels:
-    {{- include "nexo-be.labels" . | nindent 4 }}
+  name: { { include "nexo-be.fullname" . } }
+  labels: { { - include "nexo-be.labels" . | nindent 4 } }
 spec:
   selector:
-    matchLabels:
-      {{- include "nexo-be.selectorLabels" . | nindent 6 }}
+    matchLabels: { { - include "nexo-be.selectorLabels" . | nindent 6 } }
   endpoints:
     - port: http
       path: /metrics
@@ -262,7 +265,7 @@ db_connections_active
 rate(http_requests_total{namespace="nexo-develop"}[5m])
 
 # Latência p95
-histogram_quantile(0.95, 
+histogram_quantile(0.95,
   rate(http_request_duration_seconds_bucket[5m])
 )
 
@@ -401,24 +404,24 @@ global:
   resolve_timeout: 5m
 
 route:
-  group_by: ['alertname', 'namespace']
+  group_by: ["alertname", "namespace"]
   group_wait: 10s
   group_interval: 10s
   repeat_interval: 12h
-  receiver: 'discord'
+  receiver: "discord"
 
 receivers:
-  - name: 'discord'
+  - name: "discord"
     webhook_configs:
-      - url: 'https://discord.com/api/webhooks/...'
+      - url: "https://discord.com/api/webhooks/..."
         send_resolved: true
 
 inhibit_rules:
   - source_match:
-      severity: 'critical'
+      severity: "critical"
     target_match:
-      severity: 'warning'
-    equal: ['alertname', 'namespace']
+      severity: "warning"
+    equal: ["alertname", "namespace"]
 ```
 
 ### Regras de Alerta
@@ -590,13 +593,13 @@ sum by (app) (
 
 ```typescript
 // apps/nexo-be/src/tracing.ts
-import { NodeSDK } from '@opentelemetry/sdk-node';
-import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
-import { JaegerExporter } from '@opentelemetry/exporter-jaeger';
+import { NodeSDK } from "@opentelemetry/sdk-node";
+import { HttpInstrumentation } from "@opentelemetry/instrumentation-http";
+import { JaegerExporter } from "@opentelemetry/exporter-jaeger";
 
 const sdk = new NodeSDK({
   traceExporter: new JaegerExporter({
-    endpoint: 'http://jaeger-collector:14268/api/traces',
+    endpoint: "http://jaeger-collector:14268/api/traces",
   }),
   instrumentations: [new HttpInstrumentation()],
 });
@@ -624,17 +627,17 @@ SLOs:
   - metric: availability
     target: 99.9%
     window: 30d
-    
+
   # Latency
   - metric: latency_p95
     target: 200ms
     window: 7d
-    
+
   # Error Rate
   - metric: error_rate
     target: 1%
     window: 1d
-    
+
   # Throughput
   - metric: throughput
     target: 100 req/s

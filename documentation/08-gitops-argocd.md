@@ -5,6 +5,7 @@ Guia completo sobre GitOps e gerenciamento de aplicações com ArgoCD.
 ## 🎯 O que é GitOps?
 
 GitOps é uma metodologia de deploy onde:
+
 - 📝 **Git é a única fonte da verdade**
 - 🔄 **Deploy automático via sync**
 - 🔙 **Rollback = git revert**
@@ -146,27 +147,27 @@ metadata:
   namespace: argocd
 spec:
   description: Nexo Project - All environments
-  
+
   # Repositórios permitidos
   sourceRepos:
-    - 'https://github.com/geraldobl58/nexo.git'
-  
+    - "https://github.com/geraldobl58/nexo.git"
+
   # Clusters permitidos
   destinations:
-    - namespace: 'nexo-*'
+    - namespace: "nexo-*"
       server: https://kubernetes.default.svc
     - namespace: argocd
       server: https://kubernetes.default.svc
-  
+
   # Recursos permitidos
   clusterResourceWhitelist:
-    - group: '*'
-      kind: '*'
-  
+    - group: "*"
+      kind: "*"
+
   # Namespaced resources
   namespaceResourceWhitelist:
-    - group: '*'
-      kind: '*'
+    - group: "*"
+      kind: "*"
 ```
 
 ## 🎯 ArgoCD Application
@@ -184,7 +185,7 @@ metadata:
     - resources-finalizer.argocd.argoproj.io
 spec:
   project: nexo
-  
+
   source:
     repoURL: https://github.com/geraldobl58/nexo.git
     targetRevision: develop
@@ -193,11 +194,11 @@ spec:
       valueFiles:
         - values.yaml
         - values-develop.yaml
-  
+
   destination:
     server: https://kubernetes.default.svc
     namespace: nexo-develop
-  
+
   syncPolicy:
     automated:
       prune: true
@@ -212,7 +213,7 @@ spec:
         duration: 5s
         factor: 2
         maxDuration: 3m
-  
+
   revisionHistoryLimit: 10
 ```
 
@@ -227,7 +228,7 @@ metadata:
   namespace: argocd
 spec:
   project: nexo
-  
+
   source:
     repoURL: https://github.com/geraldobl58/nexo.git
     targetRevision: main
@@ -236,11 +237,11 @@ spec:
       valueFiles:
         - values.yaml
         - values-prod.yaml
-  
+
   destination:
     server: https://kubernetes.default.svc
     namespace: nexo-prod
-  
+
   syncPolicy:
     # MANUAL em produção (deploy controlado)
     automated: null
@@ -274,7 +275,7 @@ spec:
                 - app: nexo-be
                 - app: nexo-fe
                 - app: nexo-auth
-          
+
           # Lista de ambientes
           - list:
               elements:
@@ -290,31 +291,31 @@ spec:
                 - env: prod
                   branch: main
                   syncAuto: false
-  
+
   template:
     metadata:
-      name: '{{app}}-{{env}}'
+      name: "{{app}}-{{env}}"
       namespace: argocd
     spec:
       project: nexo
-      
+
       source:
         repoURL: https://github.com/geraldobl58/nexo.git
-        targetRevision: '{{branch}}'
-        path: 'local/helm/{{app}}'
+        targetRevision: "{{branch}}"
+        path: "local/helm/{{app}}"
         helm:
           valueFiles:
             - values.yaml
-            - 'values-{{env}}.yaml'
-      
+            - "values-{{env}}.yaml"
+
       destination:
         server: https://kubernetes.default.svc
-        namespace: 'nexo-{{env}}'
-      
+        namespace: "nexo-{{env}}"
+
       syncPolicy:
         automated:
-          prune: '{{syncAuto}}'
-          selfHeal: '{{syncAuto}}'
+          prune: "{{syncAuto}}"
+          selfHeal: "{{syncAuto}}"
         syncOptions:
           - CreateNamespace=true
         retry:
@@ -462,12 +463,13 @@ env:
 ```yaml
 syncPolicy:
   automated:
-    prune: true      # Remove recursos deletados
-    selfHeal: true   # Corrige drift automático
+    prune: true # Remove recursos deletados
+    selfHeal: true # Corrige drift automático
     allowEmpty: false # Não permite estado vazio
 ```
 
 **Quando usar:**
+
 - ✅ Development
 - ✅ QA
 - ⚠️ Staging (opcional)
@@ -477,10 +479,11 @@ syncPolicy:
 
 ```yaml
 syncPolicy:
-  automated: null  # Desabilita auto-sync
+  automated: null # Desabilita auto-sync
 ```
 
 **Quando usar:**
+
 - ✅ Production
 - ✅ Deploys críticos
 - ✅ Mudanças com impacto
@@ -563,12 +566,14 @@ kubectl get applications -n argocd
 ```
 
 **Estados:**
+
 - 🟢 **Synced** - Em sync com Git
 - 🟡 **OutOfSync** - Diferente do Git
 - 🔵 **Unknown** - Estado desconhecido
 - 🔴 **Error** - Erro no sync
 
 **Health:**
+
 - 🟢 **Healthy** - Todos recursos OK
 - 🟡 **Progressing** - Deploy em andamento
 - 🟡 **Degraded** - Alguns recursos com problema
@@ -725,6 +730,7 @@ rate(argocd_app_sync_total{phase="Failed"}[5m])
 Importar dashboard: ID 14584 (ArgoCD)
 
 **Métricas:**
+
 - Applications por status
 - Sync frequency
 - Sync duration

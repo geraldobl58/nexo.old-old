@@ -1,0 +1,114 @@
+# CodeRabbit Configuration
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+
+# Language: "pt-BR" for Brazilian Portuguese reviews
+language: pt-BR
+
+# Enable review comments
+reviews:
+  # Review pull requests automatically (all branches)
+  auto_review:
+    enabled: true
+    # Review PRs to any branch (não apenas default)
+    drafts: false
+    base_branches:
+      - develop
+      - qa
+      - staging
+      - main
+
+  # Review settings
+  request_changes_workflow: true
+  high_level_summary: true
+  poem: false
+  review_status: true
+  collapse_walkthrough: false
+
+  # Files to ignore
+  path_filters:
+    - "!**/*.lock"
+    - "!**/*.yaml"
+    - "!**/*.yml"
+    - "!**/package-lock.json"
+    - "!**/pnpm-lock.yaml"
+    - "!**/dist/**"
+    - "!**/build/**"
+    - "!**/.next/**"
+
+  # Code patterns to check
+  path_instructions:
+    - path: "apps/nexo-fe/src/**/*.tsx"
+      instructions: |
+        Review de código React/Next.js:
+        - Props devem ser tipadas com TypeScript
+        - Use Tailwind CSS para estilização
+        - Evite inline styles
+        - Acessibilidade: sempre use aria-labels em elementos interativos
+        - Performance: use React.memo quando apropriado
+
+    - path: "apps/nexo-fe/src/app/**/*.tsx"
+      instructions: |
+        Review de páginas Next.js:
+        - Use Server Components quando possível
+        - Client Components apenas quando necessário (use 'use client')
+        - SEO: sempre defina metadata
+        - Loading states: use Suspense boundaries
+        - Error boundaries para tratamento de erros
+        - Streaming quando aplicável
+
+    - path: "apps/nexo-fe/src/lib/**/*.ts"
+      instructions: |
+        Review de utilitários:
+        - Bem documentadas com JSDoc
+        - Tipagem forte com TypeScript
+        - Evite any types
+        - Tratamento de erros adequado
+
+    - path: "apps/nexo-be/src/**/*.ts"
+      instructions: |
+        Review seguindo Clean Architecture:
+        - Siga arquitetura em camadas (Controller → Service → Repository)
+        - Controllers: apenas roteamento e validação
+        - Services: lógica de negócio isolada
+        - DTOs para validação de entrada/saída
+        - Use decorators do class-validator
+        - Tratamento de exceções adequado
+        - Logging estruturado
+        - Documentação Swagger
+        - Princípios SOLID
+
+    - path: "apps/nexo-be/src/**/*.controller.ts"
+      instructions: |
+        Review de Controllers:
+        - Rotas RESTful seguindo convenções
+        - Decorators Swagger (@ApiTags, @ApiOperation)
+        - Guards para autenticação/autorização
+        - DTOs para request/response
+        - Status codes HTTP corretos
+        - Versionamento de API
+
+    - path: "apps/nexo-be/src/**/*.service.ts"
+      instructions: |
+        Review de Services:
+        - Lógica de negócio isolada
+        - Injeção de dependências
+        - Transações de database quando necessário
+        - Validações de negócio
+        - Retornar objetos tipados
+        - Tratamento de casos de erro
+
+# Chat settings
+chat:
+  auto_reply: true
+
+# Code quality checks
+early_access: false
+
+# Knowledge base
+knowledge_base:
+  # Learnings from reviews (enabled by default)
+  learnings:
+    scope: auto
+
+  # Custom instructions
+  opt_out_instructions: false

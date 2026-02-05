@@ -55,6 +55,7 @@ make setup
 **Tempo**: ~5-7 minutos
 
 **O que acontece:**
+
 1. ✅ Verifica dependências (instala se necessário)
 2. ✅ Configura repositórios Helm
 3. ✅ Cria cluster K3D (3 nodes)
@@ -181,6 +182,7 @@ cd apps/nexo-auth
 ```
 
 **Vantagens:**
+
 - ⚡ Hot reload instantâneo
 - 🐛 Debug fácil
 - 🔄 Iteração rápida
@@ -256,6 +258,7 @@ pnpm dev --turbo
 ### Sincronizar com K3D
 
 Opção 1: **Rebuild manual**
+
 ```bash
 cd local
 make build-images
@@ -263,6 +266,7 @@ make argocd-sync
 ```
 
 Opção 2: **Watch mode** (futuro)
+
 ```bash
 # Skaffold ou Tilt para auto-rebuild
 skaffold dev
@@ -529,6 +533,7 @@ make argocd-sync
 ### 1. Use Aliases
 
 Adicione ao `~/.zshrc`:
+
 ```bash
 alias k='kubectl'
 alias kgp='kubectl get pods'

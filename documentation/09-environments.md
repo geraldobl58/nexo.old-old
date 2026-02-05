@@ -15,12 +15,12 @@ Development → QA → Staging → Production
 
 ## 📊 Tabela de Ambientes
 
-| Ambiente | Branch | Namespace | Domain | Auto-sync | Objetivo |
-|----------|--------|-----------|--------|-----------|----------|
-| **Development** | `develop` | `nexo-develop` | `develop.nexo.local` | ✅ Sim | Desenvolvimento contínuo |
-| **QA** | `develop` | `nexo-qa` | `qa.nexo.local` | ✅ Sim | Testes automatizados |
-| **Staging** | `main` | `nexo-staging` | `staging.nexo.local` | ⚠️ Manual | Validação pré-produção |
-| **Production** | `main` | `nexo-prod` | `nexo.com` | ❌ Manual | Ambiente de produção |
+| Ambiente        | Branch    | Namespace      | Domain               | Auto-sync | Objetivo                 |
+| --------------- | --------- | -------------- | -------------------- | --------- | ------------------------ |
+| **Development** | `develop` | `nexo-develop` | `develop.nexo.local` | ✅ Sim    | Desenvolvimento contínuo |
+| **QA**          | `develop` | `nexo-qa`      | `qa.nexo.local`      | ✅ Sim    | Testes automatizados     |
+| **Staging**     | `main`    | `nexo-staging` | `staging.nexo.local` | ⚠️ Manual | Validação pré-produção   |
+| **Production**  | `main`    | `nexo-prod`    | `nexo.com`           | ❌ Manual | Ambiente de produção     |
 
 ## 🚀 Development
 
@@ -179,17 +179,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Run E2E tests
         run: |
           npm install
           npm run test:e2e -- --baseUrl=http://qa.nexo.local
-      
+
       - name: Run API tests
         run: |
           newman run tests/postman-collection.json \
             --environment tests/qa-environment.json
-      
+
       - name: Performance tests
         run: |
           k6 run tests/load-test.js
@@ -660,10 +660,10 @@ kubectl rollout undo deployment/nexo-be-prod -n nexo-prod
 
 ```typescript
 // Habilitar features por ambiente
-if (process.env.NODE_ENV === 'production') {
-  enableFeature('new-dashboard', false);
+if (process.env.NODE_ENV === "production") {
+  enableFeature("new-dashboard", false);
 } else {
-  enableFeature('new-dashboard', true);
+  enableFeature("new-dashboard", true);
 }
 ```
 

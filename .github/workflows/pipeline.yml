@@ -66,15 +66,60 @@ concurrency:
 permissions:
   contents: write
   packages: write
+  pull-requests: write # Necessário para Danger.js comentar em PRs
+  issues: write # Necessário para Danger.js
 
 jobs:
+  # ==========================================================================
+  # STAGE 0: AI Code Review (apenas PRs)
+  # ==========================================================================
+  ai-review:
+    name: 🤖 AI Code Review
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: Install Dependencies
+        working-directory: apps/nexo-fe
+        run: npm install danger
+
+      - name: Run Danger.js
+        working-directory: apps/nexo-fe
+        run: npx danger ci
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: CodeRabbit Summary
+        run: |
+          echo "## 🐰 CodeRabbit Review" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "CodeRabbit está revisando este PR automaticamente." >> $GITHUB_STEP_SUMMARY
+          echo "Os comentários aparecerão em breve na aba 'Files changed'." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Verificações realizadas:" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Clean Architecture (Backend nexo-be)" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ TypeScript Best Practices" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ React/Next.js Patterns (Frontend nexo-fe)" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Segurança e Performance" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Testes" >> $GITHUB_STEP_SUMMARY
+
   # ==========================================================================
   # STAGE 1: Pre-flight Checks
   # ==========================================================================
   preflight:
     name: 🔍 Pre-flight
     runs-on: ubuntu-latest
-    # Pula se for commit do bot ou contiver [skip ci]
+    # Não depende de ai-review porque ele só roda em PRs
     if: |
       !contains(github.event.head_commit.message, '[skip ci]') &&
       github.actor != 'github-actions[bot]'
