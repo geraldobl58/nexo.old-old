@@ -38,8 +38,8 @@ Documentação completa do Nexo Platform - Sistema GitOps com K3D, ArgoCD e Mult
 
 ### 🤖 AI & Automação
 
-| #   | Documento                                    | Descrição                      |
-| --- | -------------------------------------------- | ------------------------------ |
+| #   | Documento                                    | Descrição                     |
+| --- | -------------------------------------------- | ----------------------------- |
 | 13  | [**AI Code Review**](./13-ai-code-review.md) | CodeRabbit + Danger.js no PRs |
 
 ---

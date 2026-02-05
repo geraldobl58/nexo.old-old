@@ -31,13 +31,8 @@ reviews:
   path_instructions:
     - path: "apps/nexo-fe/src/**/*.tsx"
       instructions: |
-        Review seguindo Clean Architecture:
-        - Componentes UI não devem ter lógica de negócio
-        - Use hooks customizados para lógica complexa
+        Review de código React/Next.js:
         - Props devem ser tipadas com TypeScript
-        - Evite prop drilling (use Context ou state management)
-        - Componentes devem ser reutilizáveis
-        - Siga padrão de nomenclatura: PascalCase para componentes
         - Use Tailwind CSS para estilização
         - Evite inline styles
         - Acessibilidade: sempre use aria-labels em elementos interativos
@@ -53,36 +48,26 @@ reviews:
         - Error boundaries para tratamento de erros
         - Streaming quando aplicável
     
-    - path: "apps/nexo-fe/src/components/**/*.tsx"
-      instructions: |
-        Review de componentes:
-        - Componentes devem ser pequenos e focados
-        - Máximo 200 linhas por componente
-        - Extrair lógica complexa para hooks
-        - Componentes de UI puros (sem side effects)
-        - Teste: componentes devem ser testáveis
-    
     - path: "apps/nexo-fe/src/lib/**/*.ts"
       instructions: |
-        Review de utilitários e serviços:
-        - Funções puras sempre que possível
+        Review de utilitários:
         - Bem documentadas com JSDoc
         - Tipagem forte com TypeScript
         - Evite any types
-        - Use tipos de utilidade do TypeScript
         - Tratamento de erros adequado
     
     - path: "apps/nexo-be/src/**/*.ts"
       instructions: |
-        Review de backend NestJS:
+        Review seguindo Clean Architecture:
         - Siga arquitetura em camadas (Controller → Service → Repository)
         - Controllers: apenas roteamento e validação
-        - Services: lógica de negócio
-        - DTOs para validação de entrada
+        - Services: lógica de negócio isolada
+        - DTOs para validação de entrada/saída
         - Use decorators do class-validator
         - Tratamento de exceções adequado
         - Logging estruturado
         - Documentação Swagger
+        - Princípios SOLID
     
     - path: "apps/nexo-be/src/**/*.controller.ts"
       instructions: |

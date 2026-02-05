@@ -89,10 +89,8 @@ jobs:
 - [ ] Descrição adequada (> 50 caracteres)
 - [ ] Screenshots em mudanças visuais
 - [ ] Testes adicionados/modificados
-- [ ] Clean Architecture (frontend)
-  - [ ] Componentes sem lógica de negócio
+- [ ] Frontend (nexo-fe)
   - [ ] Props tipadas
-  - [ ] Estrutura de pastas correta
   - [ ] Server Components quando possível
 - [ ] TypeScript
   - [ ] Sem uso de `any`
@@ -108,22 +106,22 @@ jobs:
 ### CodeRabbit analisa:
 
 - [ ] **Frontend (nexo-fe)**
-  - [ ] Clean Architecture
-  - [ ] Componentes UI puros
-  - [ ] Hooks customizados para lógica
   - [ ] Server Components vs Client Components
   - [ ] SEO e metadata
   - [ ] Acessibilidade (aria-labels)
   - [ ] Performance (React.memo)
   - [ ] Tailwind CSS
+  - [ ] TypeScript tipagem
 
-- [ ] **Backend (nexo-be)**
-  - [ ] Arquitetura em camadas
-  - [ ] Controllers: roteamento apenas
-  - [ ] Services: lógica de negócio
-  - [ ] DTOs e validação
+- [ ] **Backend (nexo-be) - Clean Architecture**
+  - [ ] Arquitetura em camadas (Controller → Service → Repository)
+  - [ ] Controllers: apenas roteamento e validação
+  - [ ] Services: lógica de negócio isolada
+  - [ ] DTOs e validação de entrada/saída
+  - [ ] Princípios SOLID
   - [ ] Swagger documentation
   - [ ] Tratamento de exceções
+  - [ ] Injeção de dependências
 
 ## 🎨 Exemplos de Reviews
 
@@ -131,10 +129,9 @@ jobs:
 
 ```
 ⚠️ apps/nexo-fe/src/components/UserCard.tsx: 
-Componente não deve fazer chamadas HTTP diretas. 
-Use hooks customizados ou services.
+Props não tipadas. Defina interface ou type para as props.
 
-❌ apps/nexo-fe/src/lib/auth.ts: 
+❌ apps/nexo-be/src/services/auth.service.ts: 
 Não use @ts-ignore (2 ocorrências). Resolva os erros de tipo.
 
 ✅ Bom uso de Server Components (8 arquivos). 
@@ -144,18 +141,24 @@ Continue usando quando possível!
 ### CodeRabbit
 
 ```
-📝 Sugestão em UserCard.tsx linha 15:
+📝 Sugestão em user.service.ts linha 25:
 
-Extraia a lógica de fetch para um hook customizado:
+Siga Clean Architecture - Service não deve acessar repository diretamente.
+Use injeção de dependências:
 
-// hooks/useUser.ts
-export function useUser(id: string) {
-  const [user, setUser] = useState(null);
-  // ... fetch logic
-  return { user, loading, error };
+// user.service.ts
+@Injectable()
+export class UserService {
+  constructor(
+    private readonly userRepository: UserRepository
+  ) {}
+  
+  async findById(id: string): Promise<UserDto> {
+    return this.userRepository.findById(id);
+  }
 }
 
-Isso segue o padrão Clean Architecture e torna o componente mais reutilizável.
+Isso segue Clean Architecture com injeção de dependências e separação de camadas.
 ```
 
 ## ⚙️ Configuração Avançada
