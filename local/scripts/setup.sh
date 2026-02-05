@@ -48,36 +48,64 @@ log_error() {
 }
 
 check_dependencies() {
-    log_info "Verificando dependências..."
+    log_info "Verificando e instalando dependências..."
     
-    local missing=()
-    
+    # Verificar Docker (obrigatório - não pode instalar automaticamente)
     if ! command -v docker &> /dev/null; then
-        missing+=("docker")
-    fi
-    
-    if ! command -v k3d &> /dev/null; then
-        missing+=("k3d")
-    fi
-    
-    if ! command -v kubectl &> /dev/null; then
-        missing+=("kubectl")
-    fi
-    
-    if ! command -v helm &> /dev/null; then
-        missing+=("helm")
-    fi
-    
-    if [ ${#missing[@]} -ne 0 ]; then
-        log_error "Dependências faltando: ${missing[*]}"
+        log_error "Docker não encontrado!"
         echo ""
-        echo "Instale com:"
-        echo "  brew install k3d kubectl helm"
+        echo "  Docker Desktop é obrigatório para K3D."
+        echo "  Download: https://www.docker.com/products/docker-desktop"
         echo ""
         exit 1
     fi
     
-    log_success "Todas as dependências instaladas"
+    # Verificar/Instalar Homebrew (se no macOS)
+    if [[ "$OSTYPE" == "darwin"* ]] && ! command -v brew &> /dev/null; then
+        log_warn "Homebrew não encontrado. Instalando..."
+        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    fi
+    
+    # Instalar k3d se necessário
+    if ! command -v k3d &> /dev/null; then
+        log_warn "k3d não encontrado. Instalando..."
+        if command -v brew &> /dev/null; then
+            brew install k3d
+        else
+            curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
+        fi
+    fi
+    
+    # Instalar kubectl se necessário
+    if ! command -v kubectl &> /dev/null; then
+        log_warn "kubectl não encontrado. Instalando..."
+        if command -v brew &> /dev/null; then
+            brew install kubectl
+        else
+            log_error "kubectl não encontrado. Instale manualmente: https://kubernetes.io/docs/tasks/tools/"
+            exit 1
+        fi
+    fi
+    
+    # Instalar helm se necessário
+    if ! command -v helm &> /dev/null; then
+        log_warn "Helm não encontrado. Instalando..."
+        if command -v brew &> /dev/null; then
+            brew install helm
+        else
+            curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+        fi
+        log_success "Helm instalado"
+    fi
+    
+    # Configurar repositórios Helm
+    log_info "Configurando repositórios Helm..."
+    helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx 2>/dev/null || true
+    helm repo add prometheus-community https://prometheus-community.github.io/helm-charts 2>/dev/null || true
+    helm repo add argo https://argoproj.github.io/argo-helm 2>/dev/null || true
+    helm repo update --quiet
+    
+    log_success "Todas as dependências instaladas e configuradas"
 }
 
 # ============================================================================
@@ -186,9 +214,7 @@ create_cluster() {
 install_ingress() {
     log_info "Instalando NGINX Ingress Controller..."
     
-    helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx 2>/dev/null || true
-    helm repo update
-    
+    # Repositório já foi configurado em check_dependencies()
     helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx \
         --namespace ingress-nginx \
         --create-namespace \
@@ -276,12 +302,9 @@ install_observability() {
         return 0
     fi
     
-    # Adicionar repositório Prometheus
-    helm repo add prometheus-community https://prometheus-community.github.io/helm-charts 2>/dev/null || true
-    helm repo update
-    
     log_info "Instalando kube-prometheus-stack (pode levar alguns minutos)..."
     
+    # Repositórios já foram configurados em check_dependencies()
     # Instalar kube-prometheus-stack (Prometheus + Grafana + Alertmanager)
     helm install kube-prometheus-stack prometheus-community/kube-prometheus-stack \
         --namespace monitoring \

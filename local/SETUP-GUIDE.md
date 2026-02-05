@@ -20,6 +20,7 @@ export GITHUB_TOKEN=ghp_YOUR_TOKEN
 ## 📦 O que é instalado automaticamente
 
 ### Infraestrutura Base
+
 - ✅ Cluster K3D (nexo-local) - 3 nodes
 - ✅ NGINX Ingress Controller
 - ✅ ArgoCD + NodePort (porta 30080)
@@ -29,6 +30,7 @@ export GITHUB_TOKEN=ghp_YOUR_TOKEN
   - Alertmanager (porta 30093)
 
 ### Namespaces
+
 - `nexo-develop` - Ambiente de desenvolvimento
 - `nexo-qa` - Ambiente de qualidade
 - `nexo-staging` - Ambiente de homologação
@@ -37,30 +39,37 @@ export GITHUB_TOKEN=ghp_YOUR_TOKEN
 - `monitoring` - Observabilidade
 
 ### Aplicações (4 ambientes x 3 apps = 12 apps)
+
 Cada ambiente possui:
+
 - **Backend** (NestJS API)
 - **Frontend** (Next.js)
 - **Auth** (Keycloak + PostgreSQL)
 
 ### GHCR Secrets
+
 O script cria automaticamente o secret `ghcr-secret` em todos os namespaces para autenticação no GitHub Container Registry.
 
 ## 🔐 Credenciais
 
 ### ArgoCD
+
 - URL: http://localhost:30080
 - User: `admin`
 - Password: Obter com `kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d`
 
 ### Grafana
+
 - URL: http://localhost:30030
 - User: `admin`
 - Password: `admin`
 
 ### Prometheus
+
 - URL: http://localhost:30090
 
 ### Alertmanager
+
 - URL: http://localhost:30093
 
 ## 🌐 Configurar /etc/hosts
@@ -78,11 +87,13 @@ Adicione ao arquivo `/etc/hosts`:
 ## 📊 Monitoramento
 
 ### Ver todas as aplicações
+
 ```bash
 kubectl get applications -n argocd
 ```
 
 ### Ver pods por ambiente
+
 ```bash
 kubectl get pods -n nexo-develop
 kubectl get pods -n nexo-qa
@@ -91,11 +102,13 @@ kubectl get pods -n nexo-prod
 ```
 
 ### Ver status geral
+
 ```bash
 cd local && make status
 ```
 
 ### Logs de aplicações
+
 ```bash
 # Backend
 kubectl logs -f -n nexo-develop deployment/nexo-be-develop
@@ -114,6 +127,7 @@ cd local && make argocd-sync
 ```
 
 Ou individualmente:
+
 ```bash
 kubectl patch application nexo-be-develop -n argocd \
   --type merge \
@@ -129,10 +143,12 @@ cd local && ./scripts/destroy.sh
 ## 💾 Volumes SSD
 
 Os dados são persistidos em `/Volumes/Backup/DockerSSD/`:
+
 - `nexo/` - Dados de produção
 - `nexo-dev/` - Dados de desenvolvimento
 
 ### Estrutura de volumes:
+
 ```
 /Volumes/Backup/DockerSSD/
 ├── nexo/
@@ -151,6 +167,7 @@ Os dados são persistidos em `/Volumes/Backup/DockerSSD/`:
 ## ⚠️ Troubleshooting
 
 ### ArgoCD não sincroniza
+
 ```bash
 # Verificar logs do application controller
 kubectl logs -n argocd statefulset/argocd-application-controller --tail=100
@@ -161,6 +178,7 @@ kubectl apply -f local/argocd/apps/nexo-develop.yaml
 ```
 
 ### Pods não sobem
+
 ```bash
 # Verificar eventos
 kubectl describe pod <POD_NAME> -n nexo-develop
@@ -170,6 +188,7 @@ kubectl get secret ghcr-secret -n nexo-develop
 ```
 
 ### Recriar secrets GHCR
+
 ```bash
 for ns in nexo-develop nexo-qa nexo-staging nexo-prod; do
   kubectl delete secret ghcr-secret -n $ns
@@ -182,6 +201,7 @@ done
 ```
 
 ### Postgres com problemas
+
 ```bash
 # Limpar volumes
 rm -rf /Volumes/Backup/DockerSSD/nexo-dev/postgres/*
