@@ -1,5 +1,37 @@
 # 🏗️ Nexo Platform
 
+✅ Configuração Automática Concluída!
+O que foi criado:
+Arquivo Descrição
+startup-k3d.sh Script que verifica e inicia o ambiente
+~/Library/LaunchAgents/com.nexo.k3d-startup.plist Agente que executa no login
+O que o script faz automaticamente:
+⏳ Aguarda Docker Desktop iniciar (até 2 min)
+🚀 Inicia o cluster k3d se não estiver rodando
+🔍 Verifica pods do ArgoCD e reinicia os problemáticos
+📊 Lista status de todos os namespaces
+🔔 Mostra notificação quando o ambiente está pronto
+Logs:
+Log principal: ~/.nexo-startup.log
+Output: nexo-k3d-startup.out.log
+Erros: nexo-k3d-startup.err.log
+
+# Ver log de startup
+
+cat ~/.nexo-startup.log
+
+# Desativar inicialização automática
+
+launchctl unload ~/Library/LaunchAgents/com.nexo.k3d-startup.plist
+
+# Reativar inicialização automática
+
+launchctl load ~/Library/LaunchAgents/com.nexo.k3d-startup.plist
+
+# Executar manualmente
+
+~/Development/fullstack/nexo/local/scripts/startup-k3d.sh
+
 <div align="center">
 
 **Plataforma SaaS de Produção | GitOps | K3D Kubernetes**

@@ -1,9 +1,9 @@
 # Values for Development environment
 replicaCount: 1
 image:
-  # Para desenvolvimento local com K3D
+  # Para desenvolvimento com GHCR
   repository: ghcr.io/geraldobl58/nexo-be
-  tag: "develop-f39030fb5a3a8f921e7cf095fe07737e9d778484"
+  tag: "develop"
   pullPolicy: Always
 
 imagePullSecrets:

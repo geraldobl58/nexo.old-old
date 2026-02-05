@@ -68,6 +68,11 @@ help:
 	@echo "  make doctor        Verifica dependências instaladas"
 	@echo "  make clean         Limpa node_modules e containers"
 	@echo ""
+	@echo "$(B)SSD EXTERNO$(N)"
+	@echo "  make ssd-setup     Cria estrutura de diretórios no SSD (rápido)"
+	@echo "  make ssd-status    Verifica status e espaço do SSD"
+	@echo "  make ssd-clean     Remove dados do SSD (⚠️ DESTRUTIVO)"
+	@echo ""
 	@echo "$(Y)🏠 K3D LOCAL: cd local && make help$(N)"
 	@echo ""
 
@@ -206,3 +211,68 @@ clean:
 	@docker compose down -v --remove-orphans 2>/dev/null || true
 	@rm -rf node_modules apps/*/node_modules packages/*/node_modules 2>/dev/null || true
 	@echo "$(G)✅ Limpeza concluída$(N)"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# 💾 SSD EXTERNO - Gerenciamento de Volumes
+# ═══════════════════════════════════════════════════════════════════════════════
+# Nota: A configuração completa do SSD é feita em 'cd local && ./scripts/setup.sh'
+
+ssd-setup:
+	@echo "$(B)💾 Criando estrutura de diretórios no SSD...$(N)"
+	@if [ ! -d "/Volumes/Backup/DockerSSD" ]; then \
+		echo "$(R)❌ SSD não encontrado em /Volumes/Backup/DockerSSD$(N)"; \
+		exit 1; \
+	fi
+	@echo "   Criando diretórios para Nexo..."
+	@mkdir -p /Volumes/Backup/DockerSSD/nexo/postgres
+	@mkdir -p /Volumes/Backup/DockerSSD/nexo/keycloak
+	@echo "   Criando diretórios para Nexo Dev..."
+	@mkdir -p /Volumes/Backup/DockerSSD/nexo-dev/postgres
+	@mkdir -p /Volumes/Backup/DockerSSD/nexo-dev/redis
+	@mkdir -p /Volumes/Backup/DockerSSD/nexo-dev/keycloak
+	@mkdir -p /Volumes/Backup/DockerSSD/nexo-dev/api-uploads
+	@mkdir -p /Volumes/Backup/DockerSSD/nexo-dev/prometheus
+	@mkdir -p /Volumes/Backup/DockerSSD/nexo-dev/grafana
+	@mkdir -p /Volumes/Backup/DockerSSD/nexo-dev/loki
+	@echo "   Ajustando permissões..."
+	@chmod -R 777 /Volumes/Backup/DockerSSD/nexo 2>/dev/null || true
+	@chmod -R 777 /Volumes/Backup/DockerSSD/nexo-dev 2>/dev/null || true
+	@echo "$(G)✅ Estrutura criada com sucesso!$(N)"
+	@echo ""
+	@echo "   Agora você pode executar: docker compose up -d"
+
+ssd-status:
+	@echo "$(B)💾 Status do SSD Externo$(N)"
+	@echo ""
+	@if [ -d "/Volumes/Backup/DockerSSD" ]; then \
+		echo "$(G)✅ SSD Conectado$(N)"; \
+		echo ""; \
+		echo "$(B)Espaço Utilizado:$(N)"; \
+		du -sh /Volumes/Backup/DockerSSD/nexo* 2>/dev/null || echo "   Nenhum volume encontrado"; \
+		echo ""; \
+		echo "$(B)Detalhes por Serviço (Nexo Dev):$(N)"; \
+		du -sh /Volumes/Backup/DockerSSD/nexo-dev/* 2>/dev/null | sort -hr | head -10 || true; \
+		echo ""; \
+		echo "$(B)Espaço Disponível no SSD:$(N)"; \
+		df -h /Volumes/Backup/DockerSSD | tail -1; \
+	else \
+		echo "$(R)❌ SSD não encontrado em /Volumes/Backup/DockerSSD$(N)"; \
+		echo ""; \
+		echo "   Os volumes estão usando o disco local."; \
+		echo "   Para usar o SSD:"; \
+		echo "     1. Conecte o SSD em /Volumes/Backup/DockerSSD"; \
+		echo "     2. Execute: cd local && ./scripts/setup.sh"; \
+	fi
+
+ssd-clean:
+	@echo "$(R)⚠️  ATENÇÃO: Isso irá APAGAR todos os dados do SSD!$(N)"
+	@echo "   Dados em: /Volumes/Backup/DockerSSD/nexo*"
+	@echo ""
+	@read -p "Continuar? [y/N] " c && [ "$$c" = "y" ] || exit 1
+	@echo "$(B)🧹 Limpando dados do SSD...$(N)"
+	@docker compose down -v 2>/dev/null || true
+	@cd local/docker/compose/dev && docker compose down -v 2>/dev/null || true
+	@rm -rf /Volumes/Backup/DockerSSD/nexo* 2>/dev/null || true
+	@echo "$(G)✅ Dados do SSD removidos$(N)"
+	@echo "   Execute 'cd local && ./scripts/setup.sh' para recriar"
+
