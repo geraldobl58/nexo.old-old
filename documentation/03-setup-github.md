@@ -60,7 +60,6 @@ git add .env
 | Tipo         | Nome                    | Valor                     | Descrição            | Uso                          |
 | ------------ | ----------------------- | ------------------------- | -------------------- | ---------------------------- |
 | **Secret**   | `GHCR_TOKEN`            | `ghp_...`                 | Token para GHCR      | Build, Push, Pull de imagens |
-| **Secret**   | `GH_TOKEN`              | `ghp_...`                 | Token GitHub Actions | Automação CI/CD              |
 | **Secret**   | `DISCORD_WEBHOOK`       | `https://discord.com/...` | Webhook notificações | Alertas de deploy            |
 | **Variable** | `ARGOCD_AUTH_TOKEN`     | `eyJhbG...`               | Token ArgoCD         | Sync apps via API            |
 | **Variable** | `ARGOCD_SERVER`         | `argocd.nexo.io`          | URL do ArgoCD        | Integração CI/CD             |
@@ -71,6 +70,8 @@ git add .env
 | **Variable** | `K8S_NAMESPACE_PROD`    | `nexo-prod`               | Namespace prod       | Deploy                       |
 | **Variable** | `K8S_NAMESPACE_QA`      | `nexo-qa`                 | Namespace QA         | Deploy                       |
 | **Variable** | `K8S_NAMESPACE_STAGING` | `nexo-staging`            | Namespace staging    | Deploy                       |
+
+> **Nota:** `GH_TOKEN` não é mais necessário! O GitHub Actions fornece automaticamente `GITHUB_TOKEN` com permissões adequadas para workflows.
 
 ### Secrets do Repositório
 

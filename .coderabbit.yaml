@@ -1,0 +1,131 @@
+# CodeRabbit Configuration
+# https://docs.coderabbit.ai/guides/review-instructions
+
+# Language: "pt-br" for Brazilian Portuguese reviews
+language: pt-br
+
+# Enable review comments
+reviews:
+  # Review pull requests automatically
+  auto_review: true
+  
+  # Review settings
+  request_changes_workflow: true
+  high_level_summary: true
+  poem: false
+  review_status: true
+  collapse_walkthrough: false
+  
+  # Files to ignore
+  path_filters:
+    - "!**/*.lock"
+    - "!**/*.yaml"
+    - "!**/*.yml"
+    - "!**/package-lock.json"
+    - "!**/pnpm-lock.yaml"
+    - "!**/dist/**"
+    - "!**/build/**"
+    - "!**/.next/**"
+  
+  # Code patterns to check
+  path_instructions:
+    - path: "apps/nexo-fe/src/**/*.tsx"
+      instructions: |
+        Review seguindo Clean Architecture:
+        - Componentes UI não devem ter lógica de negócio
+        - Use hooks customizados para lógica complexa
+        - Props devem ser tipadas com TypeScript
+        - Evite prop drilling (use Context ou state management)
+        - Componentes devem ser reutilizáveis
+        - Siga padrão de nomenclatura: PascalCase para componentes
+        - Use Tailwind CSS para estilização
+        - Evite inline styles
+        - Acessibilidade: sempre use aria-labels em elementos interativos
+        - Performance: use React.memo quando apropriado
+    
+    - path: "apps/nexo-fe/src/app/**/*.tsx"
+      instructions: |
+        Review de páginas Next.js:
+        - Use Server Components quando possível
+        - Client Components apenas quando necessário (use 'use client')
+        - SEO: sempre defina metadata
+        - Loading states: use Suspense boundaries
+        - Error boundaries para tratamento de erros
+        - Streaming quando aplicável
+    
+    - path: "apps/nexo-fe/src/components/**/*.tsx"
+      instructions: |
+        Review de componentes:
+        - Componentes devem ser pequenos e focados
+        - Máximo 200 linhas por componente
+        - Extrair lógica complexa para hooks
+        - Componentes de UI puros (sem side effects)
+        - Teste: componentes devem ser testáveis
+    
+    - path: "apps/nexo-fe/src/lib/**/*.ts"
+      instructions: |
+        Review de utilitários e serviços:
+        - Funções puras sempre que possível
+        - Bem documentadas com JSDoc
+        - Tipagem forte com TypeScript
+        - Evite any types
+        - Use tipos de utilidade do TypeScript
+        - Tratamento de erros adequado
+    
+    - path: "apps/nexo-be/src/**/*.ts"
+      instructions: |
+        Review de backend NestJS:
+        - Siga arquitetura em camadas (Controller → Service → Repository)
+        - Controllers: apenas roteamento e validação
+        - Services: lógica de negócio
+        - DTOs para validação de entrada
+        - Use decorators do class-validator
+        - Tratamento de exceções adequado
+        - Logging estruturado
+        - Documentação Swagger
+    
+    - path: "apps/nexo-be/src/**/*.controller.ts"
+      instructions: |
+        Review de Controllers:
+        - Rotas RESTful seguindo convenções
+        - Decorators Swagger (@ApiTags, @ApiOperation)
+        - Guards para autenticação/autorização
+        - DTOs para request/response
+        - Status codes HTTP corretos
+        - Versionamento de API
+    
+    - path: "apps/nexo-be/src/**/*.service.ts"
+      instructions: |
+        Review de Services:
+        - Lógica de negócio isolada
+        - Injeção de dependências
+        - Transações de database quando necessário
+        - Validações de negócio
+        - Retornar objetos tipados
+        - Tratamento de casos de erro
+
+# Chat settings
+chat:
+  auto_reply: true
+
+# Code quality checks
+early_access: false
+
+# Tools to enable
+tools:
+  # AST-level checks
+  ast_level_checker:
+    enabled: true
+  
+  # Security checks
+  github_checks:
+    enabled: true
+    timeout_ms: 90000
+
+# Knowledge base
+knowledge_base:
+  # Learnings from reviews (enabled by default)
+  learnings: true
+  
+  # Custom instructions
+  opt_out_instructions: false
