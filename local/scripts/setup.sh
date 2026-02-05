@@ -23,6 +23,12 @@ PROJECT_ROOT="$(dirname "$LOCAL_DIR")"
 CLUSTER_NAME="nexo-local"
 K3D_CONFIG="$LOCAL_DIR/k3d/config.yaml"
 
+# Carregar variáveis do .env se existir
+if [ -f "$PROJECT_ROOT/.env" ]; then
+    log_info "Carregando variáveis de ambiente do .env..."
+    export $(grep -v '^#' "$PROJECT_ROOT/.env" | grep -v '^$' | xargs)
+fi
+
 # GitHub Container Registry
 GITHUB_USERNAME="${GITHUB_USERNAME:-geraldobl58}"
 GITHUB_TOKEN="${GITHUB_TOKEN:-}"
@@ -402,7 +408,14 @@ setup_registry_secret() {
     if [ -z "$github_token" ]; then
         log_warn "GitHub Token não encontrado"
         echo ""
-        echo "  Para usar imagens do GHCR, você precisa fornecer um token."
+        echo "  ⚠️  Token não foi carregado do .env"
+        echo ""
+        echo "  📝 Como configurar:"
+        echo "     1. Copie o template: cp .env.template .env"
+        echo "     2. Edite o .env e adicione seu token"
+        echo "     3. Execute o setup novamente"
+        echo ""
+        echo "  OU forneça manualmente agora:"
         echo ""
         read -p "Digite seu GitHub username [$github_username]: " input_username
         github_username="${input_username:-$github_username}"
@@ -414,6 +427,8 @@ setup_registry_secret() {
             log_error "Token não fornecido. As aplicações podem falhar ao baixar imagens."
             return 1
         fi
+    else
+        log_success "Token do GitHub carregado do .env"
     fi
     
     # Criar secret em todos os namespaces

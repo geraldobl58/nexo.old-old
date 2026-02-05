@@ -58,6 +58,7 @@ make setup
 ```
 
 **O que acontece:**
+
 - ✅ Instala dependências (Helm, k3d, kubectl)
 - ✅ Cria cluster K3D com 3 nodes
 - ✅ Instala NGINX Ingress Controller
@@ -102,6 +103,7 @@ sudo nano /etc/hosts
 ```
 
 Acesse:
+
 - **Grafana**: http://grafana.local.nexo.app (admin/admin)
 - **Prometheus**: http://prometheus.local.nexo.app
 - **Alertmanager**: http://alertmanager.local.nexo.app
@@ -115,6 +117,7 @@ Adicione ao `/etc/hosts`:
 ```
 
 Acesse:
+
 - **Frontend**: http://develop.nexo.local
 - **API Backend**: http://develop.api.nexo.local
 - **Keycloak Auth**: http://develop.auth.nexo.local

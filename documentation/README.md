@@ -6,35 +6,35 @@ Documentação completa do Nexo Platform - Sistema GitOps com K3D, ArgoCD e Mult
 
 ### 🚀 Getting Started (Comece Aqui!)
 
-| # | Documento | Descrição |
-|---|-----------|-----------|
-| 1 | [**Início Rápido**](./01-quick-start.md) | Setup completo em 5 minutos |
-| 2 | [**Arquitetura**](./02-architecture.md) | Como o sistema funciona |
-| 3 | [**Configuração GitHub**](./03-setup-github.md) | Secrets, Tokens e Repositórios |
+| #   | Documento                                       | Descrição                      |
+| --- | ----------------------------------------------- | ------------------------------ |
+| 1   | [**Início Rápido**](./01-quick-start.md)        | Setup completo em 5 minutos    |
+| 2   | [**Arquitetura**](./02-architecture.md)         | Como o sistema funciona        |
+| 3   | [**Configuração GitHub**](./03-setup-github.md) | Secrets, Tokens e Repositórios |
 
 ### 🛠️ Desenvolvimento
 
-| # | Documento | Descrição |
-|---|-----------|-----------|
-| 4 | [**Desenvolvimento Local**](./04-local-development.md) | K3D, ArgoCD, Observabilidade |
-| 5 | [**Fluxo Git**](./05-git-workflow.md) | Branches, Commits, PRs |
-| 6 | [**APIs e Serviços**](./06-apis-services.md) | Backend, Frontend, Auth |
+| #   | Documento                                              | Descrição                    |
+| --- | ------------------------------------------------------ | ---------------------------- |
+| 4   | [**Desenvolvimento Local**](./04-local-development.md) | K3D, ArgoCD, Observabilidade |
+| 5   | [**Fluxo Git**](./05-git-workflow.md)                  | Branches, Commits, PRs       |
+| 6   | [**APIs e Serviços**](./06-apis-services.md)           | Backend, Frontend, Auth      |
 
 ### 🚢 Deploy e CI/CD
 
-| # | Documento | Descrição |
-|---|-----------|-----------|
-| 7 | [**Pipeline CI/CD**](./07-cicd-pipeline.md) | GitHub Actions e Automação |
-| 8 | [**GitOps com ArgoCD**](./08-gitops-argocd.md) | Deploy Declarativo |
-| 9 | [**Ambientes**](./09-environments.md) | Develop → QA → Staging → Prod |
+| #   | Documento                                      | Descrição                     |
+| --- | ---------------------------------------------- | ----------------------------- |
+| 7   | [**Pipeline CI/CD**](./07-cicd-pipeline.md)    | GitHub Actions e Automação    |
+| 8   | [**GitOps com ArgoCD**](./08-gitops-argocd.md) | Deploy Declarativo            |
+| 9   | [**Ambientes**](./09-environments.md)          | Develop → QA → Staging → Prod |
 
 ### 📊 Operações
 
-| # | Documento | Descrição |
-|---|-----------|-----------|
-| 10 | [**Observabilidade**](./10-observability.md) | Prometheus, Grafana, Logs |
-| 11 | [**Troubleshooting**](./11-troubleshooting.md) | Resolução de Problemas |
-| 12 | [**Comandos Úteis**](./12-commands.md) | Referência Rápida |
+| #   | Documento                                      | Descrição                 |
+| --- | ---------------------------------------------- | ------------------------- |
+| 10  | [**Observabilidade**](./10-observability.md)   | Prometheus, Grafana, Logs |
+| 11  | [**Troubleshooting**](./11-troubleshooting.md) | Resolução de Problemas    |
+| 12  | [**Comandos Úteis**](./12-commands.md)         | Referência Rápida         |
 
 ---
 
@@ -67,17 +67,17 @@ make setup
 
 ## 📋 Stack Tecnológica
 
-| Componente | Tecnologia | Versão |
-|------------|-----------|---------|
-| **Container** | Docker | 29.2.1 |
-| **Kubernetes** | K3D (K3s) | v5.8.3 |
-| **GitOps** | ArgoCD | 2.13+ |
+| Componente     | Tecnologia           | Versão |
+| -------------- | -------------------- | ------ |
+| **Container**  | Docker               | 29.2.1 |
+| **Kubernetes** | K3D (K3s)            | v5.8.3 |
+| **GitOps**     | ArgoCD               | 2.13+  |
 | **Monitoring** | Prometheus + Grafana | latest |
-| **Backend** | NestJS | 10.x |
-| **Frontend** | Next.js | 15.x |
-| **Auth** | Keycloak | 26.x |
-| **Database** | PostgreSQL | 16 |
-| **Cache** | Redis | 7 |
+| **Backend**    | NestJS               | 10.x   |
+| **Frontend**   | Next.js              | 15.x   |
+| **Auth**       | Keycloak             | 26.x   |
+| **Database**   | PostgreSQL           | 16     |
+| **Cache**      | Redis                | 7      |
 
 ## 🔐 Segurança e Secrets
 
@@ -117,7 +117,7 @@ echo "GITHUB_TOKEN=ghp_..." > .env
 ## 🔗 Links Rápidos
 
 - **Repositório**: https://github.com/geraldobl58/nexo
-- **Container Registry**: ghcr.io/geraldobl58/nexo-*
+- **Container Registry**: ghcr.io/geraldobl58/nexo-\*
 - **ArgoCD Local**: http://localhost:30080
 - **Grafana Local**: http://grafana.local.nexo.app
 
@@ -136,10 +136,10 @@ A documentação anterior foi movida para `legacy/` para referência histórica.
 ---
 
 **Última atualização**: Fevereiro 2026
-| [GitHub Secrets](local/github-secrets.md)        | Todos os secrets necessários     |
-| [GitHub Config](local/github-config.md)          | Secrets, Variables, Environments |
-| [Git Branching](local/git-branching-strategy.md) | GitFlow e proteção de branches   |
-| [CI/CD Flow](local/cicd-flow.md)                 | Fluxo completo de CI/CD          |
+| [GitHub Secrets](local/github-secrets.md) | Todos os secrets necessários |
+| [GitHub Config](local/github-config.md) | Secrets, Variables, Environments |
+| [Git Branching](local/git-branching-strategy.md) | GitFlow e proteção de branches |
+| [CI/CD Flow](local/cicd-flow.md) | Fluxo completo de CI/CD |
 
 ### 💻 Desenvolvimento
 
