@@ -1,8 +1,8 @@
-import type { Metadata } from 'next';
+import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: 'Home - Nexo',
-  description: 'Podemos começar a construir algo incrível juntos!',
+  title: "Home - Nexo",
+  description: "Podemos começar a construir algo incrível juntos!",
 };
 
 const HomePage = () => {
