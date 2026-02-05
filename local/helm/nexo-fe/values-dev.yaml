@@ -1,9 +1,9 @@
 # Values for Development environment
 replicaCount: 1
 image:
-  # Para desenvolvimento local com K3D
+  # Para desenvolvimento com GHCR
   repository: ghcr.io/geraldobl58/nexo-fe
-  tag: "develop-8a47172681d46fc3bb9e44593b2adf6bd0960c7b"
+  tag: "develop-01a6910b9ae151e5a1981423ab9c39f7b54cefbc"
   pullPolicy: Always
 
 imagePullSecrets:
@@ -37,4 +37,15 @@ env:
 podDisruptionBudget:
   enabled: false
 podAnnotations:
-  app.kubernetes.io/commit: "8a47172"
+  app.kubernetes.io/commit: "01a6910"
+
+# Metrics configuration for dev
+metrics:
+  enabled: true
+  path: /api/metrics
+  serviceMonitor:
+    enabled: false
+    interval: 15s
+    scrapeTimeout: 10s
+    labels:
+      release: monitoring

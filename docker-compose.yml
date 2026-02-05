@@ -95,10 +95,20 @@ networks:
     name: nexo-network
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# 💾 Volumes
+# 💾 Volumes - Mapeados para SSD Externo
 # ═══════════════════════════════════════════════════════════════════════════════
 volumes:
   postgres-data:
     name: nexo-postgres-data
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /Volumes/Backup/DockerSSD/nexo/postgres
   keycloak-data:
     name: nexo-keycloak-data
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /Volumes/Backup/DockerSSD/nexo/keycloak

@@ -24,7 +24,7 @@
 
 <body class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4 font-sans antialiased ${bodyClass}">
     <p>
-        Deploy funcionando show de bola - Version 22 🚀
+        Deploy funcionando show de bola - Version 2 🚀
     </p>
     
     <div class="w-[800px] mx-auto">

@@ -1,57 +1,145 @@
-# 📚 Nexo Platform - Documentação
+# 📚 Documentação Nexo Platform
 
-Documentação técnica completa do projeto Nexo Platform.
+Documentação completa do Nexo Platform - Sistema GitOps com K3D, ArgoCD e Multi-Ambientes.
 
-> **Nota:** Toda a infraestrutura está consolidada na pasta `/local`. O K3D é usado como ambiente Kubernetes que espelha produção.
+## 🗂️ Índice Geral
 
-## 📖 Índice
+### 🚀 Getting Started (Comece Aqui!)
 
-### 🚀 Enterprise CI/CD Pipeline ⭐ NOVO!
+| #   | Documento                                       | Descrição                      |
+| --- | ----------------------------------------------- | ------------------------------ |
+| 1   | [**Início Rápido**](./01-quick-start.md)        | Setup completo em 5 minutos    |
+| 2   | [**Arquitetura**](./02-architecture.md)         | Como o sistema funciona        |
+| 3   | [**Configuração GitHub**](./03-setup-github.md) | Secrets, Tokens e Repositórios |
 
-**Documentação enterprise-grade completa de CI/CD com GitOps, seguindo práticas de Netflix, Spotify e Uber.**  
-**✨ Adaptada para K3D como ambiente local que espelha produção.**
+### 🛠️ Desenvolvimento
 
-| Documento                                                                  | Descrição                                                    |
-| -------------------------------------------------------------------------- | ------------------------------------------------------------ |
-| [📖 README & Índice](enterprise-pipeline/README.md)                        | **COMECE AQUI** - Índice completo da documentação enterprise |
-| [🏗️ Integração K3D](enterprise-pipeline/00-k3d-integration.md)             | **ESSENCIAL** - Como a pipeline se integra com K3D local     |
-| [00 - Arquitetura Geral](enterprise-pipeline/00-overview.md)               | Decisões técnicas, branches, fluxos                          |
-| [01 - GitHub Actions](enterprise-pipeline/01-github-actions-workflows.md)  | CI completo, workflows reutilizáveis                         |
-| [02 - ArgoCD Config](enterprise-pipeline/02-argocd-configuration.md)       | GitOps, sync policies, rollback                              |
-| [03 - Versioning](enterprise-pipeline/03-versioning-promotion.md)          | CalVer, promoção entre ambientes                             |
-| [04 - Security](enterprise-pipeline/04-security-secrets.md)                | OIDC, External Secrets, RBAC                                 |
-| [05 - Observability](enterprise-pipeline/05-observability.md)              | Métricas, logs, traces, DORA                                 |
-| [06 - Checklist](enterprise-pipeline/06-production-checklist.md)           | Validações antes de go-live                                  |
-| [📊 Diagrams](enterprise-pipeline/diagrams.md)                             | Diagramas visuais de fluxo                                   |
-| [🎮 Playbook](enterprise-pipeline/playbook.md)                             | Cenários práticos e comandos                                 |
-| [💼 Executive Summary](enterprise-pipeline/EXECUTIVE-SUMMARY.md)           | Visão executiva, ROI analysis                                |
-| [🗺️ Implementation Roadmap](enterprise-pipeline/IMPLEMENTATION-ROADMAP.md) | Plano 9 semanas, fases, marcos                               |
+| #   | Documento                                              | Descrição                    |
+| --- | ------------------------------------------------------ | ---------------------------- |
+| 4   | [**Desenvolvimento Local**](./04-local-development.md) | K3D, ArgoCD, Observabilidade |
+| 5   | [**Fluxo Git**](./05-git-workflow.md)                  | Branches, Commits, PRs       |
+| 6   | [**APIs e Serviços**](./06-apis-services.md)           | Backend, Frontend, Auth      |
 
-**Tempo de leitura**: ~2-3 horas | **Nível**: Staff/Senior Platform Engineering
+### 🚢 Deploy e CI/CD
+
+| #   | Documento                                      | Descrição                     |
+| --- | ---------------------------------------------- | ----------------------------- |
+| 7   | [**Pipeline CI/CD**](./07-cicd-pipeline.md)    | GitHub Actions e Automação    |
+| 8   | [**GitOps com ArgoCD**](./08-gitops-argocd.md) | Deploy Declarativo            |
+| 9   | [**Ambientes**](./09-environments.md)          | Develop → QA → Staging → Prod |
+
+### 📊 Operações
+
+| #   | Documento                                      | Descrição                 |
+| --- | ---------------------------------------------- | ------------------------- |
+| 10  | [**Observabilidade**](./10-observability.md)   | Prometheus, Grafana, Logs |
+| 11  | [**Troubleshooting**](./11-troubleshooting.md) | Resolução de Problemas    |
+| 12  | [**Comandos Úteis**](./12-commands.md)         | Referência Rápida         |
 
 ---
 
-### 🚀 Quick Start
+## 🎯 Início Rápido (TL;DR)
 
-| Documento                              | Descrição                     |
-| -------------------------------------- | ----------------------------- |
-| [Quick Start](local/01-quick-start.md) | Setup em 5 minutos            |
-| [README Local](local/README.md)        | Guia completo do ambiente K3D |
+```bash
+# 1. Configure o GitHub Token como Secret (uma única vez)
+# GitHub → Settings → Secrets and variables → Actions → New repository secret
+# Nome: GHCR_TOKEN
+# Valor: seu_github_token (ghp_...)
 
-### 🏗️ Infraestrutura (K3D)
+# 2. Setup do ambiente local (5 minutos)
+cd local
+export GITHUB_TOKEN=<seu_token_aqui>
+make setup
 
-| Documento                               | Descrição                |
-| --------------------------------------- | ------------------------ |
-| [Arquitetura](local/02-architecture.md) | Visão técnica do sistema |
+# 3. Acessar serviços
+# ArgoCD:   http://localhost:30080 (admin/<senha-gerada>)
+# Grafana:  http://grafana.local.nexo.app
+```
 
-### 🔧 CI/CD & GitHub
+## 🌟 Principais Recursos
 
-| Documento                                        | Descrição                        |
-| ------------------------------------------------ | -------------------------------- |
-| [GitHub Secrets](local/github-secrets.md)        | Todos os secrets necessários     |
-| [GitHub Config](local/github-config.md)          | Secrets, Variables, Environments |
-| [Git Branching](local/git-branching-strategy.md) | GitFlow e proteção de branches   |
-| [CI/CD Flow](local/cicd-flow.md)                 | Fluxo completo de CI/CD          |
+- ✅ **Setup Automatizado**: Um comando instala tudo (K3D + ArgoCD + Monitoring)
+- ✅ **4 Ambientes**: develop, qa, staging, prod
+- ✅ **GitOps**: Deploy declarativo com ArgoCD
+- ✅ **CI/CD**: GitHub Actions com promoção automática
+- ✅ **Observabilidade**: Prometheus + Grafana + Alertmanager
+- ✅ **Multi-App**: nexo-auth, nexo-be, nexo-fe
+
+## 📋 Stack Tecnológica
+
+| Componente     | Tecnologia           | Versão |
+| -------------- | -------------------- | ------ |
+| **Container**  | Docker               | 29.2.1 |
+| **Kubernetes** | K3D (K3s)            | v5.8.3 |
+| **GitOps**     | ArgoCD               | 2.13+  |
+| **Monitoring** | Prometheus + Grafana | latest |
+| **Backend**    | NestJS               | 10.x   |
+| **Frontend**   | Next.js              | 15.x   |
+| **Auth**       | Keycloak             | 26.x   |
+| **Database**   | PostgreSQL           | 16     |
+| **Cache**      | Redis                | 7      |
+
+## 🔐 Segurança e Secrets
+
+### GitHub Secrets (Recomendado)
+
+Ao invés de passar o token no comando, configure como secret do repositório:
+
+1. Acesse: `https://github.com/geraldobl58/nexo/settings/secrets/actions`
+2. Clique em **"New repository secret"**
+3. Configure:
+   - **Name**: `GHCR_TOKEN`
+   - **Value**: `ghp_...` (seu GitHub Personal Access Token)
+4. No workflow, use: `${{ secrets.GHCR_TOKEN }}`
+
+### Variáveis de Ambiente Locais
+
+Para desenvolvimento local, use variável de ambiente:
+
+```bash
+# Adicione ao seu ~/.zshrc ou ~/.bashrc
+export GITHUB_TOKEN=ghp_...
+
+# Depois só execute
+cd local && make setup
+```
+
+### ⚠️ Nunca Commite Tokens
+
+```bash
+# ❌ NUNCA faça isso
+git commit -m "add token ghp_..."
+
+# ✅ Use .env (já está no .gitignore)
+echo "GITHUB_TOKEN=ghp_..." > .env
+```
+
+## 🔗 Links Rápidos
+
+- **Repositório**: https://github.com/geraldobl58/nexo
+- **Container Registry**: ghcr.io/geraldobl58/nexo-\*
+- **ArgoCD Local**: http://localhost:30080
+- **Grafana Local**: http://grafana.local.nexo.app
+
+## 🤝 Suporte
+
+- 📖 Leia a documentação completa
+- 🐛 Reporte bugs via GitHub Issues
+- 💬 Perguntas? Abra uma Discussion
+
+---
+
+## 📚 Documentação Legacy
+
+A documentação anterior foi movida para `legacy/` para referência histórica.
+
+---
+
+**Última atualização**: Fevereiro 2026
+| [GitHub Secrets](local/github-secrets.md) | Todos os secrets necessários |
+| [GitHub Config](local/github-config.md) | Secrets, Variables, Environments |
+| [Git Branching](local/git-branching-strategy.md) | GitFlow e proteção de branches |
+| [CI/CD Flow](local/cicd-flow.md) | Fluxo completo de CI/CD |
 
 ### 💻 Desenvolvimento
 
@@ -117,12 +205,12 @@ sudo nano /etc/hosts
 
 ### Ferramentas (via NodePort)
 
-| Serviço      | URL                    | Credenciais      |
-| ------------ | ---------------------- | ---------------- |
-| ArgoCD       | http://localhost:30080 | admin / (\*)     |
-| Grafana      | http://localhost:30030 | admin / admin123 |
-| Prometheus   | http://localhost:30090 | -                |
-| Alertmanager | http://localhost:30093 | -                |
+| Serviço      | URL                    | Credenciais   |
+| ------------ | ---------------------- | ------------- |
+| ArgoCD       | http://localhost:30080 | admin / (\*)  |
+| Grafana      | http://localhost:30030 | admin / admin |
+| Prometheus   | http://localhost:30090 | -             |
+| Alertmanager | http://localhost:30093 | -             |
 
 > (\*) Obter senha: `kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d`
 

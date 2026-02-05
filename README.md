@@ -1,5 +1,169 @@
 # 🏗️ Nexo Platform
 
+Sistema GitOps completo com K3D, ArgoCD e Multi-Ambientes.
+
+[![CI/CD](https://github.com/geraldobl58/nexo/actions/workflows/ci.yml/badge.svg)](https://github.com/geraldobl58/nexo/actions)
+
+## 🚀 Início Rápido (5 minutos)
+
+### 1. Clone e Configure Segurança
+
+```bash
+# Clone o repositório
+git clone https://github.com/geraldobl58/nexo.git
+cd nexo
+
+# Configure seu GitHub Token de forma segura
+cp .env.template .env
+nano .env  # Adicione seu token
+
+# Carregue as variáveis
+export $(cat .env | xargs)
+```
+
+### 2. Execute o Setup
+
+```bash
+cd local
+make setup
+```
+
+**Pronto!** Em ~5 minutos você terá:
+- ✅ Cluster K3D com 3 nodes
+- ✅ ArgoCD rodando (http://localhost:30080)
+- ✅ Prometheus + Grafana + Alertmanager
+- ✅ 4 ambientes: develop, qa, staging, prod
+- ✅ 12 aplicações deployadas automaticamente
+
+### 3. Acesse os Serviços
+
+```bash
+# ArgoCD
+open http://localhost:30080
+# User: admin | Pass: exibida no final do setup
+
+# Grafana (adicione ao /etc/hosts primeiro)
+open http://grafana.local.nexo.app
+```
+
+## 📚 Documentação Completa
+
+📖 **[Acesse a Documentação](./documentation/README.md)**
+
+| Documento | Descrição |
+|-----------|-----------|
+| [Início Rápido](./documentation/01-quick-start.md) | Setup detalhado passo a passo |
+| [Configuração GitHub](./documentation/03-setup-github.md) | **Secrets e segurança** |
+| [Comandos Úteis](./documentation/12-commands.md) | Referência rápida |
+
+## 🔐 Segurança em Primeiro Lugar
+
+### ⚠️ NUNCA faça isso:
+
+```bash
+# ❌ Token no código
+./scripts/setup.sh ghp_123abc...
+
+# ❌ Token em commit
+git commit -m "add token ghp_..."
+```
+
+### ✅ SEMPRE faça assim:
+
+**Opção 1: Variável de Ambiente (Desenvolvimento Local)**
+
+```bash
+# Adicione ao ~/.zshrc ou ~/.bashrc
+export GITHUB_TOKEN=ghp_seu_token
+
+# Use sem passar o token
+cd local && make setup
+```
+
+**Opção 2: Arquivo .env (Recomendado)**
+
+```bash
+cp .env.template .env
+nano .env  # Adicione seu token
+export $(cat .env | xargs)
+cd local && make setup
+```
+
+**Opção 3: GitHub Secrets (CI/CD)**
+
+1. Acesse: https://github.com/geraldobl58/nexo/settings/secrets/actions
+2. Adicione secret `GHCR_TOKEN` com seu token
+3. Use no workflow: `${{ secrets.GHCR_TOKEN }}`
+
+## 📋 Stack Tecnológica
+
+| Componente | Tecnologia |
+|------------|-----------|
+| **Orquestração** | Kubernetes (K3D) |
+| **GitOps** | ArgoCD |
+| **Monitoring** | Prometheus + Grafana |
+| **Backend** | NestJS + PostgreSQL |
+| **Frontend** | Next.js |
+| **Auth** | Keycloak |
+| **CI/CD** | GitHub Actions |
+
+## 🎯 Arquitetura
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     GitHub Repository                        │
+│  (Source of Truth - GitOps)                                 │
+└────────────────┬────────────────────────────────────────────┘
+                 │
+                 ▼
+┌─────────────────────────────────────────────────────────────┐
+│                     GitHub Actions                           │
+│  • Build Docker Images                                       │
+│  • Push to GHCR (ghcr.io)                                   │
+│  • Update Helm values                                        │
+└────────────────┬────────────────────────────────────────────┘
+                 │
+                 ▼
+┌─────────────────────────────────────────────────────────────┐
+│                        ArgoCD                                │
+│  • Auto-sync from Git                                        │
+│  • Deploy to K3D                                             │
+│  • Manage 4 environments                                     │
+└────────────────┬────────────────────────────────────────────┘
+                 │
+        ┌────────┼────────┬────────┐
+        ▼        ▼        ▼        ▼
+    develop    qa    staging    prod
+    (3 apps) (3 apps) (3 apps) (3 apps)
+```
+
+## 🛠️ Comandos Principais
+
+```bash
+# Setup completo
+cd local && make setup
+
+# Ver status
+make status
+
+# Ver logs
+make logs-be      # Backend
+make logs-fe      # Frontend  
+make logs-auth    # Keycloak
+
+# Sync ArgoCD
+make argocd-sync
+
+# Destruir ambiente
+make destroy
+```
+
+## 🌐 Ambientes
+
+# Executar manualmente
+
+~/Development/fullstack/nexo/local/scripts/startup-k3d.sh
+
 <div align="center">
 
 **Plataforma SaaS de Produção | GitOps | K3D Kubernetes**
