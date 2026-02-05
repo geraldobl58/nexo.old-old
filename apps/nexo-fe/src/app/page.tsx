@@ -1,7 +1,7 @@
 const HomePage = () => {
   return (
     <>
-      <div>Deploy funcionando show de bola - Version 21 🚀</div>
+      <div>Deploy funcionando show de bola - Version 22 🚀</div>
     </>
   );
 };
