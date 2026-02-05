@@ -6,9 +6,11 @@ const createdFiles = danger.git.created_files;
 const deletedFiles = danger.git.deleted_files;
 const allFiles = [...modifiedFiles, ...createdFiles];
 
-// ============================================================================
-// 1. TAMANHO DO PR
-// ============================================================================
+// Função async principal para permitir uso de await
+async function runChecks() {
+  // ============================================================================
+  // 1. TAMANHO DO PR
+  // ============================================================================
 const totalChanges = pr.additions + pr.deletions;
 
 if (totalChanges > 1000) {
@@ -238,3 +240,7 @@ ${allFiles.filter((f) => f.startsWith("apps/nexo-be/")).length > 0 ? `- ⚙️ B
 ${tsFiles.length > 0 ? `- 📘 TypeScript: ${tsFiles.length}` : ""}
 ${hasTestChanges ? `- 🧪 Testes: Sim ✅` : `- 🧪 Testes: Não ⚠️`}
 `);
+}
+
+// Executar as verificações
+runChecks();
