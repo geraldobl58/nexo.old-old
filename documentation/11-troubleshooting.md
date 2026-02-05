@@ -18,10 +18,12 @@ Guia completo de resolução de problemas comuns no ambiente Nexo.
 ### 1. Cluster K3D não inicia
 
 **Sintomas:**
+
 - `k3d cluster list` não mostra cluster
 - `kubectl get nodes` retorna erro de conexão
 
 **Diagnóstico:**
+
 ```bash
 # Ver clusters
 k3d cluster list
@@ -52,6 +54,7 @@ docker system prune -a  # limpar recursos
 ```
 
 **Prevenção:**
+
 - Sempre usar `make destroy` antes de desligar
 - Garantir recursos suficientes (RAM, CPU)
 - Manter Docker atualizado
@@ -61,10 +64,12 @@ docker system prune -a  # limpar recursos
 ### 2. Pods em CrashLoopBackOff
 
 **Sintomas:**
+
 - Pod reinicia constantemente
 - Status: `CrashLoopBackOff`
 
 **Diagnóstico:**
+
 ```bash
 # Ver pods
 kubectl get pods -n nexo-develop
@@ -96,6 +101,7 @@ kubectl logs nexo-be-xxx-yyy -n nexo-develop -f
 ```
 
 **Solução:**
+
 ```bash
 # Corrigir código/config
 # Rebuild imagem
@@ -117,13 +123,14 @@ curl http://localhost:3333/health
 ```
 
 **Solução:**
+
 ```yaml
 # Ajustar probes no values.yaml
 livenessProbe:
-  initialDelaySeconds: 60  # Aumentar delay
+  initialDelaySeconds: 60 # Aumentar delay
   periodSeconds: 10
   timeoutSeconds: 5
-  failureThreshold: 5       # Aumentar tolerância
+  failureThreshold: 5 # Aumentar tolerância
 ```
 
 #### C. Recursos insuficientes
@@ -138,12 +145,13 @@ kubectl describe pod <pod-name> -n nexo-develop | grep -A5 "Limits\|Requests"
 ```
 
 **Solução:**
+
 ```yaml
 # Aumentar resources no values.yaml
 resources:
   limits:
-    cpu: 500m      # Aumentar
-    memory: 512Mi  # Aumentar
+    cpu: 500m # Aumentar
+    memory: 512Mi # Aumentar
   requests:
     cpu: 200m
     memory: 256Mi
@@ -154,11 +162,13 @@ resources:
 ### 3. ArgoCD não sincroniza
 
 **Sintomas:**
+
 - App stuck em `OutOfSync`
 - Sync manual falha
 - App não detecta mudanças no Git
 
 **Diagnóstico:**
+
 ```bash
 # Ver status da app
 argocd app get nexo-be-develop
@@ -184,6 +194,7 @@ argocd app manifests nexo-be-develop
 ```
 
 **Solução:**
+
 ```bash
 # Corrigir template
 # Validar sintaxe
@@ -218,6 +229,7 @@ argocd app set nexo-be-develop --sync-policy automated
 ```
 
 **Hard Refresh:**
+
 ```bash
 # Força refresh completo
 argocd app get nexo-be-develop --hard-refresh
@@ -232,10 +244,12 @@ kubectl apply -f local/argocd/apps/nexo-develop.yaml
 ### 4. Imagem não atualiza
 
 **Sintomas:**
+
 - Pod usa imagem antiga
 - Build novo não aparece no cluster
 
 **Diagnóstico:**
+
 ```bash
 # Ver imagem do pod
 kubectl get pod <pod-name> -n nexo-develop \
@@ -271,6 +285,7 @@ kubectl describe secret ghcr-secret -n nexo-develop
 ```
 
 **Recriar secret:**
+
 ```bash
 kubectl delete secret ghcr-secret -n nexo-develop
 
@@ -286,11 +301,13 @@ kubectl create secret docker-registry ghcr-secret \
 ### 5. Ingress não funciona
 
 **Sintomas:**
+
 - URL não resolve
 - `curl` retorna timeout
 - Browser mostra "can't reach"
 
 **Diagnóstico:**
+
 ```bash
 # Ver ingresses
 kubectl get ingress -n nexo-develop
@@ -348,10 +365,12 @@ helm install ingress-nginx ingress-nginx/ingress-nginx \
 ### 6. Database connection failed
 
 **Sintomas:**
+
 - App não conecta no PostgreSQL
 - Erro: "connection refused"
 
 **Diagnóstico:**
+
 ```bash
 # Ver pods postgres
 kubectl get pods -n nexo-develop | grep postgres
@@ -389,11 +408,13 @@ kubectl delete pod <postgres-pod> -n nexo-develop
 ### 7. GitHub Actions falham
 
 **Sintomas:**
+
 - Workflow com status "failed"
 - Build não completa
 - Push de imagem falha
 
 **Diagnóstico:**
+
 ```bash
 # Ver runs
 gh run list
@@ -456,11 +477,13 @@ gh run view <run-id>
 ### 8. Prometheus não coleta métricas
 
 **Sintomas:**
+
 - Grafana sem dados
 - Queries vazias
 - Targets down
 
 **Diagnóstico:**
+
 ```bash
 # Ver targets
 open http://prometheus.local.nexo.app/targets
@@ -506,11 +529,13 @@ EOF
 ### 9. Disk full no cluster
 
 **Sintomas:**
+
 - Pods não iniciam
 - `docker pull` falha
 - Erro: "no space left on device"
 
 **Diagnóstico:**
+
 ```bash
 # Ver uso de disco
 docker system df
@@ -770,7 +795,7 @@ resources:
 
 ```typescript
 // Usar logger estruturado
-logger.info('User created', {
+logger.info("User created", {
   userId: user.id,
   email: user.email,
   timestamp: new Date(),

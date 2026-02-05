@@ -5,6 +5,7 @@ Guia completo sobre o pipeline de Integração Contínua e Entrega Contínua no 
 ## 🎯 Visão Geral
 
 Pipeline automatizado que:
+
 - ✅ Valida código (lint, test, build)
 - 📦 Build e push de imagens Docker
 - 🔄 Deploy automático via ArgoCD
@@ -31,23 +32,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          
+          node-version: "20"
+
       - name: Install pnpm
         uses: pnpm/action-setup@v2
         with:
           version: 8
-          
+
       - name: Install dependencies
         run: pnpm install
-        
+
       - name: Lint
         run: pnpm lint
-        
+
       - name: Format check
         run: pnpm format:check
 
@@ -56,23 +57,23 @@ jobs:
     needs: lint
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          
+          node-version: "20"
+
       - name: Install pnpm
         uses: pnpm/action-setup@v2
         with:
           version: 8
-          
+
       - name: Install dependencies
         run: pnpm install
-        
+
       - name: Run tests
         run: pnpm test
-        
+
       - name: Upload coverage
         uses: codecov/codecov-action@v3
         with:
@@ -86,7 +87,7 @@ jobs:
         app: [nexo-be, nexo-fe, nexo-auth]
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Build ${{ matrix.app }}
         run: |
           docker build \
@@ -96,6 +97,7 @@ jobs:
 ```
 
 **Etapas:**
+
 1. ✅ Lint (ESLint, Prettier)
 2. ✅ Tests (Unit + Integration)
 3. ✅ Build (Docker images)
@@ -205,6 +207,7 @@ jobs:
 ```
 
 **Etapas:**
+
 1. 🔨 Build de imagens Docker
 2. 📦 Push para GHCR
 3. 📝 Update de manifests Helm
@@ -223,7 +226,7 @@ name: Release
 on:
   push:
     tags:
-      - 'v*.*.*'
+      - "v*.*.*"
 
 jobs:
   release:
@@ -283,7 +286,7 @@ on:
   workflow_dispatch:
     inputs:
       from:
-        description: 'Source environment'
+        description: "Source environment"
         required: true
         type: choice
         options:
@@ -291,7 +294,7 @@ on:
           - qa
           - staging
       to:
-        description: 'Target environment'
+        description: "Target environment"
         required: true
         type: choice
         options:
@@ -313,7 +316,7 @@ jobs:
           BE_TAG=$(yq e '.image.tag' local/helm/nexo-be/values-${{ inputs.from }}.yaml)
           FE_TAG=$(yq e '.image.tag' local/helm/nexo-fe/values-${{ inputs.from }}.yaml)
           AUTH_TAG=$(yq e '.image.tag' local/helm/nexo-auth/values-${{ inputs.from }}.yaml)
-          
+
           echo "be_tag=$BE_TAG" >> $GITHUB_OUTPUT
           echo "fe_tag=$FE_TAG" >> $GITHUB_OUTPUT
           echo "auth_tag=$AUTH_TAG" >> $GITHUB_OUTPUT
@@ -366,7 +369,8 @@ Configurados em: `Settings > Secrets and variables > Actions`
 ### Secrets
 
 ```bash
-GHCR_TOKEN          # Token para push de imagens (packages: write)
+GITHUB_TOKEN        # Token automático (fornecido pelo GitHub Actions)
+DISCORD_WEBHOOK     # Webhook para notificações (opcional)
 GH_TOKEN            # Token para commits/PRs (repo, workflow)
 DISCORD_WEBHOOK     # Webhook para notificações
 ```
@@ -458,13 +462,13 @@ Tag v1.0.0
 
 ```typescript
 // apps/nexo-be/src/users/users.service.spec.ts
-describe('UsersService', () => {
-  it('should create user', async () => {
+describe("UsersService", () => {
+  it("should create user", async () => {
     const user = await service.create({
-      email: 'test@example.com',
-      name: 'Test User',
+      email: "test@example.com",
+      name: "Test User",
     });
-    expect(user.email).toBe('test@example.com');
+    expect(user.email).toBe("test@example.com");
   });
 });
 ```
@@ -473,13 +477,13 @@ describe('UsersService', () => {
 
 ```typescript
 // apps/nexo-be/test/app.e2e-spec.ts
-describe('AppController (e2e)', () => {
-  it('/health (GET)', () => {
+describe("AppController (e2e)", () => {
+  it("/health (GET)", () => {
     return request(app.getHttpServer())
-      .get('/health')
+      .get("/health")
       .expect(200)
       .expect((res) => {
-        expect(res.body.status).toBe('ok');
+        expect(res.body.status).toBe("ok");
       });
   });
 });
@@ -489,14 +493,14 @@ describe('AppController (e2e)', () => {
 
 ```typescript
 // apps/nexo-fe/tests/login.spec.ts
-test('user can login', async ({ page }) => {
-  await page.goto('http://nexo.local/login');
-  
-  await page.fill('[name="email"]', 'test@example.com');
-  await page.fill('[name="password"]', 'password');
+test("user can login", async ({ page }) => {
+  await page.goto("http://nexo.local/login");
+
+  await page.fill('[name="email"]', "test@example.com");
+  await page.fill('[name="password"]', "password");
   await page.click('button[type="submit"]');
-  
-  await expect(page).toHaveURL('http://nexo.local/dashboard');
+
+  await expect(page).toHaveURL("http://nexo.local/dashboard");
 });
 ```
 
@@ -552,6 +556,7 @@ https://github.com/geraldobl58/nexo/actions
 ```
 
 **Visualizar:**
+
 - ✅ Status de workflows
 - ⏱️ Tempo de execução
 - 📝 Logs detalhados
@@ -574,6 +579,7 @@ http://localhost:30080
 ```
 
 **Monitorar:**
+
 - 🔄 Sync status
 - ✅ Health status
 - 📊 Resource state

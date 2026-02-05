@@ -42,14 +42,17 @@ Documentação completa das APIs, endpoints e serviços do projeto Nexo.
 ### Health & Metrics
 
 #### GET /health
+
 Status da aplicação
 
 **Request:**
+
 ```bash
 curl http://api.nexo.local/health
 ```
 
 **Response:**
+
 ```json
 {
   "status": "ok",
@@ -76,14 +79,17 @@ curl http://api.nexo.local/health
 ```
 
 #### GET /metrics
+
 Métricas Prometheus
 
 **Request:**
+
 ```bash
 curl http://api.nexo.local/metrics
 ```
 
 **Response:**
+
 ```
 # HELP http_requests_total Total HTTP requests
 # TYPE http_requests_total counter
@@ -101,25 +107,30 @@ Base: `/api/v1`
 #### Users
 
 ##### GET /api/v1/users
+
 Lista todos os usuários
 
 **Headers:**
+
 ```
 Authorization: Bearer <token>
 ```
 
 **Query Params:**
+
 - `page` (number) - Página (default: 1)
 - `limit` (number) - Items por página (default: 10)
 - `search` (string) - Busca por nome/email
 
 **Request:**
+
 ```bash
 curl -H "Authorization: Bearer $TOKEN" \
   "http://api.nexo.local/api/v1/users?page=1&limit=10&search=john"
 ```
 
 **Response:**
+
 ```json
 {
   "data": [
@@ -142,15 +153,18 @@ curl -H "Authorization: Bearer $TOKEN" \
 ```
 
 ##### GET /api/v1/users/:id
+
 Busca usuário por ID
 
 **Request:**
+
 ```bash
 curl -H "Authorization: Bearer $TOKEN" \
   http://api.nexo.local/api/v1/users/uuid-123
 ```
 
 **Response:**
+
 ```json
 {
   "id": "uuid-123",
@@ -167,9 +181,11 @@ curl -H "Authorization: Bearer $TOKEN" \
 ```
 
 ##### POST /api/v1/users
+
 Cria novo usuário
 
 **Request:**
+
 ```bash
 curl -X POST \
   -H "Authorization: Bearer $TOKEN" \
@@ -183,6 +199,7 @@ curl -X POST \
 ```
 
 **Response:**
+
 ```json
 {
   "id": "uuid-456",
@@ -194,9 +211,11 @@ curl -X POST \
 ```
 
 ##### PATCH /api/v1/users/:id
+
 Atualiza usuário
 
 **Request:**
+
 ```bash
 curl -X PATCH \
   -H "Authorization: Bearer $TOKEN" \
@@ -211,6 +230,7 @@ curl -X PATCH \
 ```
 
 **Response:**
+
 ```json
 {
   "id": "uuid-456",
@@ -224,9 +244,11 @@ curl -X PATCH \
 ```
 
 ##### DELETE /api/v1/users/:id
+
 Remove usuário
 
 **Request:**
+
 ```bash
 curl -X DELETE \
   -H "Authorization: Bearer $TOKEN" \
@@ -234,6 +256,7 @@ curl -X DELETE \
 ```
 
 **Response:**
+
 ```
 204 No Content
 ```
@@ -241,9 +264,11 @@ curl -X DELETE \
 #### Auth
 
 ##### POST /api/v1/auth/login
+
 Login com email/senha
 
 **Request:**
+
 ```bash
 curl -X POST \
   -H "Content-Type: application/json" \
@@ -255,6 +280,7 @@ curl -X POST \
 ```
 
 **Response:**
+
 ```json
 {
   "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
@@ -270,9 +296,11 @@ curl -X POST \
 ```
 
 ##### POST /api/v1/auth/refresh
+
 Renova access token
 
 **Request:**
+
 ```bash
 curl -X POST \
   -H "Content-Type: application/json" \
@@ -283,6 +311,7 @@ curl -X POST \
 ```
 
 **Response:**
+
 ```json
 {
   "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
@@ -291,9 +320,11 @@ curl -X POST \
 ```
 
 ##### POST /api/v1/auth/logout
+
 Logout (invalida tokens)
 
 **Request:**
+
 ```bash
 curl -X POST \
   -H "Authorization: Bearer $TOKEN" \
@@ -301,6 +332,7 @@ curl -X POST \
 ```
 
 **Response:**
+
 ```json
 {
   "message": "Logout successful"
@@ -326,6 +358,7 @@ Todas as APIs retornam erros no formato padrão:
 ```
 
 **Status Codes:**
+
 - `200` - OK
 - `201` - Created
 - `204` - No Content
@@ -346,26 +379,33 @@ Todas as APIs retornam erros no formato padrão:
 ### Pages
 
 #### / (Home)
+
 Landing page
 
 #### /dashboard
+
 Dashboard principal (auth required)
 
 #### /login
+
 Página de login
 
 #### /register
+
 Página de registro
 
 #### /users
+
 Lista de usuários (auth + role admin required)
 
 ### API Routes
 
 #### GET /api/health
+
 Health check do frontend
 
 **Response:**
+
 ```json
 {
   "status": "ok",
@@ -389,6 +429,7 @@ NEXT_PUBLIC_WS_URL=ws://api.nexo.local
 **Base URL:** `http://auth.nexo.local`
 
 ### Admin Console
+
 ```
 URL: http://auth.nexo.local/admin
 User: admin
@@ -400,10 +441,12 @@ Pass: admin
 #### nexo (Realm principal)
 
 **Clients:**
+
 - `nexo-fe` - Frontend (public client)
 - `nexo-be` - Backend (confidential client)
 
 **Roles:**
+
 - `admin` - Administrador
 - `user` - Usuário comum
 - `moderator` - Moderador
@@ -413,6 +456,7 @@ Pass: admin
 #### Authorization Code Flow
 
 1. **Authorize:**
+
 ```
 GET http://auth.nexo.local/realms/nexo/protocol/openid-connect/auth
   ?client_id=nexo-fe
@@ -422,6 +466,7 @@ GET http://auth.nexo.local/realms/nexo/protocol/openid-connect/auth
 ```
 
 2. **Token Exchange:**
+
 ```bash
 curl -X POST \
   -H "Content-Type: application/x-www-form-urlencoded" \
@@ -434,6 +479,7 @@ curl -X POST \
 ```
 
 **Response:**
+
 ```json
 {
   "access_token": "eyJhbGc...",
@@ -465,6 +511,7 @@ curl -H "Authorization: Bearer $TOKEN" \
 ```
 
 **Response:**
+
 ```json
 {
   "sub": "uuid-123",
@@ -483,6 +530,7 @@ curl -H "Authorization: Bearer $TOKEN" \
 ### PostgreSQL
 
 **Conexão:**
+
 ```
 Host: postgres.nexo-develop.svc.cluster.local
 Port: 5432
@@ -492,6 +540,7 @@ Password: [via secret]
 ```
 
 **Connection String:**
+
 ```
 DATABASE_URL="postgresql://nexo:password@postgres:5432/nexo?schema=public"
 ```
@@ -499,6 +548,7 @@ DATABASE_URL="postgresql://nexo:password@postgres:5432/nexo?schema=public"
 ### Prisma
 
 **Schema:**
+
 ```prisma
 // schema.prisma
 generator client {
@@ -530,6 +580,7 @@ enum Role {
 ```
 
 **Comandos:**
+
 ```bash
 # Generate client
 pnpm prisma generate
@@ -658,25 +709,25 @@ Importar collection:
 
 ```javascript
 // load-test.js
-import http from 'k6/http';
-import { check, sleep } from 'k6';
+import http from "k6/http";
+import { check, sleep } from "k6";
 
 export const options = {
   stages: [
-    { duration: '30s', target: 20 },
-    { duration: '1m', target: 20 },
-    { duration: '30s', target: 0 },
+    { duration: "30s", target: 20 },
+    { duration: "1m", target: 20 },
+    { duration: "30s", target: 0 },
   ],
 };
 
 export default function () {
-  const res = http.get('http://api.nexo.local/health');
-  
+  const res = http.get("http://api.nexo.local/health");
+
   check(res, {
-    'status is 200': (r) => r.status === 200,
-    'response time < 200ms': (r) => r.timings.duration < 200,
+    "status is 200": (r) => r.status === 200,
+    "response time < 200ms": (r) => r.timings.duration < 200,
   });
-  
+
   sleep(1);
 }
 ```
@@ -705,9 +756,9 @@ async findAll() {
 ```typescript
 // main.ts
 app.enableCors({
-  origin: ['http://nexo.local', 'http://nexo-dev.local'],
+  origin: ["http://nexo.local", "http://nexo-dev.local"],
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
 });
 ```
 
@@ -727,17 +778,17 @@ X-API-Key: sk_live_...
 
 ```typescript
 // Backend
-import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { SwaggerModule, DocumentBuilder } from "@nestjs/swagger";
 
 const config = new DocumentBuilder()
-  .setTitle('Nexo API')
-  .setDescription('API documentation')
-  .setVersion('1.0')
+  .setTitle("Nexo API")
+  .setDescription("API documentation")
+  .setVersion("1.0")
   .addBearerAuth()
   .build();
 
 const document = SwaggerModule.createDocument(app, config);
-SwaggerModule.setup('docs', app, document);
+SwaggerModule.setup("docs", app, document);
 ```
 
 ### Acessar Docs
@@ -752,24 +803,24 @@ http://api.nexo.local/docs
 
 ```typescript
 // nexo-client.ts
-import axios from 'axios';
+import axios from "axios";
 
 export class NexoClient {
   private api = axios.create({
-    baseURL: 'http://api.nexo.local',
+    baseURL: "http://api.nexo.local",
   });
 
   setAuth(token: string) {
-    this.api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    this.api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
   }
 
   async getUsers() {
-    const { data } = await this.api.get('/api/v1/users');
+    const { data } = await this.api.get("/api/v1/users");
     return data;
   }
 
   async createUser(user: CreateUserDto) {
-    const { data } = await this.api.post('/api/v1/users', user);
+    const { data } = await this.api.post("/api/v1/users", user);
     return data;
   }
 }
