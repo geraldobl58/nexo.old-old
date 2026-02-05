@@ -66,6 +66,8 @@ concurrency:
 permissions:
   contents: write
   packages: write
+  pull-requests: write  # Necessário para Danger.js comentar em PRs
+  issues: write         # Necessário para Danger.js
 
 jobs:
   # ==========================================================================
@@ -95,7 +97,7 @@ jobs:
         working-directory: apps/nexo-fe
         run: npx danger ci
         env:
-          GITHUB_TOKEN: ${{ secrets.GHCR_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: CodeRabbit Summary
         run: |
