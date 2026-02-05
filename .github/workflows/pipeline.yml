@@ -95,7 +95,7 @@ jobs:
         working-directory: apps/nexo-fe
         run: npx danger ci
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GHCR_TOKEN }}
 
       - name: CodeRabbit Summary
         run: |
