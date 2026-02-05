@@ -367,20 +367,55 @@ networks:
     name: nexo-dev-network
 
 # ==========================================
-# Volumes
+# Volumes - Mapeados para SSD Externo
 # ==========================================
 volumes:
   postgres-data-dev:
     name: nexo-postgres-data-dev
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /Volumes/Backup/DockerSSD/nexo-dev/postgres
   redis-data-dev:
     name: nexo-redis-data-dev
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /Volumes/Backup/DockerSSD/nexo-dev/redis
   keycloak-data-dev:
     name: nexo-keycloak-data-dev
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /Volumes/Backup/DockerSSD/nexo-dev/keycloak
   api-uploads-dev:
     name: nexo-api-uploads-dev
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /Volumes/Backup/DockerSSD/nexo-dev/api-uploads
   prometheus-data-dev:
     name: nexo-prometheus-data-dev
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /Volumes/Backup/DockerSSD/nexo-dev/prometheus
   grafana-data-dev:
     name: nexo-grafana-data-dev
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /Volumes/Backup/DockerSSD/nexo-dev/grafana
   loki-data-dev:
     name: nexo-loki-data-dev
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /Volumes/Backup/DockerSSD/nexo-dev/loki

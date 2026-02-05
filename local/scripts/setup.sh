@@ -23,6 +23,10 @@ PROJECT_ROOT="$(dirname "$LOCAL_DIR")"
 CLUSTER_NAME="nexo-local"
 K3D_CONFIG="$LOCAL_DIR/k3d/config.yaml"
 
+# GitHub Container Registry (será sobrescrito se .env existir)
+GITHUB_USERNAME="${GITHUB_USERNAME:-geraldobl58}"
+GITHUB_TOKEN="${GITHUB_TOKEN:-}"
+
 # ============================================================================
 # Funções de utilidade
 # ============================================================================
@@ -43,37 +47,138 @@ log_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
+# Carregar variáveis do .env se existir (após definir funções de log)
+if [ -f "$PROJECT_ROOT/.env" ]; then
+    log_info "Carregando variáveis de ambiente do .env..."
+    export $(grep -v '^#' "$PROJECT_ROOT/.env" | grep -v '^$' | xargs)
+    GITHUB_USERNAME="${GITHUB_USERNAME:-geraldobl58}"
+    GITHUB_TOKEN="${GITHUB_TOKEN:-}"
+fi
+
 check_dependencies() {
-    log_info "Verificando dependências..."
+    log_info "Verificando e instalando dependências..."
     
-    local missing=()
-    
+    # Verificar Docker (obrigatório - não pode instalar automaticamente)
     if ! command -v docker &> /dev/null; then
-        missing+=("docker")
-    fi
-    
-    if ! command -v k3d &> /dev/null; then
-        missing+=("k3d")
-    fi
-    
-    if ! command -v kubectl &> /dev/null; then
-        missing+=("kubectl")
-    fi
-    
-    if ! command -v helm &> /dev/null; then
-        missing+=("helm")
-    fi
-    
-    if [ ${#missing[@]} -ne 0 ]; then
-        log_error "Dependências faltando: ${missing[*]}"
+        log_error "Docker não encontrado!"
         echo ""
-        echo "Instale com:"
-        echo "  brew install k3d kubectl helm"
+        echo "  Docker Desktop é obrigatório para K3D."
+        echo "  Download: https://www.docker.com/products/docker-desktop"
         echo ""
         exit 1
     fi
     
-    log_success "Todas as dependências instaladas"
+    # Verificar/Instalar Homebrew (se no macOS)
+    if [[ "$OSTYPE" == "darwin"* ]] && ! command -v brew &> /dev/null; then
+        log_warn "Homebrew não encontrado. Instalando..."
+        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    fi
+    
+    # Instalar k3d se necessário
+    if ! command -v k3d &> /dev/null; then
+        log_warn "k3d não encontrado. Instalando..."
+        if command -v brew &> /dev/null; then
+            brew install k3d
+        else
+            curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
+        fi
+    fi
+    
+    # Instalar kubectl se necessário
+    if ! command -v kubectl &> /dev/null; then
+        log_warn "kubectl não encontrado. Instalando..."
+        if command -v brew &> /dev/null; then
+            brew install kubectl
+        else
+            log_error "kubectl não encontrado. Instale manualmente: https://kubernetes.io/docs/tasks/tools/"
+            exit 1
+        fi
+    fi
+    
+    # Instalar helm se necessário
+    if ! command -v helm &> /dev/null; then
+        log_warn "Helm não encontrado. Instalando..."
+        if command -v brew &> /dev/null; then
+            brew install helm
+        else
+            curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+        fi
+        log_success "Helm instalado"
+    fi
+    
+    # Configurar repositórios Helm
+    log_info "Configurando repositórios Helm..."
+    helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx 2>/dev/null || true
+    helm repo add prometheus-community https://prometheus-community.github.io/helm-charts 2>/dev/null || true
+    helm repo add argo https://argoproj.github.io/argo-helm 2>/dev/null || true
+    helm repo update >/dev/null 2>&1
+    
+    log_success "Todas as dependências instaladas e configuradas"
+}
+
+# ============================================================================
+# Configurar SSD Externo para Volumes Docker
+# ============================================================================
+
+setup_ssd_volumes() {
+    log_info "Verificando configuração de SSD externo..."
+    
+    local SSD_PATH="/Volumes/Backup/DockerSSD"
+    local NEXO_PATH="$SSD_PATH/nexo"
+    local NEXO_DEV_PATH="$SSD_PATH/nexo-dev"
+    
+    # Verificar se o SSD está montado
+    if [ ! -d "$SSD_PATH" ]; then
+        log_warn "SSD não encontrado em $SSD_PATH"
+        echo ""
+        echo "  Os volumes Docker serão criados no disco interno."
+        echo "  Para usar o SSD externo:"
+        echo "    1. Conecte o SSD em /Volumes/Backup/DockerSSD"
+        echo "    2. Execute este script novamente"
+        echo ""
+        read -p "Continuar sem SSD? (y/N) " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            log_error "Setup cancelado. Conecte o SSD e tente novamente."
+            exit 1
+        fi
+        return 0
+    fi
+    
+    log_success "SSD encontrado em $SSD_PATH"
+    
+    # Criar estrutura de diretórios
+    log_info "Criando estrutura de diretórios no SSD..."
+    
+    # Nexo (produção)
+    mkdir -p "$NEXO_PATH/postgres"
+    mkdir -p "$NEXO_PATH/keycloak"
+    
+    # Nexo Dev
+    mkdir -p "$NEXO_DEV_PATH/postgres"
+    mkdir -p "$NEXO_DEV_PATH/redis"
+    mkdir -p "$NEXO_DEV_PATH/keycloak"
+    mkdir -p "$NEXO_DEV_PATH/api-uploads"
+    mkdir -p "$NEXO_DEV_PATH/prometheus"
+    mkdir -p "$NEXO_DEV_PATH/grafana"
+    mkdir -p "$NEXO_DEV_PATH/loki"
+    
+    # Ajustar permissões
+    log_info "Ajustando permissões..."
+    chmod -R 777 "$NEXO_PATH"/* 2>/dev/null || true
+    chmod -R 777 "$NEXO_DEV_PATH"/* 2>/dev/null || true
+    
+    log_success "Estrutura de volumes SSD configurada!"
+    echo ""
+    echo "  📁 Volumes mapeados para:"
+    echo "    • Produção: $NEXO_PATH"
+    echo "    • Dev: $NEXO_DEV_PATH"
+    echo ""
+    
+    # Verificar espaço disponível
+    local available_space=$(df -h "$SSD_PATH" | tail -1 | awk '{print $4}')
+    log_info "Espaço disponível no SSD: $available_space"
+    echo ""
 }
 
 # ============================================================================
@@ -88,15 +193,16 @@ create_cluster() {
     
     # Verificar se cluster já existe
     if k3d cluster list | grep -q "$CLUSTER_NAME"; then
-        log_warn "Cluster '$CLUSTER_NAME' já existe"
-        read -p "Deseja recriar? (y/N) " -n 1 -r
-        echo
-        if [[ $REPLY =~ ^[Yy]$ ]]; then
-            k3d cluster delete "$CLUSTER_NAME"
-        else
-            log_info "Usando cluster existente"
-            return 0
-        fi
+        log_success "Cluster '$CLUSTER_NAME' já existe, continuando..."
+        
+        # Garantir que o cluster está rodando
+        k3d cluster start "$CLUSTER_NAME" 2>/dev/null || true
+        
+        # Aguardar nodes ficarem prontos
+        log_info "Aguardando nodes ficarem prontos..."
+        kubectl wait --for=condition=Ready nodes --all --timeout=60s 2>/dev/null || true
+        
+        return 0
     fi
     
     # Criar cluster
@@ -116,9 +222,7 @@ create_cluster() {
 install_ingress() {
     log_info "Instalando NGINX Ingress Controller..."
     
-    helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx 2>/dev/null || true
-    helm repo update
-    
+    # Repositório já foi configurado em check_dependencies()
     helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx \
         --namespace ingress-nginx \
         --create-namespace \
@@ -137,7 +241,7 @@ install_ingress() {
 create_namespaces() {
     log_info "Criando namespaces..."
     
-    local namespaces=("nexo-develop" "argocd" "monitoring")
+    local namespaces=("nexo-develop" "nexo-qa" "nexo-staging" "nexo-prod" "argocd" "monitoring")
     
     for ns in "${namespaces[@]}"; do
         kubectl create namespace "$ns" --dry-run=client -o yaml | kubectl apply -f -
@@ -152,18 +256,39 @@ create_namespaces() {
 install_argocd() {
     log_info "Instalando ArgoCD..."
     
-    # Instalar ArgoCD
-    kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+    # Verificar se já está instalado
+    if kubectl get deployment argocd-server -n argocd &>/dev/null; then
+        log_success "ArgoCD já instalado, pulando..."
+        
+        # Garantir que NodePort existe
+        if ! kubectl get svc argocd-server-nodeport -n argocd &>/dev/null; then
+            log_info "Aplicando NodePort do ArgoCD..."
+            kubectl apply -f "$LOCAL_DIR/argocd/nodeport.yaml"
+        fi
+        
+        return 0
+    fi
+    
+    # Instalar ArgoCD (ignorar erros de CRD com anotações longas)
+    log_info "Aplicando manifests do ArgoCD..."
+    kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml 2>&1 | grep -v "Too long: must have at most" || true
     
     # Aguardar pods ficarem prontos
     log_info "Aguardando ArgoCD ficar pronto..."
-    kubectl wait --for=condition=Available deployment/argocd-server -n argocd --timeout=300s
+    sleep 15
     
-    # Criar NodePort service para acesso local
+    # Aguardar deployments principais
+    kubectl wait --for=condition=Available deployment/argocd-server -n argocd --timeout=300s 2>/dev/null || true
+    kubectl wait --for=condition=Available deployment/argocd-repo-server -n argocd --timeout=300s 2>/dev/null || true
+    kubectl wait --for=condition=Available deployment/argocd-dex-server -n argocd --timeout=300s 2>/dev/null || true
+    
+    # Aplicar NodePort service para acesso local
+    log_info "Aplicando NodePort do ArgoCD..."
     kubectl apply -f "$LOCAL_DIR/argocd/nodeport.yaml"
     
     # Obter senha inicial
-    local argocd_password=$(kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d)
+    sleep 5
+    local argocd_password=$(kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d 2>/dev/null || echo "aguarde...")
     
     log_success "ArgoCD instalado!"
     echo ""
@@ -180,26 +305,70 @@ install_argocd() {
 install_observability() {
     log_info "Instalando stack de observabilidade..."
     
-    # Adicionar repositório Prometheus
-    helm repo add prometheus-community https://prometheus-community.github.io/helm-charts 2>/dev/null || true
-    helm repo update
+    # Verificar se já está instalado
+    if helm list -n monitoring | grep -q "kube-prometheus-stack"; then
+        log_success "kube-prometheus-stack já instalado, pulando..."
+        
+        # Garantir que Ingress existe
+        if [ -f "$LOCAL_DIR/observability/ingress.yaml" ]; then
+            kubectl apply -f "$LOCAL_DIR/observability/ingress.yaml" 2>/dev/null || true
+        fi
+        
+        return 0
+    fi
     
-    # Instalar kube-prometheus-stack (Prometheus + Grafana + Alertmanager)
-    helm upgrade --install monitoring prometheus-community/kube-prometheus-stack \
-        --namespace monitoring \
-        --values "$LOCAL_DIR/observability/values.yaml" \
-        --wait \
-        --timeout 10m
+    log_info "Instalando kube-prometheus-stack (pode levar alguns minutos)..."
     
-    # Obter senha do Grafana
-    local grafana_password=$(kubectl get secret --namespace monitoring monitoring-grafana -o jsonpath="{.data.admin-password}" | base64 --decode)
+    # Usar values.yaml se existir, senão usar configurações inline
+    if [ -f "$LOCAL_DIR/observability/values.yaml" ]; then
+        helm upgrade --install kube-prometheus-stack prometheus-community/kube-prometheus-stack \
+            --namespace monitoring \
+            --values "$LOCAL_DIR/observability/values.yaml" \
+            2>&1 | grep -v "context canceled" || true
+    else
+        helm upgrade --install kube-prometheus-stack prometheus-community/kube-prometheus-stack \
+            --namespace monitoring \
+            --set prometheus.prometheusSpec.serviceMonitorSelectorNilUsesHelmValues=false \
+            --set grafana.service.type=NodePort \
+            --set grafana.service.nodePort=30030 \
+            --set grafana.adminPassword=admin \
+            --set prometheus.service.type=NodePort \
+            --set prometheus.service.nodePort=30090 \
+            --set alertmanager.service.type=NodePort \
+            --set alertmanager.service.nodePort=30093 \
+            2>&1 | grep -v "context canceled" || true
+    fi
     
     log_success "Stack de observabilidade instalada!"
+    
+    # Aplicar Ingress do observability
+    if [ -f "$LOCAL_DIR/observability/ingress.yaml" ]; then
+        log_info "Aplicando Ingress do observability..."
+        kubectl apply -f "$LOCAL_DIR/observability/ingress.yaml" 2>/dev/null || true
+        log_success "Ingress aplicado"
+    fi
+    
     echo ""
-    echo "  📊 Grafana:      http://localhost:30030  (admin / $grafana_password)"
-    echo "  📈 Prometheus:   http://localhost:30090"
-    echo "  🔔 Alertmanager: http://localhost:30093"
+    echo "  📊 Grafana:      http://grafana.local.nexo.app"
+    echo "  📈 Prometheus:   http://prometheus.local.nexo.app"
+    echo "  🔔 Alertmanager: http://alertmanager.local.nexo.app"
     echo ""
+    
+    # Aplicar dashboards customizados se existirem
+    if [ -d "$LOCAL_DIR/observability/dashboards" ] && [ -n "$(ls -A $LOCAL_DIR/observability/dashboards 2>/dev/null)" ]; then
+        log_info "Aplicando dashboards customizados..."
+        kubectl create configmap nexo-dashboards \
+            --from-file="$LOCAL_DIR/observability/dashboards" \
+            --namespace monitoring \
+            --dry-run=client -o yaml | kubectl apply -f - 2>/dev/null || true
+        
+        kubectl label configmap nexo-dashboards \
+            grafana_dashboard=1 \
+            --namespace monitoring \
+            --overwrite 2>/dev/null || true
+        
+        log_success "Dashboards aplicados"
+    fi
 }
 
 # ============================================================================
@@ -227,12 +396,70 @@ verify_local_registry() {
 }
 
 # ============================================================================
-# Configurar Secret do Registry (não necessário para registry local)
+# Configurar Secret do Registry (GHCR)
 # ============================================================================
 
 setup_registry_secret() {
-    log_info "Registry local não requer secrets de autenticação"
-    log_success "Configuração do registry completa"
+    log_info "Configurando secrets do GitHub Container Registry..."
+    
+    local namespaces=("nexo-develop" "nexo-qa" "nexo-staging" "nexo-prod")
+    local github_token="$GITHUB_TOKEN"
+    local github_username="$GITHUB_USERNAME"
+    
+    # Se o token não foi fornecido via variável de ambiente, solicitar
+    if [ -z "$github_token" ]; then
+        log_warn "GitHub Token não encontrado"
+        echo ""
+        echo "  ⚠️  Token não foi carregado do .env"
+        echo ""
+        echo "  📝 Como configurar:"
+        echo "     1. Copie o template: cp .env.template .env"
+        echo "     2. Edite o .env e adicione seu token"
+        echo "     3. Execute o setup novamente"
+        echo ""
+        echo "  OU forneça manualmente agora:"
+        echo ""
+        read -p "Digite seu GitHub username [$github_username]: " input_username
+        github_username="${input_username:-$github_username}"
+        
+        read -sp "Digite seu GitHub Token (ghp_...): " github_token
+        echo ""
+        
+        if [ -z "$github_token" ]; then
+            log_error "Token não fornecido. As aplicações podem falhar ao baixar imagens."
+            return 1
+        fi
+    else
+        log_success "Token do GitHub carregado do .env"
+    fi
+    
+    # Criar secret em todos os namespaces
+    local created=0
+    local skipped=0
+    
+    for ns in "${namespaces[@]}"; do
+        if kubectl get secret ghcr-secret -n "$ns" &>/dev/null; then
+            log_info "Secret ghcr-secret já existe em $ns"
+            skipped=$((skipped + 1))
+        else
+            kubectl create secret docker-registry ghcr-secret \
+                --docker-server=ghcr.io \
+                --docker-username="$github_username" \
+                --docker-password="$github_token" \
+                -n "$ns" &>/dev/null
+            
+            if [ $? -eq 0 ]; then
+                log_success "Secret ghcr-secret criado em $ns"
+                created=$((created + 1))
+            else
+                log_error "Falha ao criar secret em $ns"
+            fi
+        fi
+    done
+    
+    echo ""
+    log_success "Secrets GHCR: $created criados, $skipped existentes"
+    echo ""
 }
 
 # ============================================================================
@@ -240,15 +467,135 @@ setup_registry_secret() {
 # ============================================================================
 
 apply_argocd_apps() {
-    log_info "Aplicando Applications do ArgoCD..."
+    log_info "Aplicando projetos e aplicações do ArgoCD..."
     
-    # Aplicar projetos
-    kubectl apply -f "$LOCAL_DIR/argocd/projects/"
+    # Aplicar projetos primeiro
+    if [ -d "$LOCAL_DIR/argocd/projects" ]; then
+        log_info "Aplicando projetos do ArgoCD..."
+        kubectl apply -f "$LOCAL_DIR/argocd/projects/" 2>&1 | grep -v "prefer a domain-qualified finalizer" || true
+        log_success "Projetos aplicados"
+    fi
     
-    # Aplicar applications
-    kubectl apply -f "$LOCAL_DIR/argocd/apps/"
+    # Aplicar aplicações de todos os ambientes
+    if [ -d "$LOCAL_DIR/argocd/apps" ]; then
+        log_info "Aplicando aplicações para todos os ambientes..."
+        kubectl apply -f "$LOCAL_DIR/argocd/apps/" 2>&1 | grep -v "prefer a domain-qualified finalizer" || true
+        log_success "Aplicações aplicadas para todos os ambientes"
+    fi
     
-    log_success "Applications do ArgoCD aplicadas"
+    echo ""
+    
+    # Mostrar status das aplicações
+    sleep 3
+    log_info "Status das aplicações no ArgoCD:"
+    kubectl get applications -n argocd 2>/dev/null || echo "Nenhuma aplicação encontrada ainda"
+    echo ""
+}
+
+# ============================================================================
+# Build e Push de Imagens
+# ============================================================================
+
+build_images() {
+    log_info "Construindo e enviando imagens para o registry local..."
+    echo ""
+    
+    # Obter commit hash curto
+    cd "$PROJECT_ROOT"
+    local GIT_COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo "latest")
+    
+    log_info "Tag da imagem: $GIT_COMMIT"
+    echo ""
+    
+    # Build nexo-auth
+    log_info "🔨 Building nexo-auth:$GIT_COMMIT..."
+    docker build \
+        -t localhost:5050/nexo-auth:$GIT_COMMIT \
+        -t localhost:5050/nexo-auth:latest \
+        -f "$PROJECT_ROOT/apps/nexo-auth/Dockerfile" \
+        "$PROJECT_ROOT/apps/nexo-auth" \
+        --quiet
+    
+    docker push localhost:5050/nexo-auth:$GIT_COMMIT --quiet
+    docker push localhost:5050/nexo-auth:latest --quiet
+    log_success "nexo-auth:$GIT_COMMIT ✓"
+    
+    # Build nexo-be
+    log_info "🔨 Building nexo-be:$GIT_COMMIT..."
+    docker build \
+        -t localhost:5050/nexo-be:$GIT_COMMIT \
+        -t localhost:5050/nexo-be:latest \
+        -f "$PROJECT_ROOT/apps/nexo-be/Dockerfile" \
+        "$PROJECT_ROOT" \
+        --quiet
+    
+    docker push localhost:5050/nexo-be:$GIT_COMMIT --quiet
+    docker push localhost:5050/nexo-be:latest --quiet
+    log_success "nexo-be:$GIT_COMMIT ✓"
+    
+    # Build nexo-fe
+    log_info "🔨 Building nexo-fe:$GIT_COMMIT..."
+    docker build \
+        -t localhost:5050/nexo-fe:$GIT_COMMIT \
+        -t localhost:5050/nexo-fe:latest \
+        -f "$PROJECT_ROOT/apps/nexo-fe/Dockerfile" \
+        "$PROJECT_ROOT" \
+        --quiet
+    
+    docker push localhost:5050/nexo-fe:$GIT_COMMIT --quiet
+    docker push localhost:5050/nexo-fe:latest --quiet
+    log_success "nexo-fe:$GIT_COMMIT ✓"
+    
+    echo ""
+    log_success "Todas as imagens construídas e enviadas!"
+    echo ""
+    
+    # Listar imagens no registry
+    log_info "Imagens disponíveis no registry:"
+    curl -s http://localhost:5050/v2/_catalog | grep -o '"repositories":\[[^]]*\]'
+    echo ""
+}
+
+# ============================================================================
+# Sincronizar Aplicações ArgoCD
+# ============================================================================
+
+sync_argocd_apps() {
+    log_info "Sincronizando aplicações do ArgoCD..."
+    echo ""
+    
+    # Aguardar alguns segundos para ArgoCD detectar as aplicações
+    sleep 10
+    
+    # Forçar sync de todas as aplicações em todos os ambientes
+    for app in $(kubectl get applications -n argocd -o jsonpath='{.items[*].metadata.name}' 2>/dev/null); do
+        log_info "  Syncing $app..."
+        kubectl patch application $app -n argocd \
+            --type merge \
+            -p '{"operation":{"initiatedBy":{"username":"admin"},"sync":{}}}' \
+            2>/dev/null || true
+    done
+    
+    echo ""
+    log_success "Sync iniciado para todas as aplicações"
+    echo ""
+    
+    # Aguardar pods ficarem prontos no ambiente develop
+    log_info "Aguardando pods do nexo-develop ficarem prontos..."
+    sleep 20
+    
+    local max_wait=60
+    local waited=0
+    while [ $waited -lt $max_wait ]; do
+        local ready_pods=$(kubectl get pods -n nexo-develop --no-headers 2>/dev/null | grep -c "Running" || echo "0")
+        if [ "$ready_pods" -ge "3" ]; then
+            break
+        fi
+        sleep 5
+        waited=$((waited + 5))
+    done
+    
+    echo ""
 }
 
 # ============================================================================
@@ -258,42 +605,71 @@ apply_argocd_apps() {
 show_summary() {
     echo ""
     echo "============================================================================"
-    echo -e "${GREEN}✅ Ambiente local K3D configurado com sucesso!${NC}"
+    echo -e "${GREEN}✅ Ambiente Nexo K3D configurado com sucesso!${NC}"
     echo "============================================================================"
     echo ""
+    
+    # Obter senhas
+    local argocd_password=$(kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d 2>/dev/null || echo "admin")
+    local grafana_password="admin"
+    
+    echo "📋 Serviços Disponíveis:"
+    echo ""
+    echo "  ┌─────────────────────────────────────────────────────────────────┐"
+    echo "  │ 🔐 ArgoCD                                                       │"
+    echo "  │    URL:  http://localhost:30080                                 │"
+    echo "  │    User: admin                                                  │"
+    echo "  │    Pass: $argocd_password                                       │"
+    echo "  ├─────────────────────────────────────────────────────────────────┤"
+    echo "  │ 📊 Grafana                                                      │"
+    echo "  │    URL:  http://localhost:30030                                 │"
+    echo "  │    User: admin                                                  │"
+    echo "  │    Pass: $grafana_password                                      │"
+    echo "  ├─────────────────────────────────────────────────────────────────┤"
+    echo "  │ 📈 Prometheus:   http://localhost:30090                         │"
+    echo "  │ 🔔 Alertmanager: http://localhost:30093                         │"
+    echo "  └─────────────────────────────────────────────────────────────────┘"
+    echo ""
+    
+    echo "🎯 Aplicações Nexo (Develop):"
+    echo ""
+    echo "  ┌─────────────────────────────────────────────────────────────────┐"
+    echo "  │ 🎨 Frontend:  http://develop.nexo.local                         │"
+    echo "  │ ⚙️  Backend:   http://develop.api.nexo.local                    │"
+    echo "  │ 🔐 Keycloak:  http://develop.auth.nexo.local                    │"
+    echo "  └─────────────────────────────────────────────────────────────────┘"
+    echo ""
+    
+    echo "📦 Status dos Pods por Ambiente:"
+    echo ""
+    for ns in nexo-develop nexo-qa nexo-staging nexo-prod; do
+        echo "  === $ns ==="
+        kubectl get pods -n "$ns" 2>/dev/null | head -5 || echo "    Nenhum pod ainda"
+        echo ""
+    done
+    
     echo "🐳 Registry Local:"
     echo ""
-    echo "   • Fora do cluster: localhost:5050"
-    echo "   • Dentro do cluster: k3d-nexo-registry:5000"
+    echo "  • localhost:5050 (fora do cluster)"
+    echo "  • k3d-nexo-registry:5000 (dentro do cluster)"
     echo ""
-    echo "🔄 Fluxo de Desenvolvimento Local:"
-    echo ""
-    echo "   Código → Build Local → Push Registry → ArgoCD Sync → K3D"
-    echo ""
-    echo "   cd local && make build-images    # Build e push todas as imagens"
-    echo "   kubectl rollout restart -n nexo-develop deployment  # Aplicar"
-    echo ""
-    echo "📋 Serviços disponíveis:"
-    echo ""
-    echo "  | Serviço       | URL                      | Credenciais            |"
-    echo "  |---------------|--------------------------|------------------------|"
-    echo "  | ArgoCD        | http://localhost:30080   | admin / (ver acima)    |"
-    echo "  | Grafana       | http://localhost:30030   | admin / (ver acima)    |"
-    echo "  | Prometheus    | http://localhost:30090   | -                      |"
-    echo "  | Alertmanager  | http://localhost:30093   | -                      |"
-    echo ""
-    echo "📋 Comandos úteis:"
+    
+    echo "📋 Comandos Úteis:"
     echo ""
     echo "  make status          # Ver status geral"
     echo "  make pods            # Ver pods"
-    echo "  make build-images    # Build e push imagens locais"
+    echo "  make build-images    # Rebuild imagens"
     echo "  make logs-be         # Logs do backend"
+    echo "  make argocd-sync     # Ressincronizar apps"
     echo "  make destroy         # Destruir ambiente"
     echo ""
-    echo "📋 Para Cloud/Produção:"
+    
+    echo "💡 Adicione ao /etc/hosts:"
     echo ""
-    echo "  Edite os values-*.yaml trocando 'k3d-nexo-registry:5000'"
-    echo "  por 'docker.io/geraldobl58' para usar DockerHub"
+    echo "  127.0.0.1 develop.nexo.local develop.api.nexo.local develop.auth.nexo.local"
+    echo "  127.0.0.1 qa.nexo.local qa.api.nexo.local qa.auth.nexo.local"
+    echo "  127.0.0.1 staging.nexo.local staging.api.nexo.local staging.auth.nexo.local"
+    echo "  127.0.0.1 prod.nexo.local prod.api.nexo.local prod.auth.nexo.local"
     echo ""
 }
 
@@ -304,11 +680,28 @@ show_summary() {
 main() {
     echo ""
     echo "============================================================================"
-    echo "🚀 Nexo Platform - Setup Ambiente Local K3D"
+    echo "🚀 Nexo Platform - Setup Completo K3D + ArgoCD"
     echo "============================================================================"
     echo ""
     
+    # Verificar se GITHUB_TOKEN foi fornecido como argumento ou variável de ambiente
+    if [ -n "$1" ]; then
+        export GITHUB_TOKEN="$1"
+        log_info "GitHub Token fornecido como argumento"
+    elif [ -z "$GITHUB_TOKEN" ]; then
+        log_warn "GitHub Token não fornecido"
+        echo ""
+        echo "  💡 Você pode fornecer o token de 3 formas:"
+        echo ""
+        echo "  1. Como argumento: ./setup.sh ghp_YOUR_TOKEN"
+        echo "  2. Como variável: export GITHUB_TOKEN=ghp_YOUR_TOKEN && ./setup.sh"
+        echo "  3. Interativamente (será solicitado durante o setup)"
+        echo ""
+        sleep 2
+    fi
+    
     check_dependencies
+    setup_ssd_volumes
     create_cluster
     verify_local_registry
     create_namespaces
@@ -317,6 +710,7 @@ main() {
     install_observability
     setup_registry_secret
     apply_argocd_apps
+    sync_argocd_apps
     show_summary
 }
 
