@@ -1,13 +1,21 @@
 # CodeRabbit Configuration
-# https://docs.coderabbit.ai/guides/review-instructions
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
 
-# Language: "pt-br" for Brazilian Portuguese reviews
-language: pt-br
+# Language: "pt-BR" for Brazilian Portuguese reviews
+language: pt-BR
 
 # Enable review comments
 reviews:
-  # Review pull requests automatically
-  auto_review: true
+  # Review pull requests automatically (all branches)
+  auto_review:
+    enabled: true
+    # Review PRs to any branch (não apenas default)
+    drafts: false
+    base_branches:
+      - develop
+      - qa
+      - staging
+      - main
 
   # Review settings
   request_changes_workflow: true
@@ -110,7 +118,8 @@ tools:
 # Knowledge base
 knowledge_base:
   # Learnings from reviews (enabled by default)
-  learnings: true
+  learnings:
+    scope: auto
 
   # Custom instructions
   opt_out_instructions: false
