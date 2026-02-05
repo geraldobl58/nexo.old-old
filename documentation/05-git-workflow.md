@@ -22,15 +22,15 @@ main (produção)
 
 ### Tipos de Branches
 
-| Branch | Propósito | Base | Merge para |
-|--------|-----------|------|------------|
-| `main` | **Produção** - código estável em produção | - | - |
-| `develop` | **Desenvolvimento** - código em desenvolvimento | `main` | `main` |
-| `feature/*` | Nova funcionalidade | `develop` | `develop` |
-| `fix/*` | Correção de bug | `develop` | `develop` |
-| `hotfix/*` | Correção urgente produção | `main` | `main` + `develop` |
-| `chore/*` | Manutenção, deps, refactor | `develop` | `develop` |
-| `docs/*` | Apenas documentação | `develop` | `develop` |
+| Branch      | Propósito                                       | Base      | Merge para         |
+| ----------- | ----------------------------------------------- | --------- | ------------------ |
+| `main`      | **Produção** - código estável em produção       | -         | -                  |
+| `develop`   | **Desenvolvimento** - código em desenvolvimento | `main`    | `main`             |
+| `feature/*` | Nova funcionalidade                             | `develop` | `develop`          |
+| `fix/*`     | Correção de bug                                 | `develop` | `develop`          |
+| `hotfix/*`  | Correção urgente produção                       | `main`    | `main` + `develop` |
+| `chore/*`   | Manutenção, deps, refactor                      | `develop` | `develop`          |
+| `docs/*`    | Apenas documentação                             | `develop` | `develop`          |
 
 ## 🚀 Workflow Completo
 
@@ -141,19 +141,19 @@ Formato: `<tipo>[escopo opcional]: <descrição>`
 
 ### Tipos
 
-| Tipo | Descrição | Exemplo |
-|------|-----------|---------|
-| `feat` | Nova funcionalidade | `feat(api): adiciona endpoint de busca` |
-| `fix` | Correção de bug | `fix(auth): corrige expiração de token` |
-| `docs` | Apenas documentação | `docs: atualiza guia de setup` |
-| `style` | Formatação, lint | `style: formata código com prettier` |
-| `refactor` | Refatoração (sem mudança de comportamento) | `refactor(db): otimiza queries` |
-| `perf` | Melhoria de performance | `perf(api): cacheia respostas frequentes` |
-| `test` | Adiciona ou corrige testes | `test(users): adiciona testes unitários` |
-| `chore` | Manutenção, deps, config | `chore(deps): atualiza dependências` |
-| `ci` | CI/CD | `ci: adiciona workflow de deploy` |
-| `build` | Build system | `build: configura webpack` |
-| `revert` | Reverter commit | `revert: "feat: adiciona feature X"` |
+| Tipo       | Descrição                                  | Exemplo                                   |
+| ---------- | ------------------------------------------ | ----------------------------------------- |
+| `feat`     | Nova funcionalidade                        | `feat(api): adiciona endpoint de busca`   |
+| `fix`      | Correção de bug                            | `fix(auth): corrige expiração de token`   |
+| `docs`     | Apenas documentação                        | `docs: atualiza guia de setup`            |
+| `style`    | Formatação, lint                           | `style: formata código com prettier`      |
+| `refactor` | Refatoração (sem mudança de comportamento) | `refactor(db): otimiza queries`           |
+| `perf`     | Melhoria de performance                    | `perf(api): cacheia respostas frequentes` |
+| `test`     | Adiciona ou corrige testes                 | `test(users): adiciona testes unitários`  |
+| `chore`    | Manutenção, deps, config                   | `chore(deps): atualiza dependências`      |
+| `ci`       | CI/CD                                      | `ci: adiciona workflow de deploy`         |
+| `build`    | Build system                               | `build: configura webpack`                |
+| `revert`   | Reverter commit                            | `revert: "feat: adiciona feature X"`      |
 
 ### Escopos Comuns
 
@@ -351,6 +351,7 @@ v1.2.3
 ```
 
 **Exemplos:**
+
 - `v1.0.0` - Release inicial
 - `v1.1.0` - Adiciona nova feature (compatível)
 - `v1.1.1` - Corrige bug
@@ -463,12 +464,14 @@ git remote -v
 ### 1. Commits Pequenos e Frequentes
 
 ❌ **Ruim:**
+
 ```bash
 git commit -m "fix: várias correções"
 # 50 arquivos alterados
 ```
 
 ✅ **Bom:**
+
 ```bash
 git commit -m "fix(auth): corrige validação de token"
 # 2 arquivos alterados
@@ -480,6 +483,7 @@ git commit -m "fix(api): corrige tratamento de erro"
 ### 2. Mensagens Descritivas
 
 ❌ **Ruim:**
+
 ```bash
 git commit -m "ajustes"
 git commit -m "wip"
@@ -487,6 +491,7 @@ git commit -m "fix"
 ```
 
 ✅ **Bom:**
+
 ```bash
 git commit -m "feat(users): adiciona endpoint de busca avançada"
 git commit -m "fix(auth): corrige expiração prematura de tokens"

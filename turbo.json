@@ -17,5 +17,13 @@
       "cache": false,
       "persistent": true
     }
+  },
+  "pipeline": {
+    "build": {
+      "dependsOn": ["^build"]
+    },
+    "lint": {},
+    "typecheck": {},
+    "test": {}
   }
 }
