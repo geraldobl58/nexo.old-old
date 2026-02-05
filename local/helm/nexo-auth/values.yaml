@@ -103,11 +103,13 @@ postgresql:
       memory: 256Mi
 
 # Metrics configuration
+# Keycloak requer configuração adicional para expor métricas
+# Desabilitado temporariamente até implementar suporte completo
 metrics:
-  enabled: true
+  enabled: false
   path: /metrics
   serviceMonitor:
-    enabled: true
+    enabled: false
     interval: 30s
     scrapeTimeout: 10s
     labels:
