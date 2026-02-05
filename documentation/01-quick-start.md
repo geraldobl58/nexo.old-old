@@ -23,21 +23,31 @@ cd nexo
 
 Você precisa de um GitHub Personal Access Token com permissão `read:packages`:
 
-**Opção A: Variável de Ambiente (Recomendado para dev local)**
+**Opção A: Arquivo .env (Recomendado - Token carrega automaticamente)**
+
+```bash
+# 1. Copie o template
+cp .env.template .env
+
+# 2. Edite o .env e adicione seu token
+nano .env
+
+# Conteúdo do .env:
+GITHUB_TOKEN=ghp_seu_token_aqui
+GITHUB_USERNAME=seu_usuario
+
+# 3. Pronto! O script carrega automaticamente
+```
+
+**Opção B: Variável de Ambiente**
 
 ```bash
 # Adicione ao ~/.zshrc ou ~/.bashrc
 export GITHUB_TOKEN=ghp_seu_token_aqui
+export GITHUB_USERNAME=seu_usuario
 
 # Recarregue o shell
 source ~/.zshrc
-```
-
-**Opção B: Passar diretamente no comando**
-
-```bash
-cd local
-./scripts/setup.sh ghp_seu_token_aqui
 ```
 
 **Opção C: GitHub Secret (Para CI/CD)**
@@ -52,10 +62,11 @@ cd local
 ```bash
 cd local
 make setup
-
-# OU com token direto
-./scripts/setup.sh ghp_seu_token_aqui
 ```
+
+**O setup irá:**
+- 🔍 Detectar e carregar token do `.env` automaticamente
+- ✅ OU pedir o token manualmente se não encontrar
 
 **O que acontece:**
 
