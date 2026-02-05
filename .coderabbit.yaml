@@ -104,17 +104,6 @@ chat:
 # Code quality checks
 early_access: false
 
-# Tools to enable
-tools:
-  # AST-level checks
-  ast_level_checker:
-    enabled: true
-
-  # Security checks
-  github_checks:
-    enabled: true
-    timeout_ms: 90000
-
 # Knowledge base
 knowledge_base:
   # Learnings from reviews (enabled by default)
