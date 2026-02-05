@@ -54,7 +54,7 @@ source ~/.zshrc
 
 1. Acesse: https://github.com/seu-usuario/nexo/settings/secrets/actions
 2. Clique em **"New repository secret"**
-3. Nome: `GHCR_TOKEN`
+3. Nome: `DISCORD_WEBHOOK` (opcional para notificações)
 4. Valor: `ghp_...`
 
 ### 3. Execute o Setup

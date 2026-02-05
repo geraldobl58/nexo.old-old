@@ -47,10 +47,12 @@ Documentação completa do Nexo Platform - Sistema GitOps com K3D, ArgoCD e Mult
 ## 🎯 Início Rápido (TL;DR)
 
 ```bash
-# 1. Configure o GitHub Token como Secret (uma única vez)
+# 1. Configure o Discord Webhook como Secret (opcional)
 # GitHub → Settings → Secrets and variables → Actions → New repository secret
-# Nome: GHCR_TOKEN
-# Valor: seu_github_token (ghp_...)
+# Nome: DISCORD_WEBHOOK
+# Valor: https://discord.com/api/webhooks/...
+# 
+# Nota: GITHUB_TOKEN já é fornecido automaticamente!
 
 # 2. Setup do ambiente local (5 minutos)
 cd local

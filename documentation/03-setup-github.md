@@ -59,7 +59,6 @@ git add .env
 
 | Tipo         | Nome                    | Valor                     | Descrição            | Uso                          |
 | ------------ | ----------------------- | ------------------------- | -------------------- | ---------------------------- |
-| **Secret**   | `GHCR_TOKEN`            | `ghp_...`                 | Token para GHCR      | Build, Push, Pull de imagens |
 | **Secret**   | `DISCORD_WEBHOOK`       | `https://discord.com/...` | Webhook notificações | Alertas de deploy            |
 | **Variable** | `ARGOCD_AUTH_TOKEN`     | `eyJhbG...`               | Token ArgoCD         | Sync apps via API            |
 | **Variable** | `ARGOCD_SERVER`         | `argocd.nexo.io`          | URL do ArgoCD        | Integração CI/CD             |
@@ -71,7 +70,13 @@ git add .env
 | **Variable** | `K8S_NAMESPACE_QA`      | `nexo-qa`                 | Namespace QA         | Deploy                       |
 | **Variable** | `K8S_NAMESPACE_STAGING` | `nexo-staging`            | Namespace staging    | Deploy                       |
 
-> **Nota:** `GH_TOKEN` não é mais necessário! O GitHub Actions fornece automaticamente `GITHUB_TOKEN` com permissões adequadas para workflows.
+> **✅ Secrets Necessários:** Apenas `DISCORD_WEBHOOK`!
+> 
+> O GitHub Actions fornece automaticamente `GITHUB_TOKEN` com todas as permissões necessárias:
+> - `packages: write` - Push de imagens Docker no GHCR
+> - `contents: write` - Commit de values files
+> - `pull-requests: write` - Comentários do Danger.js
+> - `issues: write` - Labels e comentários
 
 ### Secrets do Repositório
 
@@ -81,23 +86,30 @@ Para que o CI/CD funcione automaticamente:
 2. Vá em: **Settings** → **Secrets and variables** → **Actions**
 3. Clique em **"New repository secret"**
 
-Configure os seguintes secrets:
+Configure o seguinte secret:
 
-#### Secret 1: GHCR_TOKEN
+#### Secret: DISCORD_WEBHOOK
 
 ```
-Name: GHCR_TOKEN
-Value: ghp_seu_token_github
-Description: Token para push/pull de imagens no GHCR
+Name: DISCORD_WEBHOOK
+Value: https://discord.com/api/webhooks/...
+Description: Webhook para notificações de deploy
 ```
 
 **Usado em:**
 
-- Build de imagens Docker
-- Push para GitHub Container Registry
-- Pull de imagens privadas no K3D
+- Notificações de deploy bem-sucedido
+- Alertas de falhas no pipeline
+- Resumo de mudanças por ambiente
 
-#### Secret 2: GHCR_USERNAME (Opcional)
+> **⚠️ Importante:** `GITHUB_TOKEN` é fornecido automaticamente pelo GitHub Actions e já tem permissões para:
+> - Push/pull de imagens no GitHub Container Registry (GHCR)
+> - Comentar em Pull Requests (Danger.js)
+> - Atualizar repositório (update values files)
+> 
+> **Não é necessário criar nenhum token customizado!**
+
+#### GHCR_USERNAME (Opcional)
 
 ```
 Name: GHCR_USERNAME

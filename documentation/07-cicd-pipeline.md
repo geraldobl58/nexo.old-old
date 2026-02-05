@@ -369,7 +369,8 @@ Configurados em: `Settings > Secrets and variables > Actions`
 ### Secrets
 
 ```bash
-GHCR_TOKEN          # Token para push de imagens (packages: write)
+GITHUB_TOKEN        # Token automático (fornecido pelo GitHub Actions)
+DISCORD_WEBHOOK     # Webhook para notificações (opcional)
 GH_TOKEN            # Token para commits/PRs (repo, workflow)
 DISCORD_WEBHOOK     # Webhook para notificações
 ```
