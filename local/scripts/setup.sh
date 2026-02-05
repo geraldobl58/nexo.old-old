@@ -103,7 +103,7 @@ check_dependencies() {
     helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx 2>/dev/null || true
     helm repo add prometheus-community https://prometheus-community.github.io/helm-charts 2>/dev/null || true
     helm repo add argo https://argoproj.github.io/argo-helm 2>/dev/null || true
-    helm repo update --quiet
+    helm repo update >/dev/null 2>&1
     
     log_success "Todas as dependências instaladas e configuradas"
 }
