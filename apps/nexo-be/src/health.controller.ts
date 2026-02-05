@@ -6,11 +6,11 @@ import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 export class HealthController {
   @Get('health')
   @ApiOperation({
-    summary: 'Deploy funcionando show de bola - Version 21 🚀',
+    summary: 'Deploy funcionando show de bola - Version 23 🚀',
   })
   @ApiResponse({
     status: 200,
-    description: 'Deploy funcionando show de bola - Version 21 🚀',
+    description: 'Deploy funcionando show de bola - Version 23 🚀',
     schema: {
       type: 'object',
       properties: {
