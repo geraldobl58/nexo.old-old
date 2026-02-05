@@ -117,12 +117,12 @@ sudo nano /etc/hosts
 
 ### Ferramentas (via NodePort)
 
-| Serviço      | URL                    | Credenciais  |
-| ------------ | ---------------------- | ------------ |
-| ArgoCD       | http://localhost:30080 | admin / (*) |
+| Serviço      | URL                    | Credenciais   |
+| ------------ | ---------------------- | ------------- |
+| ArgoCD       | http://localhost:30080 | admin / (\*)  |
 | Grafana      | http://localhost:30030 | admin / admin |
-| Prometheus   | http://localhost:30090 | -            |
-| Alertmanager | http://localhost:30093 | -            |
+| Prometheus   | http://localhost:30090 | -             |
+| Alertmanager | http://localhost:30093 | -             |
 
 > (\*) Obter senha: `kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d`
 

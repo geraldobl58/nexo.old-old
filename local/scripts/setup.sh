@@ -23,6 +23,10 @@ PROJECT_ROOT="$(dirname "$LOCAL_DIR")"
 CLUSTER_NAME="nexo-local"
 K3D_CONFIG="$LOCAL_DIR/k3d/config.yaml"
 
+# GitHub Container Registry
+GITHUB_USERNAME="${GITHUB_USERNAME:-geraldobl58}"
+GITHUB_TOKEN="${GITHUB_TOKEN:-}"
+
 # ============================================================================
 # Funções de utilidade
 # ============================================================================
@@ -203,7 +207,7 @@ install_ingress() {
 create_namespaces() {
     log_info "Criando namespaces..."
     
-    local namespaces=("nexo-develop" "argocd" "monitoring")
+    local namespaces=("nexo-develop" "nexo-qa" "nexo-staging" "nexo-prod" "argocd" "monitoring")
     
     for ns in "${namespaces[@]}"; do
         kubectl create namespace "$ns" --dry-run=client -o yaml | kubectl apply -f -
@@ -345,34 +349,57 @@ verify_local_registry() {
 # ============================================================================
 
 setup_registry_secret() {
-    log_info "Configurando secret do GitHub Container Registry..."
+    log_info "Configurando secrets do GitHub Container Registry..."
     
-    # Verificar se já existe
-    if kubectl get secret ghcr-secret -n nexo-develop &>/dev/null; then
-        log_success "Secret ghcr-secret já existe"
-        return 0
+    local namespaces=("nexo-develop" "nexo-qa" "nexo-staging" "nexo-prod")
+    local github_token="$GITHUB_TOKEN"
+    local github_username="$GITHUB_USERNAME"
+    
+    # Se o token não foi fornecido via variável de ambiente, solicitar
+    if [ -z "$github_token" ]; then
+        log_warn "GitHub Token não encontrado"
+        echo ""
+        echo "  Para usar imagens do GHCR, você precisa fornecer um token."
+        echo ""
+        read -p "Digite seu GitHub username [$github_username]: " input_username
+        github_username="${input_username:-$github_username}"
+        
+        read -sp "Digite seu GitHub Token (ghp_...): " github_token
+        echo ""
+        
+        if [ -z "$github_token" ]; then
+            log_error "Token não fornecido. As aplicações podem falhar ao baixar imagens."
+            return 1
+        fi
     fi
     
-    log_warn "Secret ghcr-secret não encontrado"
-    echo ""
-    echo "  Para usar imagens do GHCR, você precisa configurar o secret."
-    echo "  Execute: ./scripts/setup-ghcr-secret-interactive.sh"
-    echo ""
-    echo "  Ou configure manualmente com seu GitHub Token:"
-    echo "  kubectl create secret docker-registry ghcr-secret \\"
-    echo "    --docker-server=ghcr.io \\"
-    echo "    --docker-username=SEU_USUARIO \\"
-    echo "    --docker-password=SEU_TOKEN \\"
-    echo "    -n nexo-develop"
-    echo ""
+    # Criar secret em todos os namespaces
+    local created=0
+    local skipped=0
     
-    read -p "Deseja configurar agora? (y/N) " -n 1 -r
-    echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        "$SCRIPT_DIR/setup-ghcr-secret-interactive.sh"
-    else
-        log_warn "Prosseguindo sem secret. As aplicações podem falhar ao baixar imagens."
-    fi
+    for ns in "${namespaces[@]}"; do
+        if kubectl get secret ghcr-secret -n "$ns" &>/dev/null; then
+            log_info "Secret ghcr-secret já existe em $ns"
+            skipped=$((skipped + 1))
+        else
+            kubectl create secret docker-registry ghcr-secret \
+                --docker-server=ghcr.io \
+                --docker-username="$github_username" \
+                --docker-password="$github_token" \
+                -n "$ns" &>/dev/null
+            
+            if [ $? -eq 0 ]; then
+                log_success "Secret ghcr-secret criado em $ns"
+                created=$((created + 1))
+            else
+                log_error "Falha ao criar secret em $ns"
+            fi
+        fi
+    done
+    
+    echo ""
+    log_success "Secrets GHCR: $created criados, $skipped existentes"
+    echo ""
 }
 
 # ============================================================================
@@ -385,10 +412,14 @@ apply_argocd_apps() {
     # Aplicar projetos
     kubectl apply -f "$LOCAL_DIR/argocd/projects/" 2>/dev/null || true
     
-    # Aplicar apenas o ambiente develop inicialmente
+    # Aplicar TODAS as aplicações (develop, qa, staging, prod)
+    log_info "Aplicando aplicações para todos os ambientes..."
     kubectl apply -f "$LOCAL_DIR/argocd/apps/nexo-develop.yaml" 2>/dev/null || true
+    kubectl apply -f "$LOCAL_DIR/argocd/apps/nexo-qa.yaml" 2>/dev/null || true
+    kubectl apply -f "$LOCAL_DIR/argocd/apps/nexo-staging.yaml" 2>/dev/null || true
+    kubectl apply -f "$LOCAL_DIR/argocd/apps/nexo-prod.yaml" 2>/dev/null || true
     
-    log_success "Projetos e aplicações aplicados"
+    log_success "Projetos e aplicações aplicados para todos os ambientes"
     echo ""
 }
 
@@ -467,7 +498,7 @@ sync_argocd_apps() {
     # Aguardar alguns segundos para ArgoCD detectar as aplicações
     sleep 10
     
-    # Forçar sync de todas as aplicações
+    # Forçar sync de todas as aplicações em todos os ambientes
     for app in $(kubectl get applications -n argocd -o jsonpath='{.items[*].metadata.name}' 2>/dev/null); do
         log_info "  Syncing $app..."
         kubectl patch application $app -n argocd \
@@ -480,7 +511,7 @@ sync_argocd_apps() {
     log_success "Sync iniciado para todas as aplicações"
     echo ""
     
-    # Aguardar pods ficarem prontos
+    # Aguardar pods ficarem prontos no ambiente develop
     log_info "Aguardando pods do nexo-develop ficarem prontos..."
     sleep 20
     
@@ -540,10 +571,13 @@ show_summary() {
     echo "  └─────────────────────────────────────────────────────────────────┘"
     echo ""
     
-    echo "📦 Status dos Pods:"
+    echo "📦 Status dos Pods por Ambiente:"
     echo ""
-    kubectl get pods -n nexo-develop 2>/dev/null || echo "  Nenhum pod no namespace nexo-develop ainda"
-    echo ""
+    for ns in nexo-develop nexo-qa nexo-staging nexo-prod; do
+        echo "  === $ns ==="
+        kubectl get pods -n "$ns" 2>/dev/null | head -5 || echo "    Nenhum pod ainda"
+        echo ""
+    done
     
     echo "🐳 Registry Local:"
     echo ""
@@ -564,6 +598,9 @@ show_summary() {
     echo "💡 Adicione ao /etc/hosts:"
     echo ""
     echo "  127.0.0.1 develop.nexo.local develop.api.nexo.local develop.auth.nexo.local"
+    echo "  127.0.0.1 qa.nexo.local qa.api.nexo.local qa.auth.nexo.local"
+    echo "  127.0.0.1 staging.nexo.local staging.api.nexo.local staging.auth.nexo.local"
+    echo "  127.0.0.1 prod.nexo.local prod.api.nexo.local prod.auth.nexo.local"
     echo ""
 }
 
@@ -577,6 +614,22 @@ main() {
     echo "🚀 Nexo Platform - Setup Completo K3D + ArgoCD"
     echo "============================================================================"
     echo ""
+    
+    # Verificar se GITHUB_TOKEN foi fornecido como argumento ou variável de ambiente
+    if [ -n "$1" ]; then
+        export GITHUB_TOKEN="$1"
+        log_info "GitHub Token fornecido como argumento"
+    elif [ -z "$GITHUB_TOKEN" ]; then
+        log_warn "GitHub Token não fornecido"
+        echo ""
+        echo "  💡 Você pode fornecer o token de 3 formas:"
+        echo ""
+        echo "  1. Como argumento: ./setup.sh ghp_YOUR_TOKEN"
+        echo "  2. Como variável: export GITHUB_TOKEN=ghp_YOUR_TOKEN && ./setup.sh"
+        echo "  3. Interativamente (será solicitado durante o setup)"
+        echo ""
+        sleep 2
+    fi
     
     check_dependencies
     setup_ssd_volumes
