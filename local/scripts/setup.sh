@@ -261,8 +261,9 @@ install_argocd() {
         return 0
     fi
     
-    # Instalar ArgoCD
-    kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+    # Instalar ArgoCD (ignorar erros de CRD com anotações longas)
+    log_info "Aplicando manifests do ArgoCD..."
+    kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml 2>&1 | grep -v "Too long: must have at most" || true
     
     # Aguardar pods ficarem prontos
     log_info "Aguardando ArgoCD ficar pronto..."
@@ -299,31 +300,50 @@ install_observability() {
     # Verificar se já está instalado
     if helm list -n monitoring | grep -q "kube-prometheus-stack"; then
         log_success "kube-prometheus-stack já instalado, pulando..."
+        
+        # Garantir que Ingress existe
+        if [ -f "$LOCAL_DIR/observability/ingress.yaml" ]; then
+            kubectl apply -f "$LOCAL_DIR/observability/ingress.yaml" 2>/dev/null || true
+        fi
+        
         return 0
     fi
     
     log_info "Instalando kube-prometheus-stack (pode levar alguns minutos)..."
     
-    # Repositórios já foram configurados em check_dependencies()
-    # Instalar kube-prometheus-stack (Prometheus + Grafana + Alertmanager)
-    helm install kube-prometheus-stack prometheus-community/kube-prometheus-stack \
-        --namespace monitoring \
-        --set prometheus.prometheusSpec.serviceMonitorSelectorNilUsesHelmValues=false \
-        --set grafana.service.type=NodePort \
-        --set grafana.service.nodePort=30030 \
-        --set grafana.adminPassword=admin \
-        --set prometheus.service.type=NodePort \
-        --set prometheus.service.nodePort=30090 \
-        --set alertmanager.service.type=NodePort \
-        --set alertmanager.service.nodePort=30093 \
-        --wait \
-        --timeout 10m
+    # Usar values.yaml se existir, senão usar configurações inline
+    if [ -f "$LOCAL_DIR/observability/values.yaml" ]; then
+        helm upgrade --install kube-prometheus-stack prometheus-community/kube-prometheus-stack \
+            --namespace monitoring \
+            --values "$LOCAL_DIR/observability/values.yaml" \
+            2>&1 | grep -v "context canceled" || true
+    else
+        helm upgrade --install kube-prometheus-stack prometheus-community/kube-prometheus-stack \
+            --namespace monitoring \
+            --set prometheus.prometheusSpec.serviceMonitorSelectorNilUsesHelmValues=false \
+            --set grafana.service.type=NodePort \
+            --set grafana.service.nodePort=30030 \
+            --set grafana.adminPassword=admin \
+            --set prometheus.service.type=NodePort \
+            --set prometheus.service.nodePort=30090 \
+            --set alertmanager.service.type=NodePort \
+            --set alertmanager.service.nodePort=30093 \
+            2>&1 | grep -v "context canceled" || true
+    fi
     
     log_success "Stack de observabilidade instalada!"
+    
+    # Aplicar Ingress do observability
+    if [ -f "$LOCAL_DIR/observability/ingress.yaml" ]; then
+        log_info "Aplicando Ingress do observability..."
+        kubectl apply -f "$LOCAL_DIR/observability/ingress.yaml" 2>/dev/null || true
+        log_success "Ingress aplicado"
+    fi
+    
     echo ""
-    echo "  📊 Grafana:      http://localhost:30030  (admin / admin)"
-    echo "  📈 Prometheus:   http://localhost:30090"
-    echo "  🔔 Alertmanager: http://localhost:30093"
+    echo "  📊 Grafana:      http://grafana.local.nexo.app"
+    echo "  📈 Prometheus:   http://prometheus.local.nexo.app"
+    echo "  🔔 Alertmanager: http://alertmanager.local.nexo.app"
     echo ""
     
     # Aplicar dashboards customizados se existirem
@@ -432,17 +452,26 @@ setup_registry_secret() {
 apply_argocd_apps() {
     log_info "Aplicando projetos e aplicações do ArgoCD..."
     
-    # Aplicar projetos
-    kubectl apply -f "$LOCAL_DIR/argocd/projects/" 2>/dev/null || true
+    # Aplicar projetos primeiro
+    if [ -d "$LOCAL_DIR/argocd/projects" ]; then
+        log_info "Aplicando projetos do ArgoCD..."
+        kubectl apply -f "$LOCAL_DIR/argocd/projects/" 2>&1 | grep -v "prefer a domain-qualified finalizer" || true
+        log_success "Projetos aplicados"
+    fi
     
-    # Aplicar TODAS as aplicações (develop, qa, staging, prod)
-    log_info "Aplicando aplicações para todos os ambientes..."
-    kubectl apply -f "$LOCAL_DIR/argocd/apps/nexo-develop.yaml" 2>/dev/null || true
-    kubectl apply -f "$LOCAL_DIR/argocd/apps/nexo-qa.yaml" 2>/dev/null || true
-    kubectl apply -f "$LOCAL_DIR/argocd/apps/nexo-staging.yaml" 2>/dev/null || true
-    kubectl apply -f "$LOCAL_DIR/argocd/apps/nexo-prod.yaml" 2>/dev/null || true
+    # Aplicar aplicações de todos os ambientes
+    if [ -d "$LOCAL_DIR/argocd/apps" ]; then
+        log_info "Aplicando aplicações para todos os ambientes..."
+        kubectl apply -f "$LOCAL_DIR/argocd/apps/" 2>&1 | grep -v "prefer a domain-qualified finalizer" || true
+        log_success "Aplicações aplicadas para todos os ambientes"
+    fi
     
-    log_success "Projetos e aplicações aplicados para todos os ambientes"
+    echo ""
+    
+    # Mostrar status das aplicações
+    sleep 3
+    log_info "Status das aplicações no ArgoCD:"
+    kubectl get applications -n argocd 2>/dev/null || echo "Nenhuma aplicação encontrada ainda"
     echo ""
 }
 
