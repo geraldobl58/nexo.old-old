@@ -66,8 +66,8 @@ concurrency:
 permissions:
   contents: write
   packages: write
-  pull-requests: write  # Necessário para Danger.js comentar em PRs
-  issues: write         # Necessário para Danger.js
+  pull-requests: write # Necessário para Danger.js comentar em PRs
+  issues: write # Necessário para Danger.js
 
 jobs:
   # ==========================================================================
