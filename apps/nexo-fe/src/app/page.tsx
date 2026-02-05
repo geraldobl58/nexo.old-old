@@ -1,8 +1,8 @@
 const HomePage = () => {
   return (
-    <>
-      <div>Deploy funcionando show de bola - Version PR 3🚀🚀🚀</div>
-    </>
+    <div>
+      <h1>Podemos começar a construir algo incrível juntos!</h1>
+    </div>
   );
 };
 
